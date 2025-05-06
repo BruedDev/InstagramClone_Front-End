@@ -15,9 +15,10 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
   useEffect(() => {
     // Hàm kiểm tra xác thực bằng cách gọi API
     const checkAuth = async () => {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
       try {
         console.log("[ProtectedRoute] Đang kiểm tra xác thực qua API");
-        const response = await fetch("http://localhost:5000/api/auth/check", {
+        const response = await fetch(`${apiUrl}/api/auth/check`, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",

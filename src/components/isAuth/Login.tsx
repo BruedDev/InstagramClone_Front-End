@@ -21,9 +21,10 @@ export default function Login() {
   // Kiểm tra người dùng đã đăng nhập chưa khi component được load
   useEffect(() => {
     const checkIfLoggedIn = async () => {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
       try {
         // Kiểm tra trạng thái đăng nhập bằng cách gọi API check
-        const response = await fetch("http://localhost:5000/api/auth/check", {
+        const response = await fetch(`${apiUrl}/api/auth/check`, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
