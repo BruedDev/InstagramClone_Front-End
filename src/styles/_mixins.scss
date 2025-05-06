@@ -1,0 +1,109 @@
+@use "sass:math";
+
+@mixin flex-column {
+  display: flex;
+  flex-direction: column;
+}
+
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+@mixin flex-start {
+  display: flex;
+  align-items: flex-start;
+}
+
+@mixin flex-center-column {
+  @include flex-center;
+  flex-direction: column;
+}
+@mixin flex-start-column {
+  @include flex-start;
+  flex-direction: column;
+}
+
+@mixin flex-center-vert {
+  display: flex;
+  align-items: center;
+}
+
+@mixin flex-center-horiz {
+  display: flex;
+  justify-content: center;
+}
+
+@mixin list-style-none {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+@mixin flex-center-space-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+@mixin font-size(
+  $font-size,
+  $line-height: normal,
+  $letter-spacing: normal,
+  $font-weight: normal
+) {
+  font-size: calc($font-size / 16) * 1rem;
+  font-weight: $font-weight;
+
+  @if $line-height == normal {
+    line-height: normal;
+  } @else {
+    line-height: math.div($line-height, $font-size);
+  }
+
+  @if $letter-spacing == normal {
+    letter-spacing: normal;
+  } @else {
+    letter-spacing: #{math.div($letter-spacing, 100) *
+      math.div($font-size, 16)}rem;
+  }
+}
+
+@mixin cover-background {
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: center;
+}
+
+@mixin pseudo(
+  $width: 100%,
+  $height: 100%,
+  $display: inline-block,
+  $pos: absolute,
+  $content: ""
+) {
+  content: $content;
+  display: $display;
+  position: $pos;
+  @include box($width, $height);
+}
+
+@mixin respond($breakpoint) {
+  @if $breakpoint == xs {
+    @media (max-width: 480px) {
+      @content;
+    }
+  } @else if $breakpoint == sm {
+    @media (max-width: 768px) {
+      @content;
+    }
+  } @else if $breakpoint == md {
+    @media (max-width: 1024px) {
+      @content;
+    }
+  } @else if $breakpoint == lg {
+    @media (max-width: 1200px) {
+      @content;
+    }
+  }
+}
