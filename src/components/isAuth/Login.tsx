@@ -3,6 +3,7 @@
 import { useState, FormEvent, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { checkAuth } from "@/utils/isAuth";
 
 interface LoginFormData {
   identifier: string;
@@ -21,27 +22,16 @@ export default function Login() {
   // Kiểm tra người dùng đã đăng nhập chưa khi component được load
   useEffect(() => {
     const checkIfLoggedIn = async () => {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-      console.log("apiUrl:", apiUrl);
       try {
-        // Kiểm tra trạng thái đăng nhập bằng cách gọi API check
-        const response = await fetch(`${apiUrl}/api/auth/check`, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include", // Đảm bảo gửi cookie với request
-        });
+        // Sử dụng utility function để kiểm tra xác thực
+        const isAuthenticated = await checkAuth();
 
-        if (response.ok) {
+        if (isAuthenticated) {
           // Nếu đã đăng nhập, chuyển hướng đến trang chính
-          console.log("Người dùng đã đăng nhập, chuyển hướng về trang chủ");
           router.replace("/");
-        } else {
-          console.log("Chưa đăng nhập, ở lại trang đăng nhập");
         }
-      } catch (error) {
-        console.error("Lỗi khi kiểm tra đăng nhập:", error);
+      } catch (error: unknown) {
+        setError(error instanceof Error ? error.message : "Có lỗi xảy ra");
       }
     };
 
@@ -60,7 +50,6 @@ export default function Login() {
     e.preventDefault();
     setError("");
     setIsLoading(true);
-    console.log("Đang gửi dữ liệu đăng nhập:", formData);
     const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
     try {
@@ -73,23 +62,15 @@ export default function Login() {
         credentials: "include", // Quan trọng để nhận cookie từ server
       });
 
-      console.log("Response status:", response.status);
-      console.log("Response headers:", Object.fromEntries(response.headers));
-
       const data = await response.json();
-      console.log("Response data:", data);
 
       if (!response.ok) {
         throw new Error(data.message || "Đăng nhập thất bại");
       }
 
-      console.log("Đăng nhập thành công:", data);
-      console.log("Kiểm tra cookies sau đăng nhập:", document.cookie);
-
       // Chuyển hướng đến trang chủ
       router.replace("/");
     } catch (err) {
-      console.error("Lỗi đăng nhập:", err);
       setError(err instanceof Error ? err.message : "Có lỗi xảy ra");
     } finally {
       setIsLoading(false);
