@@ -22,6 +22,7 @@ export default function Login() {
   useEffect(() => {
     const checkIfLoggedIn = async () => {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+      console.log("apiUrl:", apiUrl);
       try {
         // Kiểm tra trạng thái đăng nhập bằng cách gọi API check
         const response = await fetch(`${apiUrl}/api/auth/check`, {
