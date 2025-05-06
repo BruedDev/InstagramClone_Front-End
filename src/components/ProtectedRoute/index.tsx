@@ -42,8 +42,8 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
 
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
-    // Thiết lập interval để kiểm tra định kỳ (mỗi 5 phút)
-    const authCheckInterval = setInterval(verifyAuth, 5 * 60 * 1000);
+    // Thiết lập interval để kiểm tra định kỳ (mỗi 1 tiếng)
+    const authCheckInterval = setInterval(verifyAuth, 60 * 60 * 1000);
 
     // Cleanup function
     return () => {
