@@ -61,9 +61,10 @@ export default function Login() {
     setError("");
     setIsLoading(true);
     console.log("Đang gửi dữ liệu đăng nhập:", formData);
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
     try {
-      const response = await fetch("http://localhost:5000/api/auth/login", {
+      const response = await fetch(`${apiUrl}/api/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
