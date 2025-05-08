@@ -19,6 +19,12 @@ export default function Login() {
   const [error, setError] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
+  // Hàm kiểm tra trình duyệt Safari
+  const isSafari = () => {
+    const ua = window.navigator.userAgent;
+    return ua.includes("Safari") && !ua.includes("Chrome");
+  };
+
   // Kiểm tra người dùng đã đăng nhập chưa khi component được load
   useEffect(() => {
     const checkIfLoggedIn = async () => {
@@ -68,6 +74,11 @@ export default function Login() {
 
       if (!response.ok) {
         throw new Error(data.message || "Đăng nhập thất bại");
+      }
+
+      // Kiểm tra và lưu vào localStorage nếu là Safari
+      if (isSafari()) {
+        localStorage.setItem("userToken", data.token); // Hoặc token bạn nhận được từ backend
       }
 
       router.replace("/");
