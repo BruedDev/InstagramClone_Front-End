@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "https://instagramclone-backend-2jp7.onrender.com"
+    }
+  ]
+}
