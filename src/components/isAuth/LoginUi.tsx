@@ -89,7 +89,7 @@ export default function LoginUi({
               Quên mật khẩu?
             </Link>
             <Link
-              href="/register"
+              href="/accounts/register"
               className="font-medium text-blue-600 hover:text-blue-500"
             >
               Đăng ký tài khoản
