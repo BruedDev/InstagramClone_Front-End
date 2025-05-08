@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { checkAuth } from "@/utils/isAuth";
+import InstagramLoader from "../Loaing/InstagramLoader";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -55,9 +56,9 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
   // Hiển thị trạng thái loading trong khi kiểm tra xác thực
   if (isAuthenticated === null) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-      </div>
+      <>
+        <InstagramLoader />
+      </>
     );
   }
 
