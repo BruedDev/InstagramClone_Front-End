@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { checkAuth } from "@/utils/isAuth";
-import InstagramLoader from "../Loaing/InstagramLoader";
+import InstagramLoader from "../Loading/InstagramLoader";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
