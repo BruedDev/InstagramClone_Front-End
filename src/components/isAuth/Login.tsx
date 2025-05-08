@@ -53,19 +53,49 @@ export default function Login() {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
     try {
-      const response = await fetch(`${apiUrl}/api/auth/login`, {
+      // Bước 1: Gửi thông tin đăng nhập
+      const loginResponse = await fetch(`${apiUrl}/api/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(formData),
-        credentials: "include", // Quan trọng để nhận cookie từ server
+        body: JSON.stringify({
+          identifier: formData.identifier,
+          password: formData.password,
+        }),
+        credentials: "omit", // Không gửi cookie
       });
 
-      const data = await response.json();
+      const loginData = await loginResponse.json();
 
-      if (!response.ok) {
-        throw new Error(data.message || "Đăng nhập thất bại");
+      if (!loginResponse.ok) {
+        throw new Error(loginData.message || "Đăng nhập thất bại");
+      }
+
+      // Bước 2: Gửi yêu cầu xác thực thông tin người dùng
+      // Sử dụng user ID từ kết quả đăng nhập
+      const authCheckResponse = await fetch(`${apiUrl}/api/auth/check`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${loginData.temporaryToken}`, // Sử dụng temporary token từ bước login
+        },
+      });
+
+      const authData = await authCheckResponse.json();
+
+      if (!authCheckResponse.ok) {
+        throw new Error(authData.message || "Xác thực thất bại");
+      }
+
+      // Lưu token chính thức vào localStorage
+      if (authData.token) {
+        localStorage.setItem("authToken", authData.token);
+      }
+
+      // Lưu thông tin user nếu cần
+      if (authData.user) {
+        localStorage.setItem("user", JSON.stringify(authData.user));
       }
 
       // Chuyển hướng đến trang chủ

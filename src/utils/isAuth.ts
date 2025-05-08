@@ -1,3 +1,5 @@
+// utils/isAuth.ts
+
 "use client";
 
 export const checkAuth = async (): Promise<boolean> => {
