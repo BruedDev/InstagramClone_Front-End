@@ -48,17 +48,21 @@ export default function Login() {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    setError("");
-    setIsLoading(true);
+    setError(""); // Reset lỗi cũ
+    setIsLoading(true); // Đang gửi yêu cầu
     const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
     try {
+      // Gửi dữ liệu đăng nhập
       const response = await fetch(`${apiUrl}/api/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          identifier: formData.identifier, // Gửi dữ liệu identifier
+          password: formData.password, // Gửi mật khẩu
+        }),
         credentials: "include", // Quan trọng để nhận cookie từ server
       });
 
@@ -68,12 +72,12 @@ export default function Login() {
         throw new Error(data.message || "Đăng nhập thất bại");
       }
 
-      // Chuyển hướng đến trang chủ
+      // Nếu đăng nhập thành công, chuyển hướng đến trang chủ
       router.replace("/");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Có lỗi xảy ra");
     } finally {
-      setIsLoading(false);
+      setIsLoading(false); // Kết thúc quá trình gửi yêu cầu
     }
   };
 
