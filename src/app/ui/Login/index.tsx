@@ -1,4 +1,5 @@
 // import LoginFacebook from "@/components/LoginFacebook";
+import LoginFacebook from "@/components/LoginFacebook";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -78,11 +79,7 @@ export default function Login({
             </div>
 
             {/* <LoginFacebook /> */}
-            <a href="https://instagramclone-backend-2jp7.onrender.com/api/auth/facebook">
-              <button className="w-full rounded bg-blue-500 py-2 text-sm font-semibold text-white hover:bg-blue-600">
-                Đăng nhập với Facebook
-              </button>
-            </a>
+            <LoginFacebook />
 
             <div className="text-center">
               <a
