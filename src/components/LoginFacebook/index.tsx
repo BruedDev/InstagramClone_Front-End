@@ -51,13 +51,21 @@ export default function LoginFacebook() {
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    // Chỉ load SDK một lần
+    // Nếu đã có script, kiểm tra FB readiness
     if (document.getElementById("facebook-jssdk")) {
-      setIsSDKLoaded(true);
+      const interval = setInterval(() => {
+        if (
+          window.FB &&
+          typeof window.FB.init === "function" &&
+          typeof window.FB.getLoginStatus === "function"
+        ) {
+          setIsSDKLoaded(true);
+          clearInterval(interval);
+        }
+      }, 100);
       return;
     }
 
-    // Khởi tạo Facebook SDK
     window.fbAsyncInit = function () {
       window.FB.init({
         appId: process.env.NEXT_PUBLIC_FACEBOOK_APP_ID || "",
@@ -65,14 +73,15 @@ export default function LoginFacebook() {
         xfbml: true,
         version: "v18.0",
       });
-
-      // Kiểm tra trạng thái đăng nhập sau khi khởi tạo
-      window.FB.getLoginStatus(() => {
-        setIsSDKLoaded(true);
-      });
+      // Polling readiness
+      const interval = setInterval(() => {
+        if (window.FB && typeof window.FB.getLoginStatus === "function") {
+          setIsSDKLoaded(true);
+          clearInterval(interval);
+        }
+      }, 100);
     };
 
-    // Load the SDK asynchronously
     (function (d: Document, s: string, id: string) {
       const fjs = d.getElementsByTagName(s)[0];
       if (d.getElementById(id)) return;
@@ -99,17 +108,16 @@ export default function LoginFacebook() {
     setIsLoading(true);
 
     try {
-      // Kiểm tra trạng thái đăng nhập trước khi thực hiện login
       window.FB.getLoginStatus((response) => {
-        if (response.status === "connected") {
+        if (response.status === "connected" && response.authResponse) {
           // Nếu đã đăng nhập, lấy thông tin người dùng
           window.FB.api(
             "/me",
             { fields: "name,email" },
             (userInfo: FacebookUserInfo) => {
               handleFacebookAuthResponse(
-                response.authResponse?.accessToken || "",
-                response.authResponse?.userID || "",
+                response.authResponse!.accessToken,
+                response.authResponse!.userID,
                 userInfo
               );
             }
