@@ -24,6 +24,9 @@ const nextConfig: NextConfig = {
     prependData: `@use "variables" as *; @use "mixins" as *; @use "functions" as *;`,
     outputStyle: 'compressed',
   },
+  env: {
+    NEXT_PUBLIC_FACEBOOK_APP_ID: process.env.NEXT_PUBLIC_FACEBOOK_APP_ID,
+  },
 };
 
 export default nextConfig;

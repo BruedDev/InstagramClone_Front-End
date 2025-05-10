@@ -19,6 +19,7 @@ interface FacebookSDK {
     params: { fields: string },
     callback: (response: FacebookUserInfo) => void
   ): void;
+  getLoginStatus(callback: (response: FacebookLoginResponse) => void): void;
 }
 
 interface FacebookLoginResponse {
@@ -65,7 +66,10 @@ export default function LoginFacebook() {
         version: "v18.0",
       });
 
-      setIsSDKLoaded(true);
+      // Kiểm tra trạng thái đăng nhập sau khi khởi tạo
+      window.FB.getLoginStatus(() => {
+        setIsSDKLoaded(true);
+      });
     };
 
     // Load the SDK asynchronously
@@ -87,38 +91,57 @@ export default function LoginFacebook() {
   }, []);
 
   const handleFacebookLogin = () => {
-    if (!isSDKLoaded) {
-      console.error("Facebook SDK chưa được tải");
+    if (!isSDKLoaded || !window.FB) {
+      console.error("Facebook SDK chưa được tải hoặc chưa khởi tạo");
       return;
     }
 
     setIsLoading(true);
 
     try {
-      window.FB.login(
-        (response: FacebookLoginResponse) => {
-          if (response.authResponse) {
-            const { accessToken, userID } = response.authResponse;
+      // Kiểm tra trạng thái đăng nhập trước khi thực hiện login
+      window.FB.getLoginStatus((response) => {
+        if (response.status === "connected") {
+          // Nếu đã đăng nhập, lấy thông tin người dùng
+          window.FB.api(
+            "/me",
+            { fields: "name,email" },
+            (userInfo: FacebookUserInfo) => {
+              handleFacebookAuthResponse(
+                response.authResponse?.accessToken || "",
+                response.authResponse?.userID || "",
+                userInfo
+              );
+            }
+          );
+        } else {
+          // Nếu chưa đăng nhập, thực hiện login
+          window.FB.login(
+            (response: FacebookLoginResponse) => {
+              if (response.authResponse) {
+                const { accessToken, userID } = response.authResponse;
 
-            // Lấy thông tin người dùng từ Facebook
-            window.FB.api(
-              "/me",
-              { fields: "name,email" },
-              (userInfo: FacebookUserInfo) => {
-                // Xử lý thông tin đăng nhập
-                handleFacebookAuthResponse(accessToken, userID, userInfo);
+                // Lấy thông tin người dùng từ Facebook
+                window.FB.api(
+                  "/me",
+                  { fields: "name,email" },
+                  (userInfo: FacebookUserInfo) => {
+                    // Xử lý thông tin đăng nhập
+                    handleFacebookAuthResponse(accessToken, userID, userInfo);
+                  }
+                );
+              } else {
+                console.log("Người dùng đã hủy đăng nhập hoặc không cấp quyền");
+                setIsLoading(false);
               }
-            );
-          } else {
-            console.log("Người dùng đã hủy đăng nhập hoặc không cấp quyền");
-            setIsLoading(false);
-          }
-        },
-        {
-          scope: "public_profile,email",
-          return_scopes: true,
+            },
+            {
+              scope: "public_profile,email",
+              return_scopes: true,
+            }
+          );
         }
-      );
+      });
     } catch (error) {
       console.error("Lỗi khi khởi tạo đăng nhập Facebook:", error);
       setIsLoading(false);
