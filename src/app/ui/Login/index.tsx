@@ -78,7 +78,7 @@ export default function Login({
             </div>
 
             {/* <LoginFacebook /> */}
-            <a href="http://localhost:5000/api/auth/facebook">
+            <a href="https://instagramclone-backend-2jp7.onrender.com/api/auth/facebook">
               <button className="w-full rounded bg-blue-500 py-2 text-sm font-semibold text-white hover:bg-blue-600">
                 Đăng nhập với Facebook
               </button>
