@@ -69,6 +69,7 @@ export default function LoginGoogle() {
           width: "100%",
           maxWidth: "100%",
           display: "block",
+          background: "white",
         }}
         className="google-login-container"
       >
