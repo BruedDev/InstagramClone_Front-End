@@ -9,6 +9,7 @@ export function middleware(request: NextRequest) {
   // Nếu là public path
   if (publicPaths.includes(pathname)) {
     const token = searchParams.get("token");
+    console.log("Token from URL:", token);
 
     if (token) {
       // Lưu token vào cookie
