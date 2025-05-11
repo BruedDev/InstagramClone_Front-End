@@ -1,5 +1,23 @@
-// import LogoutComponent from "@/components/Logout";
+"use client";
+
+import { logout } from "@/server/auth";
+import { useRouter } from "next/navigation";
 
 export default function Home() {
-  return <div>home</div>;
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      router.push("/accounts"); // Điều hướng sau khi đăng xuất
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
+
+  return (
+    <div>
+      <button onClick={handleLogout}>Logout</button>
+    </div>
+  );
 }
