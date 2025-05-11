@@ -6,13 +6,15 @@ import {
 } from "@react-oauth/google";
 import { googleLogin } from "@/server/auth";
 import { useRouter } from "next/navigation";
+import { useEffect, useRef } from "react";
 
 export default function LoginGoogle() {
   const router = useRouter();
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // Khai báo kiểu cho payload của Google Login
   interface GoogleAuthPayload {
-    tokenId: string; // Đảm bảo key này trùng với server
+    tokenId: string;
   }
 
   const handleSuccess = async (credentialResponse: CredentialResponse) => {
@@ -20,7 +22,7 @@ export default function LoginGoogle() {
       const credential = credentialResponse?.credential;
       if (!credential) throw new Error("No credential received");
 
-      const payload: GoogleAuthPayload = { tokenId: credential }; // Sử dụng `tokenId` thay vì `idToken`
+      const payload: GoogleAuthPayload = { tokenId: credential };
 
       // Gọi hàm googleLogin với payload đã được định nghĩa đúng kiểu
       const user = await googleLogin(payload);
@@ -36,14 +38,58 @@ export default function LoginGoogle() {
     }
   };
 
+  // Add CSS to ensure Google button is full width
+  useEffect(() => {
+    if (containerRef.current) {
+      // Apply styling to the container
+      containerRef.current.style.width = "100%";
+      containerRef.current.style.display = "block";
+
+      // Find and style the iframe and button within the container
+      setTimeout(() => {
+        const iframe = containerRef.current?.querySelector("iframe");
+        const button = containerRef.current?.querySelector("button");
+
+        if (iframe) {
+          iframe.style.width = "100%";
+        }
+
+        if (button) {
+          button.style.width = "100%";
+        }
+      }, 100); // Small delay to ensure elements are rendered
+    }
+  }, []);
+
   return (
     <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_APP_ID!}>
-      <div style={{ width: "100%" }}>
+      <div
+        ref={containerRef}
+        style={{
+          width: "100%",
+          maxWidth: "100%",
+          display: "block",
+        }}
+        className="google-login-container"
+      >
+        <style jsx global>{`
+          .google-login-container > div,
+          .google-login-container > div > div,
+          .google-login-container iframe,
+          .google-login-container button {
+            width: 100% !important;
+            max-width: 100% !important;
+          }
+        `}</style>
         <GoogleLogin
           onSuccess={handleSuccess}
           onError={() => console.log("Login Failed")}
-          theme="outline" // Bạn có thể thêm theme nếu cần
-          width="100%" // Đảm bảo chiều rộng của GoogleLogin là 100%
+          theme="outline"
+          width="100%"
+          useOneTap
+          shape="rectangular"
+          text="continue_with"
+          locale="vi"
         />
       </div>
     </GoogleOAuthProvider>
