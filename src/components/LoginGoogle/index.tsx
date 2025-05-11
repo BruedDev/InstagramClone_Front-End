@@ -38,7 +38,7 @@ export default function LoginGoogle() {
 
   return (
     <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_APP_ID!}>
-      <div>
+      <div className="w-full">
         <GoogleLogin
           onSuccess={handleSuccess}
           onError={() => console.log("Login Failed")}
