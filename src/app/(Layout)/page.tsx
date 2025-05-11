@@ -1,9 +1,5 @@
-import LogoutComponent from "@/components/Logout";
+// import LogoutComponent from "@/components/Logout";
 
 export default function Home() {
-  return (
-    <div>
-      <LogoutComponent />
-    </div>
-  );
+  return <div>home</div>;
 }
