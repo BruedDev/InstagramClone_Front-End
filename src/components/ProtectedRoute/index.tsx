@@ -15,6 +15,24 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
   const router = useRouter();
 
   useEffect(() => {
+    // Kiểm tra và lưu token từ URL (nếu có)
+    const url = new URL(window.location.href);
+    const token = url.searchParams.get("token");
+    const cookieSet = url.searchParams.get("cookieSet");
+
+    if (cookieSet === "true" && token) {
+      // Lưu token vào localStorage để có thể dùng sau
+      localStorage.setItem("token", token);
+
+      // Xóa token và cookieSet khỏi URL để tránh trùng lặp
+      url.searchParams.delete("token");
+      url.searchParams.delete("cookieSet");
+      const cleanUrl = `${url.pathname}${url.search}`;
+
+      // Thực hiện chuyển hướng lại URL sạch
+      router.replace(cleanUrl);
+    }
+
     const checkUserAuth = async () => {
       try {
         const user: User | null = await checkAuth();
