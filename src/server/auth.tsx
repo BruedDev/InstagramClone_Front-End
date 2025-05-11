@@ -15,6 +15,11 @@ interface RegisterPayload {
   password: string;
 }
 
+// Interface cho Google Auth
+interface GoogleAuthPayload {
+  tokenId: string;
+}
+
 export interface User {
   id: string;
   username: string;
@@ -164,6 +169,26 @@ export const facebookLogin = async (data: {
   if (!response.ok) {
     const errorData = await response.json();
     throw new Error(errorData.message || "Facebook login failed");
+  }
+
+  const responseData = (await response.json()) as AuthResponse;
+  handleTokenStorage(responseData);
+
+  return responseData.user as User;
+};
+
+// Đăng nhập Google
+export const googleLogin = async (data: GoogleAuthPayload): Promise<User> => {
+  const response = await fetch(`${BASE_URL}/google`, {
+    method: "POST",
+    headers: createAuthHeaders(),
+    body: JSON.stringify(data),
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message || "Google login failed");
   }
 
   const responseData = (await response.json()) as AuthResponse;

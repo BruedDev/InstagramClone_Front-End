@@ -9,7 +9,7 @@ export default function Home() {
   const handleLogout = async () => {
     try {
       await logout();
-      router.push("/accounts"); // Điều hướng sau khi đăng xuất
+      router.push("/accounts");
     } catch (error) {
       console.error("Logout failed:", error);
     }
