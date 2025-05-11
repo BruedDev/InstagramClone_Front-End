@@ -16,7 +16,6 @@ export default function LoginComponent() {
     try {
       const user: User = await login({ identifier, password });
       console.log("✅ Đăng nhập thành công:", user);
-      localStorage.setItem("user", JSON.stringify(user));
       router.push("/");
     } catch (err: unknown) {
       if (err instanceof Error) {
