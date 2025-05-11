@@ -71,10 +71,7 @@ export default function LoginGoogle() {
           theme="outline"
           useOneTap
           shape="rectangular"
-          text="continue_with"
           locale="vi"
-          // width={"320px"}
-          min-width={"320px"}
         />
       </div>
     </GoogleOAuthProvider>
