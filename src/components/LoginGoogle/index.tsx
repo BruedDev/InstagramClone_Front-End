@@ -56,14 +56,16 @@ export default function LoginGoogle() {
           .gsi-material-button,
           .S9gUrf-YoZ4jf,
           .nsm7Bb-HzV7m-LgbsSe-BPrWId,
-          .r2fjmd {
+          .nsm7Bb-HzV7m-LgbsSe-MJoBVe .r2fjmd {
             width: 100% !important;
             max-width: 100% !important;
+            min-width: 100% !important;
           }
 
           /* Đảm bảo các div cha cũng có width 100% */
           div.aJyGGd div {
             width: 100% !important;
+            min-width: 100% !important;
           }
 
           /* Styling cho các container bên ngoài */
