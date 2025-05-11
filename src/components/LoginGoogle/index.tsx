@@ -7,12 +7,12 @@ import {
 import { googleLogin } from "@/server/auth";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
+import styles from "./LoginGoogle.module.scss";
 
 export default function LoginGoogle() {
   const router = useRouter();
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Khai báo kiểu cho payload của Google Login
   interface GoogleAuthPayload {
     tokenId: string;
   }
@@ -23,8 +23,6 @@ export default function LoginGoogle() {
       if (!credential) throw new Error("No credential received");
 
       const payload: GoogleAuthPayload = { tokenId: credential };
-
-      // Gọi hàm googleLogin với payload đã được định nghĩa đúng kiểu
       const user = await googleLogin(payload);
       console.log("Đăng nhập thành công:", user);
 
@@ -38,45 +36,25 @@ export default function LoginGoogle() {
     }
   };
 
-  // Add CSS to ensure Google button is full width
+  // Inject class trực tiếp vào button Google sau khi render
   useEffect(() => {
-    if (containerRef.current) {
-      // Apply styling to the container
-      containerRef.current.style.width = "100%";
-      containerRef.current.style.display = "block";
+    const timer = setTimeout(() => {
+      const button = containerRef.current?.querySelector('div[role="button"]');
+      if (button) {
+        button.classList.add(styles.googleCustomBtn);
+      }
+    }, 300); // Delay để Google button được render
 
-      // Find and style the iframe and button within the container
-      setTimeout(() => {
-        const iframe = containerRef.current?.querySelector("iframe");
-        const button = containerRef.current?.querySelector("button");
-
-        if (iframe) {
-          iframe.style.width = "100%";
-        }
-
-        if (button) {
-          button.style.width = "100%";
-        }
-      }, 100);
-    }
+    return () => clearTimeout(timer);
   }, []);
 
   return (
     <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_APP_ID!}>
-      <div
-        ref={containerRef}
-        style={{
-          width: "100%",
-          maxWidth: "100%",
-          display: "block",
-        }}
-        className="google-login-container"
-      >
+      <div ref={containerRef}>
         <GoogleLogin
           onSuccess={handleSuccess}
           onError={() => console.log("Login Failed")}
           theme="outline"
-          width="320px"
           useOneTap
           shape="rectangular"
           text="continue_with"
