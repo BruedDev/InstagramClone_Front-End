@@ -1,40 +1,48 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-// Tên cookie chứa token xác thực tiêu chuẩn
-const AUTH_TOKEN_COOKIE = "token"; // Điều chỉnh tên này theo backend của bạn
-
-// Tên cookie đặc biệt cho thiết bị Apple
-const APPLE_AUTH_COOKIE = "auth_user_data";
-
 export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+  const { pathname, searchParams } = request.nextUrl;
 
   // Các đường dẫn công khai không cần xác thực
   const publicPaths = ["/accounts", "/accounts/login", "/accounts/register"];
-  if (publicPaths.includes(pathname)) {
+  if (publicPaths.some(path => pathname === path || pathname.startsWith(path + "/"))) {
     return NextResponse.next();
   }
 
-  // Đọc cookie token tiêu chuẩn
-  const token = request.cookies.get(AUTH_TOKEN_COOKIE);
+  let isAuthenticated = false;
 
-  // Đọc cookie đặc biệt cho thiết bị Apple
-  const appleAuthCookie = request.cookies.get(APPLE_AUTH_COOKIE);
+  // 1. Kiểm tra token trong cookie
+  const tokenCookie = request.cookies.get("token");
+  if (tokenCookie?.value) {
+    isAuthenticated = true;
+  }
 
-  // Phát hiện thiết bị Apple từ User-Agent
-  const userAgent = request.headers.get("user-agent") || "";
-  const isApplePlatform =
-    userAgent.toLowerCase().includes('mac') ||
-    userAgent.toLowerCase().includes('iphone') ||
-    userAgent.toLowerCase().includes('ipad') ||
-    userAgent.toLowerCase().includes('ipod');
+  // 2. Kiểm tra token trong Authorization header (dùng cho fallback khi cookie bị chặn)
+  const authHeader = request.headers.get("Authorization");
+  if (!isAuthenticated && authHeader && authHeader.startsWith("Bearer ")) {
+    isAuthenticated = true;
+  }
 
-  // Xác thực dựa trên:
-  // 1. Token tiêu chuẩn cho tất cả các thiết bị
-  // 2. Cookie đặc biệt cho thiết bị Apple
-  const isAuthenticated = token || (isApplePlatform && appleAuthCookie);
+  // 3. Kiểm tra token trong query params (dùng cho OAuth callbacks và trường hợp iOS/macOS)
+  const tokenParam = searchParams.get("token");
+  if (!isAuthenticated && tokenParam) {
+    isAuthenticated = true;
 
+    // Chuyển hướng tới cùng URL nhưng không có token trong query params
+    // Để tránh để lộ token trong URL history
+    if (tokenParam) {
+      const cleanUrl = new URL(request.url);
+      cleanUrl.searchParams.delete("token");
+
+      // Chỉ chuyển hướng nếu URL đã thay đổi
+      if (cleanUrl.toString() !== request.url) {
+        return NextResponse.redirect(cleanUrl);
+      }
+    }
+  }
+
+  // Nếu không có token, chuyển hướng đến trang đăng nhập
   if (!isAuthenticated) {
     return NextResponse.redirect(new URL("/accounts", request.url));
   }
@@ -43,5 +51,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|assets|api).*)"],
 };
