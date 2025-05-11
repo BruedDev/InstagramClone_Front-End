@@ -38,10 +38,12 @@ export default function LoginGoogle() {
 
   return (
     <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_APP_ID!}>
-      <div className="w-full">
+      <div style={{ width: "100%" }}>
         <GoogleLogin
           onSuccess={handleSuccess}
           onError={() => console.log("Login Failed")}
+          theme="outline" // Bạn có thể thêm theme nếu cần
+          width="100%" // Đảm bảo chiều rộng của GoogleLogin là 100%
         />
       </div>
     </GoogleOAuthProvider>
