@@ -69,7 +69,6 @@ export default function LoginGoogle() {
           width: "100%",
           maxWidth: "100%",
           display: "block",
-          background: "white",
         }}
         className="google-login-container"
       >
@@ -77,7 +76,7 @@ export default function LoginGoogle() {
           onSuccess={handleSuccess}
           onError={() => console.log("Login Failed")}
           theme="outline"
-          width="100%"
+          width="320px"
           useOneTap
           shape="rectangular"
           text="continue_with"
