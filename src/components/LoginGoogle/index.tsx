@@ -42,7 +42,9 @@ export default function LoginGoogle() {
         style={{
           width: "100%",
           maxWidth: "100%",
-          display: "block",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
         }}
         className="google-login-container"
       >
