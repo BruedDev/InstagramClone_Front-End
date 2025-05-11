@@ -47,6 +47,28 @@ const handleTokenStorage = (response: AuthResponse): void => {
   }
 };
 
+// Hàm xử lý token từ URL (dùng cho redirect sau khi đăng nhập Facebook)
+export const handleAuthFromURL = (): void => {
+  if (typeof window !== "undefined") {
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get("token");
+    const cookieSet = urlParams.get("cookieSet");
+
+    if (token && cookieSet === "true") {
+      // Lưu token vào localStorage
+      localStorage.setItem("authToken", token);
+
+      // Xóa token và cookieSet khỏi URL để bảo mật
+      const url = new URL(window.location.href);
+      url.searchParams.delete("token");
+      url.searchParams.delete("cookieSet");
+
+      // Cập nhật URL mà không làm tải lại trang
+      window.history.replaceState({}, document.title, url.toString());
+    }
+  }
+};
+
 // Hàm lấy token từ localStorage (dùng khi cookies bị chặn)
 const getAuthToken = (): string | null => {
   return localStorage.getItem("authToken");
