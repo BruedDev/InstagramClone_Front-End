@@ -6,20 +6,19 @@ export function middleware(request: NextRequest) {
 
   const publicPaths = ["/accounts", "/accounts/login", "/accounts/register"];
 
-  // Cho phép truy cập các path công khai
+  // Nếu là public path
   if (publicPaths.includes(pathname)) {
     const token = searchParams.get("token");
-    console.log("Token from URL:", token);
 
     if (token) {
       // Lưu token vào cookie
-      const response = NextResponse.redirect(new URL("/accounts", origin));
+      const response = NextResponse.redirect(new URL("/", origin)); // Chuyển hướng về `/`
       response.cookies.set("token", token, {
         httpOnly: true,
         secure: true,
-        sameSite: "none",
+        sameSite: "strict",
         path: "/",
-        maxAge: 60 * 60 * 24,
+        maxAge: 60 * 60 * 24, // 1 day
       });
       return response;
     }
@@ -27,10 +26,9 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Kiểm tra token từ cookie
+  // Kiểm tra token trong cookie với các route protected
   const token = request.cookies.get("token")?.value;
 
-  // Nếu không có token, chuyển hướng về trang đăng nhập
   if (!token) {
     return NextResponse.redirect(new URL("/accounts", request.url));
   }
