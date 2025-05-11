@@ -13,6 +13,7 @@ export default function LoginGoogle() {
   const router = useRouter();
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // Khai báo kiểu cho payload của Google Login
   interface GoogleAuthPayload {
     tokenId: string;
   }
@@ -23,6 +24,8 @@ export default function LoginGoogle() {
       if (!credential) throw new Error("No credential received");
 
       const payload: GoogleAuthPayload = { tokenId: credential };
+
+      // Gọi hàm googleLogin với payload đã được định nghĩa đúng kiểu
       const user = await googleLogin(payload);
       console.log("Đăng nhập thành công:", user);
 
@@ -36,21 +39,32 @@ export default function LoginGoogle() {
     }
   };
 
-  // Inject class trực tiếp vào button Google sau khi render
+  // Add CSS to ensure Google button is full width
   useEffect(() => {
-    const timer = setTimeout(() => {
-      const button = containerRef.current?.querySelector('div[role="button"]');
-      if (button) {
-        button.classList.add(styles.googleCustomBtn);
-      }
-    }, 300); // Delay để Google button được render
+    if (containerRef.current) {
+      // Apply styling to the container
+      containerRef.current.style.width = "100%";
+      containerRef.current.style.display = "block";
 
-    return () => clearTimeout(timer);
+      // Find and style the iframe and button within the container
+      setTimeout(() => {
+        const iframe = containerRef.current?.querySelector("iframe");
+        const button = containerRef.current?.querySelector("button");
+
+        if (iframe) {
+          iframe.style.width = "100%";
+        }
+
+        if (button) {
+          button.style.width = "100%";
+        }
+      }, 100);
+    }
   }, []);
 
   return (
     <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_APP_ID!}>
-      <div ref={containerRef}>
+      <div ref={containerRef} className={styles.googleCustomBtn}>
         <GoogleLogin
           onSuccess={handleSuccess}
           onError={() => console.log("Login Failed")}
@@ -59,6 +73,7 @@ export default function LoginGoogle() {
           shape="rectangular"
           text="continue_with"
           locale="vi"
+          min-width="320px"
         />
       </div>
     </GoogleOAuthProvider>
