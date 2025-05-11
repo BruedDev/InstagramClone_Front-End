@@ -24,7 +24,6 @@ export default function LoginGoogle() {
 
       const payload: GoogleAuthPayload = { tokenId: credential };
 
-      // Gọi hàm googleLogin với payload đã được định nghĩa đúng kiểu
       const user = await googleLogin(payload);
       console.log("Đăng nhập thành công:", user);
 
@@ -38,50 +37,49 @@ export default function LoginGoogle() {
     }
   };
 
-  // Add CSS to ensure Google button is full width
+  // Force Google button to be 100% width even in personalized mode
   useEffect(() => {
-    if (containerRef.current) {
-      // Apply styling to the container
-      containerRef.current.style.width = "100%";
-      containerRef.current.style.display = "block";
-
-      // Find and style the iframe and button within the container
-      setTimeout(() => {
-        const iframe = containerRef.current?.querySelector("iframe");
-        const button = containerRef.current?.querySelector("button");
+    const timeout = setTimeout(() => {
+      if (containerRef.current) {
+        const iframe = containerRef.current.querySelector("iframe");
 
         if (iframe) {
           iframe.style.width = "100%";
+          iframe.style.minWidth = "100%";
+          iframe.style.maxWidth = "100%";
+          iframe.style.display = "block";
+          iframe.style.transform = "scale(1)";
+          iframe.style.transformOrigin = "left center";
         }
+      }
+    }, 300); // đợi Google render xong
 
-        if (button) {
-          button.style.width = "100%";
-        }
-      }, 100);
-    }
+    return () => clearTimeout(timeout);
   }, []);
 
   return (
     <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_APP_ID!}>
-      <div
-        ref={containerRef}
-        style={{
-          width: "100%",
-          maxWidth: "100%",
-          display: "block",
-        }}
-        className="google-login-container"
-      >
-        <GoogleLogin
-          onSuccess={handleSuccess}
-          onError={() => console.log("Login Failed")}
-          theme="outline"
-          width="100%"
-          useOneTap
-          shape="rectangular"
-          text="continue_with"
-          locale="vi"
-        />
+      <div style={{ overflow: "hidden", width: "100%" }}>
+        <div
+          ref={containerRef}
+          className="google-login-container"
+          style={{
+            width: "100%",
+            maxWidth: "100%",
+            display: "block",
+          }}
+        >
+          <GoogleLogin
+            onSuccess={handleSuccess}
+            onError={() => console.log("Login Failed")}
+            theme="outline"
+            width="100%"
+            useOneTap
+            shape="rectangular"
+            text="continue_with"
+            locale="vi"
+          />
+        </div>
       </div>
     </GoogleOAuthProvider>
   );
