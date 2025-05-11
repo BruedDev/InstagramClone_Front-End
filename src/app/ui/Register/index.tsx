@@ -1,4 +1,4 @@
-import LoginFacebook from "@/components/LoginFacebook";
+import LoginGoogle from "@/components/LoginGoogle";
 import Image from "next/image";
 
 type RegisterProps = {
@@ -47,7 +47,7 @@ export default function Register({
             Đăng ký để xem ảnh và video từ bạn bè.
           </p>
 
-          <LoginFacebook />
+          <LoginGoogle />
 
           <div className="relative my-4 flex items-center">
             <div className="flex-grow border-t border-gray-700"></div>
