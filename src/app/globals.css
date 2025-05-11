@@ -25,9 +25,10 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
-div[role="button"].nsm7Bb-HzV7m-LgbsSe {
+.nsm7Bb-HzV7m-LgbsSe {
   min-width: 100% !important;
   max-width: 100% !important;
   width: 100% !important;
   box-sizing: border-box;
+  min-width: 320px !important;
 }
