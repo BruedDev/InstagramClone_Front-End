@@ -1,5 +1,4 @@
 // server/auth.ts
-
 const BASE_URL = `${process.env.NEXT_PUBLIC_API_URL}/api/auth`;
 
 interface LoginPayload {
@@ -31,6 +30,60 @@ export interface User {
   updatedAt: string;
 }
 
+// Constants for Apple platform workaround
+const COOKIE_NAME = "auth_user_data";
+const COOKIE_EXPIRY = 5 * 60 * 1000; // 5 phút
+
+// Function to detect macOS or iOS
+const isApplePlatform = (): boolean => {
+  if (typeof window === "undefined") return false; // SSR check
+
+  const userAgent = navigator.userAgent.toLowerCase();
+  return (
+    userAgent.includes("mac") ||
+    userAgent.includes("iphone") ||
+    userAgent.includes("ipad") ||
+    userAgent.includes("ipod")
+  );
+};
+
+// Function to set a cookie with expiration
+const setCookie = (name: string, value: string, expiry: number): void => {
+  if (typeof document === "undefined") return; // SSR check
+
+  const date = new Date();
+  date.setTime(date.getTime() + expiry);
+  const expires = `expires=${date.toUTCString()}`;
+  document.cookie = `${name}=${value};${expires};path=/;SameSite=Strict`;
+};
+
+// Function to get a cookie by name
+const getCookie = (name: string): string | null => {
+  if (typeof document === "undefined") return null; // SSR check
+
+  const cookies = document.cookie.split(";");
+  for (let i = 0; i < cookies.length; i++) {
+    const cookie = cookies[i].trim();
+    if (cookie.startsWith(name + "=")) {
+      return cookie.substring(name.length + 1);
+    }
+  }
+  return null;
+};
+
+// Function to refresh Apple platform cookie
+const refreshApplePlatformCookie = (userData: User): void => {
+  setCookie(COOKIE_NAME, JSON.stringify(userData), COOKIE_EXPIRY);
+
+  // Set timeout to refresh the cookie before it expires
+  setTimeout(() => {
+    const existingUserData = getCookie(COOKIE_NAME);
+    if (existingUserData) {
+      refreshApplePlatformCookie(JSON.parse(existingUserData));
+    }
+  }, COOKIE_EXPIRY - 30000); // Refresh 30 seconds before expiry
+};
+
 // Đăng nhập
 export const login = async (data: LoginPayload): Promise<User> => {
   const response = await fetch(`${BASE_URL}/login`, {
@@ -47,7 +100,14 @@ export const login = async (data: LoginPayload): Promise<User> => {
     throw new Error(errorData.message || "Login failed");
   }
 
-  return await response.json();
+  const userData = await response.json();
+
+  // Xử lý riêng cho thiết bị Apple
+  if (isApplePlatform() && userData) {
+    refreshApplePlatformCookie(userData);
+  }
+
+  return userData;
 };
 
 // Đăng ký
@@ -66,11 +126,23 @@ export const register = async (data: RegisterPayload): Promise<User> => {
     throw new Error(errorData.message || "Registration failed");
   }
 
-  return await response.json();
+  const userData = await response.json();
+
+  // Xử lý riêng cho thiết bị Apple
+  if (isApplePlatform() && userData) {
+    refreshApplePlatformCookie(userData);
+  }
+
+  return userData;
 };
 
 // Đăng xuất
 export const logout = async (): Promise<{ message: string }> => {
+  // Xóa cookie nếu đang ở thiết bị Apple
+  if (isApplePlatform()) {
+    document.cookie = `${COOKIE_NAME}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
+  }
+
   const response = await fetch(`${BASE_URL}/logout`, {
     method: "POST",
     credentials: "include",
@@ -105,67 +177,51 @@ export const facebookLogin = async (data: {
     throw new Error(errorData.message || "Facebook login failed");
   }
 
-  return await response.json();
+  const userData = await response.json();
+
+  // Xử lý riêng cho thiết bị Apple
+  if (isApplePlatform() && userData) {
+    refreshApplePlatformCookie(userData);
+  }
+
+  return userData;
 };
 
 // Kiểm tra xác thực
 export const checkAuth = async (): Promise<User | null> => {
-  // Kiểm tra nếu có token trong localStorage (được lưu từ phản hồi trước đó)
-  const storedToken = localStorage.getItem("auth_token");
-
-  // Xác định xem có phải là trình duyệt WebKit hay không
-  const isWebKit =
-    /^((?!chrome|android).)*safari/i.test(navigator.userAgent) &&
-    /iPhone|iPad|iPod|Mac/.test(navigator.userAgent);
-
-  const headers: HeadersInit = {
-    "Content-Type": "application/json",
-  };
-
-  // Nếu có token đã lưu, thêm vào header
-  if (storedToken) {
-    headers["X-Access-Token"] = storedToken;
-    // Thêm cả vào Authorization header để đảm bảo
-    headers["Authorization"] = `Bearer ${storedToken}`;
-  }
-
-  // Thêm header đánh dấu nếu là WebKit và lần đầu gọi API
-  if (isWebKit && !storedToken) {
-    headers["X-Webkit-Initial-Request"] = "true";
-  }
-
-  const response = await fetch(`${BASE_URL}/check`, {
-    method: "GET",
-    headers: headers,
-    credentials: "include", // Vẫn gửi cookie nếu có thể
-  });
-
-  // Kiểm tra các header trong response
-  const tokenFromHeader = response.headers.get("X-Refresh-Token");
-  if (tokenFromHeader) {
-    localStorage.setItem("auth_token", tokenFromHeader);
-  }
-
-  // Xử lý status code 203 (WebKit token tạm thời)
-  if (response.status === 203) {
-    const data = await response.json();
-    if (data.token) {
-      localStorage.setItem("auth_token", data.token);
-
-      // Thực hiện gọi lại API với token mới
-      return await checkAuth();
+  // Kiểm tra cookie cho thiết bị Apple
+  if (isApplePlatform()) {
+    const userCookie = getCookie(COOKIE_NAME);
+    if (userCookie) {
+      try {
+        const userData: User = JSON.parse(userCookie);
+        return userData;
+      } catch (error) {
+        console.error("Error parsing user cookie:", error);
+      }
     }
   }
 
-  if (!response.ok) {
-    // Nếu lỗi 401, xóa token đã lưu
-    if (response.status === 401) {
-      localStorage.removeItem("auth_token");
+  try {
+    const response = await fetch(`${BASE_URL}/check`, {
+      method: "GET",
+      credentials: "include",
+    });
+
+    if (!response.ok) {
+      return null; // Không ném lỗi, chỉ trả về null khi không xác thực được
     }
 
-    const errorData = await response.json();
-    throw new Error(errorData.message || "Authentication check failed");
-  }
+    const userData = await response.json();
 
-  return await response.json();
+    // Lưu cookie cho thiết bị Apple
+    if (isApplePlatform() && userData) {
+      refreshApplePlatformCookie(userData);
+    }
+
+    return userData;
+  } catch (error) {
+    console.error("Authentication check error:", error);
+    return null;
+  }
 };

@@ -1,53 +1,47 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
+// Tên cookie chứa token xác thực tiêu chuẩn
+const AUTH_TOKEN_COOKIE = "token"; // Điều chỉnh tên này theo backend của bạn
+
+// Tên cookie đặc biệt cho thiết bị Apple
+const APPLE_AUTH_COOKIE = "auth_user_data";
+
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Các đường dẫn công khai không cần xác thực
   const publicPaths = ["/accounts", "/accounts/login", "/accounts/register"];
-  const isPublicPath = publicPaths.some(path => pathname === path || pathname.startsWith(`${path}/`));
-
-  if (isPublicPath) {
+  if (publicPaths.includes(pathname)) {
     return NextResponse.next();
   }
 
-  // Kiểm tra cookie "token"
-  const token = request.cookies.get("token");
+  // Đọc cookie token tiêu chuẩn
+  const token = request.cookies.get(AUTH_TOKEN_COOKIE);
 
-  // Kiểm tra header Authorization (có thể được gửi từ client với token từ localStorage)
-  const authHeader = request.headers.get("Authorization");
-  const xAccessToken = request.headers.get("X-Access-Token");
+  // Đọc cookie đặc biệt cho thiết bị Apple
+  const appleAuthCookie = request.cookies.get(APPLE_AUTH_COOKIE);
 
-  // Thêm kiểm tra cả query param token (dùng cho trường hợp dự phòng)
-  const urlToken = request.nextUrl.searchParams.get("token");
+  // Phát hiện thiết bị Apple từ User-Agent
+  const userAgent = request.headers.get("user-agent") || "";
+  const isApplePlatform =
+    userAgent.toLowerCase().includes('mac') ||
+    userAgent.toLowerCase().includes('iphone') ||
+    userAgent.toLowerCase().includes('ipad') ||
+    userAgent.toLowerCase().includes('ipod');
 
-  // Nếu không có token trong cookie và không có header Authorization
-  if (!token && !authHeader && !xAccessToken && !urlToken) {
-    // Kiểm tra user agent để xác định có phải WebKit
-    const userAgent = request.headers.get("user-agent") || "";
-    const isWebKit = userAgent.includes("Safari") &&
-                     (userAgent.includes("iPhone") ||
-                      userAgent.includes("iPad") ||
-                      userAgent.includes("Mac"));
+  // Xác thực dựa trên:
+  // 1. Token tiêu chuẩn cho tất cả các thiết bị
+  // 2. Cookie đặc biệt cho thiết bị Apple
+  const isAuthenticated = token || (isApplePlatform && appleAuthCookie);
 
-    if (isWebKit) {
-      // Đối với WebKit, thêm query param để trang frontend biết đây là request từ WebKit
-      const redirectUrl = new URL("/accounts/login", request.url);
-      redirectUrl.searchParams.set("webkit", "true");
-      return NextResponse.redirect(redirectUrl);
-    }
-
+  if (!isAuthenticated) {
     return NextResponse.redirect(new URL("/accounts", request.url));
   }
 
   return NextResponse.next();
 }
 
-// Bao gồm API routes trong matcher để cho phép xác thực API
 export const config = {
-  matcher: [
-    // Loại trừ các tệp tĩnh
-    "/((?!_next/static|_next/image|favicon.ico|api/auth/check).*)",
-  ],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 };
