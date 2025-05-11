@@ -40,18 +40,45 @@ export default function LoginGoogle() {
     <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_APP_ID!}>
       <div style={{ width: "100%" }}>
         <style jsx global>{`
-          .nsm7Bb-HzV7m-LgbsSe {
+          /* Styling cho tất cả các button và container của Google */
+          .nsm7Bb-HzV7m-LgbsSe,
+          .nsm7Bb-HzV7m-LgbsSe.pSzOP-SxQuSe,
+          .S9gUrf-YoZ4jf,
+          .ksBjEc,
+          .Vwe4Vb-MZArnb,
+          .FliLIb,
+          .zJKIV,
+          .gPHLDe,
+          div[role="button"],
+          div[aria-labelledby="button-label"],
+          div[data-is-touch-wrapper="true"],
+          button.gsi-material-button,
+          .gsi-material-button,
+          .S9gUrf-YoZ4jf,
+          .nsm7Bb-HzV7m-LgbsSe-BPrWId,
+          .r2fjmd {
             width: 100% !important;
             max-width: 100% !important;
           }
 
-          /* Đảm bảo container cha cũng width 100% */
-          .nsm7Bb-HzV7m-LgbsSe.pSzOP-SxQuSe {
+          /* Đảm bảo các div cha cũng có width 100% */
+          div.aJyGGd div {
             width: 100% !important;
           }
 
-          /* Đảm bảo các div bao ngoài đều width 100% */
-          div[role="button"] {
+          /* Styling cho các container bên ngoài */
+          .L5Fo6c-sM5MNb {
+            width: 100% !important;
+            display: block !important;
+          }
+
+          /* Styling cho các iframe có thể xuất hiện */
+          iframe {
+            width: 100% !important;
+          }
+
+          /* Styling cho button được hiển thị (One Tap) */
+          .Jx4nYe {
             width: 100% !important;
           }
         `}</style>
@@ -61,6 +88,7 @@ export default function LoginGoogle() {
           useOneTap
           text="continue_with"
           locale="vi"
+          width="100%"
         />
       </div>
     </GoogleOAuthProvider>
