@@ -77,7 +77,9 @@ export default function Login({
               <div className="flex-grow border-t border-gray-700"></div>
             </div>
 
-            <LoginGoogle />
+            <div className="w-full">
+              <LoginGoogle />
+            </div>
 
             <div className="text-center">
               <a
