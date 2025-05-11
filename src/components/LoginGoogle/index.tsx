@@ -73,6 +73,7 @@ export default function LoginGoogle() {
           shape="rectangular"
           text="continue_with"
           locale="vi"
+          width={"320px"}
           min-width="320px"
         />
       </div>
