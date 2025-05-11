@@ -1,4 +1,3 @@
-// import LoginFacebook from "@/components/LoginFacebook";
 import LoginGoogle from "@/components/LoginGoogle";
 import Image from "next/image";
 import Link from "next/link";
@@ -78,7 +77,6 @@ export default function Login({
               <div className="flex-grow border-t border-gray-700"></div>
             </div>
 
-            {/* <LoginFacebook /> */}
             <LoginGoogle />
 
             <div className="text-center">
