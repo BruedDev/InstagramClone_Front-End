@@ -1,15 +1,24 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { checkAuth, handleAuthFromURL } from "@/server/auth"; // Import hàm xử lý token từ URL
+import { checkAuth, handleAuthFromURL } from "@/server/auth";
 import type { User } from "@/server/auth";
 
-interface ProtectedRouteProps {
-  children: React.ReactNode;
+// Loading component để hiển thị khi đang tải
+function LoadingSpinner() {
+  return (
+    <div className="flex h-screen w-full items-center justify-center">
+      <div className="text-center">
+        <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]" />
+        <p className="mt-2">Đang tải...</p>
+      </div>
+    </div>
+  );
 }
 
-export default function ProtectedRoute({ children }: ProtectedRouteProps) {
+// Component nội dung chính
+function ProtectedContent({ children }: { children: React.ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const router = useRouter();
@@ -21,12 +30,12 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
         // Xử lý token từ URL nếu có (từ redirect Facebook)
         const token = searchParams?.get("token");
         const cookieSet = searchParams?.get("cookieSet");
-        console.log("cookieSet", cookieSet);
+
         if (token && cookieSet === "true") {
           // Sử dụng hàm handleAuthFromURL để xử lý token từ URL
           handleAuthFromURL();
 
-          // Đánh dấu đã xác thực để không chuyển hướng ngay
+          // Đánh dấu đã xác thực
           setIsAuthenticated(true);
           setLoading(false);
           return;
@@ -52,23 +61,26 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
     checkUserAuth();
   }, [router, searchParams]);
 
-  // Hiển thị trạng thái đang tải
   if (loading) {
-    return (
-      <div className="flex h-screen w-full items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]" />
-          <p className="mt-2">Đang tải...</p>
-        </div>
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
-  // Không hiển thị gì nếu chưa xác thực (sẽ chuyển hướng)
   if (!isAuthenticated) {
     return null;
   }
 
-  // Hiển thị nội dung được bảo vệ nếu đã xác thực
   return <>{children}</>;
+}
+
+// Component chính với Suspense
+export default function ProtectedRoute({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <Suspense fallback={<LoadingSpinner />}>
+      <ProtectedContent>{children}</ProtectedContent>
+    </Suspense>
+  );
 }
