@@ -16,7 +16,7 @@ export default function LogoutComponent() {
         await logout();
 
         // Xóa token từ localStorage (phòng trường hợp cookie bị chặn)
-        sessionStorage.removeItem("authToken");
+        localStorage.removeItem("authToken");
 
         // Redirect về trang login sau khi đăng xuất thành công
         router.push("/accounts");
@@ -42,7 +42,7 @@ export default function LogoutComponent() {
       await logout();
 
       // Xóa token từ localStorage
-      sessionStorage.removeItem("authToken");
+      localStorage.removeItem("authToken");
 
       // Redirect về trang login sau khi đăng xuất thành công
       router.push("/accounts");

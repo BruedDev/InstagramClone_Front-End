@@ -43,13 +43,13 @@ interface AuthResponse {
 const handleTokenStorage = (response: AuthResponse): void => {
   if (response.success && response.token && response.cookieSet) {
     // Lưu token vào localStorage như là phương án dự phòng
-    sessionStorage.setItem("authToken", response.token);
+    localStorage.setItem("authToken", response.token);
   }
 };
 
 // Hàm lấy token từ localStorage (dùng khi cookies bị chặn)
 const getAuthToken = (): string | null => {
-  return sessionStorage.getItem("authToken");
+  return localStorage.getItem("authToken");
 };
 
 // Hàm tạo headers với token nếu cần
@@ -109,7 +109,7 @@ export const register = async (data: RegisterPayload): Promise<User> => {
 // Đăng xuất
 export const logout = async (): Promise<{ message: string }> => {
   // Xóa token trong localStorage khi đăng xuất
-  sessionStorage.removeItem("authToken");
+  localStorage.removeItem("authToken");
 
   const response = await fetch(`${BASE_URL}/logout`, {
     method: "POST",
