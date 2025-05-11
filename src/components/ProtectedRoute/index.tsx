@@ -21,7 +21,7 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
         // Xử lý token từ URL nếu có (từ redirect Facebook)
         const token = searchParams?.get("token");
         const cookieSet = searchParams?.get("cookieSet");
-
+        console.log("cookieSet", cookieSet);
         if (token && cookieSet === "true") {
           // Sử dụng hàm handleAuthFromURL để xử lý token từ URL
           handleAuthFromURL();
