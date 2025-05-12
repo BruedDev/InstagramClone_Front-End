@@ -14,9 +14,12 @@ const Loading: React.FC = () => {
           priority
         />
       </div>
-      <div className="w-[100px] h-[2px] bg-gray-200 rounded-full overflow-hidden relative">
-        <div className="absolute top-0 h-full w-[30%] bg-gray-800 rounded-full animate-loading"></div>
+      {/* Thanh loading */}
+      <div className="w-[100px] h-[2px] bg-white rounded-full overflow-hidden relative">
+        <div className="absolute top-0 h-full w-[30%] rounded-full animate-loading bg-gradient-to-r from-yellow-400 via-pink-500 to-purple-600"></div>
       </div>
+
+      {/* Animation styles */}
       <style jsx global>{`
         @keyframes loading {
           0% {
