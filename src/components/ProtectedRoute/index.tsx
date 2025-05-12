@@ -2,8 +2,8 @@
 
 import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { checkAuth, handleAuthFromURL } from "@/server/auth";
-import type { User } from "@/server/auth";
+import { checkAuth } from "@/server/auth";
+import type { User } from "@/types/auth.type";
 
 // Loading component để hiển thị khi đang tải
 function LoadingSpinner() {
@@ -32,9 +32,6 @@ function ProtectedContent({ children }: { children: React.ReactNode }) {
         const cookieSet = searchParams?.get("cookieSet");
 
         if (token && cookieSet === "true") {
-          // Sử dụng hàm handleAuthFromURL để xử lý token từ URL
-          handleAuthFromURL();
-
           // Đánh dấu đã xác thực
           setIsAuthenticated(true);
           setLoading(false);

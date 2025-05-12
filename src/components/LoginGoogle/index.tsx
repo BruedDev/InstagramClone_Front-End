@@ -6,14 +6,10 @@ import {
 } from "@react-oauth/google";
 import { googleLogin } from "@/server/auth";
 import { useRouter } from "next/navigation";
+import { GoogleAuthPayload } from "@/types/auth.type";
 
 export default function LoginGoogle() {
   const router = useRouter();
-
-  // Khai báo kiểu cho payload của Google Login
-  interface GoogleAuthPayload {
-    tokenId: string;
-  }
 
   const handleSuccess = async (credentialResponse: CredentialResponse) => {
     try {

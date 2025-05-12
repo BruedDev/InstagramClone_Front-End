@@ -1,76 +1,19 @@
 // server/auth.ts
+import {
+  LoginPayload,
+  RegisterPayload,
+  GoogleAuthPayload,
+  User,
+  AuthResponse,
+} from "@/types/auth.type";
 
 const BASE_URL = `${process.env.NEXT_PUBLIC_API_URL}/api/auth`;
-
-interface LoginPayload {
-  identifier: string;
-  password: string;
-}
-
-interface RegisterPayload {
-  username: string;
-  fullName: string;
-  email?: string;
-  phoneNumber?: string;
-  password: string;
-}
-
-// Interface cho Google Auth
-interface GoogleAuthPayload {
-  tokenId: string;
-}
-
-export interface User {
-  id: string;
-  username: string;
-  fullName: string;
-  email: string;
-  phoneNumber: string;
-  profilePicture: string;
-  bio: string;
-  followers: string[];
-  following: string[];
-  isPrivate: boolean;
-  authType: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface AuthResponse {
-  success: boolean;
-  message?: string;
-  token?: string;
-  cookieSet?: boolean;
-  user?: User;
-}
 
 // Hàm lưu token trong localStorage khi cookies bị chặn
 const handleTokenStorage = (response: AuthResponse): void => {
   if (response.success && response.token && response.cookieSet) {
     // Lưu token vào localStorage như là phương án dự phòng
     localStorage.setItem("authToken", response.token);
-  }
-};
-
-// Hàm xử lý token từ URL (dùng cho redirect sau khi đăng nhập Facebook)
-export const handleAuthFromURL = (): void => {
-  if (typeof window !== "undefined") {
-    const urlParams = new URLSearchParams(window.location.search);
-    const token = urlParams.get("token");
-    const cookieSet = urlParams.get("cookieSet");
-
-    if (token && cookieSet === "true") {
-      // Lưu token vào localStorage
-      localStorage.setItem("authToken", token);
-
-      // Xóa token và cookieSet khỏi URL để bảo mật
-      const url = new URL(window.location.href);
-      url.searchParams.delete("token");
-      url.searchParams.delete("cookieSet");
-
-      // Cập nhật URL mà không làm tải lại trang
-      window.history.replaceState({}, document.title, url.toString());
-    }
   }
 };
 
@@ -150,31 +93,6 @@ export const logout = async (): Promise<{ message: string }> => {
   }
 
   return await response.json();
-};
-
-// Đăng nhập Facebook
-export const facebookLogin = async (data: {
-  accessToken: string;
-  userID: string;
-  name: string;
-  email: string;
-}): Promise<User> => {
-  const response = await fetch(`${BASE_URL}/facebook/login`, {
-    method: "POST",
-    headers: createAuthHeaders(),
-    body: JSON.stringify(data),
-    credentials: "include",
-  });
-
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.message || "Facebook login failed");
-  }
-
-  const responseData = (await response.json()) as AuthResponse;
-  handleTokenStorage(responseData);
-
-  return responseData.user as User;
 };
 
 // Đăng nhập Google
