@@ -8,7 +8,11 @@ import { googleLogin } from "@/server/auth";
 import { useRouter } from "next/navigation";
 import { GoogleAuthPayload } from "@/types/auth.type";
 
-export default function LoginGoogle() {
+interface LoginGoogleProps {
+  mode?: "signin" | "signup"; // bạn có thể thêm các giá trị khác nếu cần
+}
+
+export default function LoginGoogle({ mode = "signin" }: LoginGoogleProps) {
   const router = useRouter();
 
   const handleSuccess = async (credentialResponse: CredentialResponse) => {
@@ -17,11 +21,8 @@ export default function LoginGoogle() {
       if (!credential) throw new Error("No credential received");
 
       const payload: GoogleAuthPayload = { tokenId: credential };
-
-      // Gọi hàm googleLogin với payload đã được định nghĩa đúng kiểu
       const user = await googleLogin(payload);
       console.log("Đăng nhập thành công:", user);
-
       router.push("/");
     } catch (error) {
       if (error instanceof Error) {
@@ -32,9 +33,13 @@ export default function LoginGoogle() {
     }
   };
 
+  // Xác định giá trị text theo mode
+  const googleButtonText = mode === "signup" ? "signup_with" : "signin_with";
+
   return (
     <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_APP_ID!}>
       <div
+        className="google-login-container"
         style={{
           width: "100%",
           maxWidth: "100%",
@@ -42,16 +47,14 @@ export default function LoginGoogle() {
           alignItems: "center",
           justifyContent: "center",
         }}
-        className="google-login-container"
       >
         <GoogleLogin
           onSuccess={handleSuccess}
           onError={() => console.log("Login Failed")}
           theme="outline"
-          width={"100%"}
           useOneTap
           shape="rectangular"
-          text="continue_with"
+          text={googleButtonText}
           locale="vi"
         />
       </div>

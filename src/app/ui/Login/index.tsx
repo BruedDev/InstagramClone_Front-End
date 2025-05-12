@@ -80,7 +80,7 @@ export default function Login({
               <div className="flex-grow border-t border-gray-700"></div>
             </div>
 
-            <LoginGoogle />
+            <LoginGoogle mode="signin" />
 
             <div className="text-center">
               <a
