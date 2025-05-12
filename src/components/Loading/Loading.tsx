@@ -8,7 +8,7 @@ export default function Loading() {
           {/* Logo image */}
           <div className="absolute inset-0 flex items-center justify-center">
             <Image
-              src="/Images/logo.svg"
+              src="/Images/Instagram_logo_2016.svg.png"
               alt="Logo"
               className="w-16 h-16 object-contain"
             />
