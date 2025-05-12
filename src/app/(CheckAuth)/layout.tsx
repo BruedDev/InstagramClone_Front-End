@@ -31,7 +31,7 @@ export default function RootLayout({
       >
         <div className={styles.container}>
           {children}
-          <Footer />
+          <Footer type="login" />
         </div>
       </body>
     </html>

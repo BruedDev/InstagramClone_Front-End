@@ -22,7 +22,8 @@ export default function LoginGoogle({ mode = "signin" }: LoginGoogleProps) {
 
       const payload: GoogleAuthPayload = { tokenId: credential };
       const user = await googleLogin(payload);
-      console.log("Đăng nhập thành công:", user);
+      localStorage.setItem("id", user.id);
+      localStorage.setItem("username", user.username);
       router.push("/");
     } catch (error) {
       if (error instanceof Error) {

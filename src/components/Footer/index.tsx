@@ -1,7 +1,11 @@
 import React from "react";
 import styles from "./Footer.module.scss";
 
-const Footer: React.FC = () => {
+interface FooterProps {
+  type?: "login" | "home";
+}
+
+const Footer: React.FC<FooterProps> = ({ type = "home" }) => {
   const footerLinks = [
     "Meta",
     "Giới thiệu",
@@ -17,9 +21,13 @@ const Footer: React.FC = () => {
     "Tải thông tin người liên hệ lên & người không phải người dùng",
   ];
 
+  // Chọn class theo type
+  const containerClass =
+    type === "login" ? styles.container : styles["container-home"];
+
   return (
     <footer
-      className={`flex flex-col justify-center items-center text-xs min-h-[20vh] bg-black text-center py-4 px-4 ${styles.container}`}
+      className={`flex flex-col justify-center items-center text-xs text-center py-4 px-4 ${containerClass}`}
     >
       <div className="flex flex-wrap justify-center gap-4 mb-4">
         {footerLinks.map((link, index) => (

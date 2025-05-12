@@ -12,7 +12,6 @@ const BASE_URL = `${process.env.NEXT_PUBLIC_API_URL}/api/auth`;
 // Hàm lưu token trong localStorage khi cookies bị chặn
 const handleTokenStorage = (response: AuthResponse): void => {
   if (response.success && response.token && response.cookieSet) {
-    // Lưu token vào localStorage như là phương án dự phòng
     localStorage.setItem("authToken", response.token);
   }
 };
@@ -42,7 +41,7 @@ export const login = async (data: LoginPayload): Promise<User> => {
     method: "POST",
     headers: createAuthHeaders(),
     body: JSON.stringify(data),
-    credentials: "include", // Vẫn cố gắng gửi cookie
+    credentials: "include",
   });
 
   if (!response.ok) {
@@ -52,7 +51,6 @@ export const login = async (data: LoginPayload): Promise<User> => {
 
   const responseData = (await response.json()) as AuthResponse;
   handleTokenStorage(responseData);
-
   return responseData.user as User;
 };
 

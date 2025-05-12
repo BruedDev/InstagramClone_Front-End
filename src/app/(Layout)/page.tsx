@@ -1,24 +1,18 @@
 "use client";
 
-import { logout } from "@/server/auth";
-import { useRouter } from "next/navigation";
+import { useUser } from "@/app/hooks/useUser";
 
 export default function Home() {
-  const router = useRouter();
+  const { user, loading } = useUser();
 
-  const handleLogout = async () => {
-    try {
-      await logout();
-      router.push("/accounts");
-      localStorage.clear();
-    } catch (error) {
-      console.error("Logout failed:", error);
-    }
-  };
+  if (loading || !user) {
+    return [];
+  }
 
   return (
     <div>
-      <button onClick={handleLogout}>Logout</button>
+      <p>Xin chào, {user.username}</p>
+      <p>Xin chào, {user.email}</p>
     </div>
   );
 }

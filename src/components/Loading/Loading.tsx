@@ -3,7 +3,10 @@ import Image from "next/image";
 
 const Loading: React.FC = () => {
   return (
-    <div className="fixed inset-0 flex flex-col items-center justify-center bg-black z-50">
+    <div
+      className="fixed inset-0 flex flex-col items-center justify-center bg-black z-50"
+      style={{ zIndex: "10000" }}
+    >
       <div className="mb-6">
         <Image
           src="/Images/Instagram_logo_2016.svg.png"

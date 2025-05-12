@@ -28,9 +28,12 @@ export default function Login({
     >
       <div className="w-full max-w-sm">
         <div className={`mb-4 rounded bg-black p-8 ${styles.form}`}>
-          <div className="mb-8 flex justify-center">
+          <div
+            className="mb-8 flex justify-center"
+            style={{ userSelect: "none", pointerEvents: "none" }}
+          >
             <Image
-              src="/Images/logo.svg"
+              src="/Images/logoLogin.png"
               alt="Instagram"
               width={175}
               height={51}
