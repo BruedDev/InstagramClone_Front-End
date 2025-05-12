@@ -10,12 +10,29 @@ export default function Loading() {
             <Image
               src="/Images/Instagram_logo_2016.svg.png"
               alt="Logo"
-              className="w-16 h-16 object-contain"
+              width={64}
+              height={64}
+              className="object-contain"
             />
           </div>
-          <div className="w-full h-full rounded-full border-t-2 border-b-2 border-gray-300 animate-pulse"></div>
+          <div className="w-full h-full border-t-2 border-b-2 border-gray-300 animate-pulse"></div>
         </div>
         <div className="mt-4 w-16 h-1 bg-gradient-to-r from-purple-500 via-pink-500 to-red-500 rounded animate-shimmer"></div>
+        <div className="mt-4 text-white text-sm">Loading...</div>
+        <div className="mt-6 flex space-x-2">
+          <div
+            className="w-2 h-2 bg-white rounded-full animate-bounce"
+            style={{ animationDelay: "0ms" }}
+          ></div>
+          <div
+            className="w-2 h-2 bg-white rounded-full animate-bounce"
+            style={{ animationDelay: "300ms" }}
+          ></div>
+          <div
+            className="w-2 h-2 bg-white rounded-full animate-bounce"
+            style={{ animationDelay: "600ms" }}
+          ></div>
+        </div>
       </div>
     </>
   );
