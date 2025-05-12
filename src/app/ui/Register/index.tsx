@@ -1,5 +1,7 @@
 import LoginGoogle from "@/components/LoginGoogle";
 import Image from "next/image";
+import Link from "next/link";
+import styles from "./Register.module.scss";
 
 type RegisterProps = {
   email: string;
@@ -30,10 +32,12 @@ export default function Register({
   handleKeyDown,
 }: RegisterProps) {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-black">
+    <div
+      className={`flex min-h-screen items-center justify-center bg-black ${styles.container}`}
+    >
       <div className="w-full max-w-sm">
-        <div className="mb-4 rounded border border-gray-800 bg-black p-8">
-          <div className="mb-6 flex justify-center">
+        <div className={`mb-4 rounded bg-black p-8 ${styles.form}`}>
+          <Link href="/" className="mb-6 flex justify-center">
             <Image
               src="/Images/logo.svg"
               alt="Instagram"
@@ -41,7 +45,7 @@ export default function Register({
               height={51}
               priority
             />
-          </div>
+          </Link>
 
           <p className="mb-6 text-center text-sm text-gray-400">
             Đăng ký để xem ảnh và video từ bạn bè.
@@ -62,7 +66,7 @@ export default function Register({
                 placeholder="Số di động hoặc email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full rounded border border-gray-700 bg-black px-2 py-2 text-sm text-white focus:border-gray-500 focus:outline-none"
+                className="w-full rounded bg-black px-2 py-2 text-sm text-white focus:border-gray-500 focus:outline-none"
                 onKeyDown={handleKeyDown}
               />
             </div>
@@ -73,7 +77,7 @@ export default function Register({
                 placeholder="Tên đầy đủ"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                className="w-full rounded border border-gray-700 bg-black px-2 py-2 text-sm text-white focus:border-gray-500 focus:outline-none"
+                className="w-full rounded bg-black px-2 py-2 text-sm text-white focus:border-gray-500 focus:outline-none"
                 onKeyDown={handleKeyDown}
               />
             </div>
@@ -84,7 +88,7 @@ export default function Register({
                 placeholder="Tên người dùng"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="w-full rounded border border-gray-700 bg-black px-2 py-2 text-sm text-white focus:border-gray-500 focus:outline-none"
+                className="w-full rounded bg-black px-2 py-2 text-sm text-white focus:border-gray-500 focus:outline-none"
                 onKeyDown={handleKeyDown}
               />
             </div>
@@ -95,7 +99,7 @@ export default function Register({
                 placeholder="Mật khẩu"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded border border-gray-700 bg-black px-2 py-2 text-sm text-white focus:border-gray-500 focus:outline-none"
+                className="w-full rounded bg-black px-2 py-2 text-sm text-white focus:border-gray-500 focus:outline-none"
                 onKeyDown={handleKeyDown}
               />
             </div>
@@ -143,7 +147,9 @@ export default function Register({
           </div>
         </div>
 
-        <div className="mt-4 rounded border border-gray-800 bg-black p-6 text-center">
+        <div
+          className={`mt-4 rounded bg-black p-6 text-center ${styles.form2}`}
+        >
           <p className="text-sm text-gray-400">
             Bạn có tài khoản?{" "}
             <a href="/accounts/login" className="font-semibold text-blue-500">

@@ -1,6 +1,7 @@
 import LoginGoogle from "@/components/LoginGoogle";
 import Image from "next/image";
 import Link from "next/link";
+import styles from "./Login.module.scss";
 
 interface LoginProps {
   identifier: string;
@@ -22,10 +23,12 @@ export default function Login({
   handleKeyDown,
 }: LoginProps) {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-black">
+    <div
+      className={`flex min-h-[80vh] items-center justify-center bg-black ${styles.container}`}
+    >
       <div className="w-full max-w-sm">
-        <div className="mb-4 rounded border border-gray-800 bg-black p-8">
-          <div className="mb-8 flex justify-center">
+        <div className={`mb-4 rounded bg-black p-8 ${styles.form}`}>
+          <Link href="/" className="mb-8 flex justify-center">
             <Image
               src="/Images/logo.svg"
               alt="Instagram"
@@ -33,7 +36,7 @@ export default function Login({
               height={51}
               priority
             />
-          </div>
+          </Link>
 
           <div className="space-y-4">
             <div>
@@ -42,7 +45,7 @@ export default function Login({
                 placeholder="Số điện thoại, tên người dùng hoặc email"
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
-                className="w-full rounded border border-gray-700 bg-black px-2 py-2 text-sm text-white focus:border-gray-500 focus:outline-none"
+                className="w-full rounded bg-black px-2 py-2 text-sm text-white focus:border-gray-500 focus:outline-none"
                 onKeyDown={handleKeyDown}
               />
             </div>
@@ -53,7 +56,7 @@ export default function Login({
                 placeholder="Mật khẩu"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded border border-gray-700 bg-black px-2 py-2 text-sm text-white focus:border-gray-500 focus:outline-none"
+                className="w-full rounded bg-black px-2 py-2 text-sm text-white focus:border-gray-500 focus:outline-none"
                 onKeyDown={handleKeyDown}
               />
             </div>
@@ -90,7 +93,9 @@ export default function Login({
           </div>
         </div>
 
-        <div className="mt-4 rounded border border-gray-800 bg-black p-6 text-center">
+        <div
+          className={`mt-4 rounded bg-black p-6 text-center ${styles.form2}`}
+        >
           <p className="text-sm text-gray-400">
             Bạn chưa có tài khoản?{" "}
             <Link
