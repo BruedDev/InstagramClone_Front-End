@@ -1,6 +1,5 @@
 import LoginGoogle from "@/components/LoginGoogle";
 import Image from "next/image";
-import Link from "next/link";
 import styles from "./Register.module.scss";
 
 type RegisterProps = {
@@ -37,7 +36,7 @@ export default function Register({
     >
       <div className="w-full max-w-sm">
         <div className={`mb-4 rounded bg-black p-8 ${styles.form}`}>
-          <Link href="/" className="mb-6 flex justify-center">
+          <div className="mb-6 flex justify-center">
             <Image
               src="/Images/logo.svg"
               alt="Instagram"
@@ -45,7 +44,7 @@ export default function Register({
               height={51}
               priority
             />
-          </Link>
+          </div>
 
           <p className="mb-6 text-center text-sm text-gray-400">
             Đăng ký để xem ảnh và video từ bạn bè.

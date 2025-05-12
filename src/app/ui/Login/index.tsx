@@ -28,7 +28,7 @@ export default function Login({
     >
       <div className="w-full max-w-sm">
         <div className={`mb-4 rounded bg-black p-8 ${styles.form}`}>
-          <Link href="/" className="mb-8 flex justify-center">
+          <div className="mb-8 flex justify-center">
             <Image
               src="/Images/logo.svg"
               alt="Instagram"
@@ -36,7 +36,7 @@ export default function Login({
               height={51}
               priority
             />
-          </Link>
+          </div>
 
           <div className="space-y-4">
             <div>
