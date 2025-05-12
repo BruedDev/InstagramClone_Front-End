@@ -1,39 +1,37 @@
+import React from "react";
 import Image from "next/image";
 
-export default function Loading() {
+const Loading: React.FC = () => {
   return (
-    <>
-      <div className="flex flex-col items-center justify-center min-h-screen bg-black">
-        <div className="w-20 h-20 relative">
-          {/* Logo image */}
-          <div className="absolute inset-0 flex items-center justify-center">
-            <Image
-              src="/Images/Instagram_logo_2016.svg.png"
-              alt="Logo"
-              width={64}
-              height={64}
-              className="object-contain"
-            />
-          </div>
-          <div className="w-full h-full border-t-2 border-b-2 border-gray-300 animate-pulse"></div>
-        </div>
-        <div className="mt-4 w-16 h-1 bg-gradient-to-r from-purple-500 via-pink-500 to-red-500 rounded animate-shimmer"></div>
-        <div className="mt-4 text-white text-sm">Loading...</div>
-        <div className="mt-6 flex space-x-2">
-          <div
-            className="w-2 h-2 bg-white rounded-full animate-bounce"
-            style={{ animationDelay: "0ms" }}
-          ></div>
-          <div
-            className="w-2 h-2 bg-white rounded-full animate-bounce"
-            style={{ animationDelay: "300ms" }}
-          ></div>
-          <div
-            className="w-2 h-2 bg-white rounded-full animate-bounce"
-            style={{ animationDelay: "600ms" }}
-          ></div>
-        </div>
+    <div className="fixed inset-0 flex flex-col items-center justify-center bg-black z-50">
+      <div className="mb-6">
+        <Image
+          src="/Images/Instagram_logo_2016.svg.png"
+          alt="Logo"
+          width={72}
+          height={72}
+          className="object-contain"
+          priority
+        />
       </div>
-    </>
+      <div className="w-[100px] h-[2px] bg-gray-200 rounded-full overflow-hidden relative">
+        <div className="absolute top-0 h-full w-[30%] bg-gray-800 rounded-full animate-loading"></div>
+      </div>
+      <style jsx global>{`
+        @keyframes loading {
+          0% {
+            left: -30%;
+          }
+          100% {
+            left: 100%;
+          }
+        }
+        .animate-loading {
+          animation: loading 1s infinite ease-in-out;
+        }
+      `}</style>
+    </div>
   );
-}
+};
+
+export default Loading;
