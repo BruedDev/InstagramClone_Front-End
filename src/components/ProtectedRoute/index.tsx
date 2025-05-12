@@ -4,18 +4,7 @@ import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { checkAuth } from "@/server/auth";
 import type { User } from "@/types/auth.type";
-
-// Loading component để hiển thị khi đang tải
-function LoadingSpinner() {
-  return (
-    <div className="flex h-screen w-full items-center justify-center">
-      <div className="text-center">
-        <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]" />
-        <p className="mt-2">Đang tải...</p>
-      </div>
-    </div>
-  );
-}
+import LoadingSpinner from "@/components/Loading/Loading";
 
 // Component nội dung chính
 function ProtectedContent({ children }: { children: React.ReactNode }) {
