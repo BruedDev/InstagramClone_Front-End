@@ -1,6 +1,7 @@
 import LoginGoogle from "@/components/LoginGoogle";
 import Image from "next/image";
 import styles from "./Register.module.scss";
+import Link from "next/link";
 
 type RegisterProps = {
   email: string;
@@ -157,9 +158,12 @@ export default function Register({
         >
           <p className="text-sm text-gray-400">
             Bạn có tài khoản?{" "}
-            <a href="/accounts/login" className="font-semibold text-blue-500">
+            <Link
+              href="/accounts/login"
+              className="font-semibold text-blue-500"
+            >
               Đăng nhập
-            </a>
+            </Link>
           </p>
         </div>
       </div>
