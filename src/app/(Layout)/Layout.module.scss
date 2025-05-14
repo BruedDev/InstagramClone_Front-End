@@ -10,9 +10,4 @@
   @media (max-width: 768px) {
     padding-bottom: 20%;
   }
-
-  /* Media query dành riêng cho Safari trên iOS */
-  @media (max-width: 768px) and (pointer: coarse) {
-    padding-bottom: 40%; /* Đặt padding-bottom cho các thiết bị iOS */
-  }
 }
