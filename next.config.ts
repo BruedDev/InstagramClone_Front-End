@@ -16,7 +16,8 @@ const nextConfig: NextConfig = {
       'firebasestorage.googleapis.com',
       'cdn.discordapp.com',
       'avatars.githubusercontent.com',
-      'www.gravatar.com',
+     'www.gravatar.com',
+     'res.cloudinary.com',
     ],
   },
   sassOptions: {

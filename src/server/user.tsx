@@ -1,5 +1,7 @@
 // server/user.ts
 import { GetUserResponse } from "@/types/user.type";
+import { UploadAvatarResponse } from "@/types/user.type";
+import { DeleteAvatarResponse } from "@/types/user.type";
 
 export interface DeleteUserResponse {
   success: boolean;
@@ -82,6 +84,69 @@ export const deleteUser = async (
     return (await response.json()) as DeleteUserResponse;
   } catch (error) {
     console.error("Lỗi khi xóa người dùng:", error);
+    throw error;
+  }
+};
+
+export const uploadAvatar = async (
+  file: File
+): Promise<UploadAvatarResponse> => {
+  try {
+    const token = localStorage.getItem("authToken");
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const headers: HeadersInit = {
+      Authorization: `Bearer ${token}`,
+    };
+
+    const response = await fetch(`${BASE_URL}/uploadAvatar`, {
+      method: "POST",
+      headers,
+      body: formData,
+      credentials: "include",
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Tải ảnh đại diện thất bại");
+    }
+
+    const data = await response.json();
+    return {
+      success: data.success,
+      message: data.message,
+      profilePicture: data.profilePicture,
+    };
+  } catch (error) {
+    console.error("Lỗi khi tải ảnh đại diện:", error);
+    throw error;
+  }
+};
+
+export const deleteAvatar = async (): Promise<DeleteAvatarResponse> => {
+  try {
+    const token = localStorage.getItem("authToken");
+
+    const headers: HeadersInit = {
+      Authorization: `Bearer ${token}`,
+    };
+
+    const response = await fetch(`${BASE_URL}/deleteAvatar`, {
+      method: "DELETE",
+      headers,
+      credentials: "include",
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Xóa ảnh đại diện thất bại");
+    }
+
+    return (await response.json()) as DeleteAvatarResponse;
+  } catch (error) {
+    console.error("Lỗi khi xóa ảnh đại diện:", error);
     throw error;
   }
 };

@@ -1,3 +1,164 @@
 .information {
+  display: flex;
+  flex-direction: column;
   margin: 0 auto;
+
+  @media (max-width: 480px) {
+    margin: 0;
+    width: calc(100% - 112px);
+    padding-top: 8px;
+  }
+}
+
+.action {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+
+  @media (max-width: 735px) {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  @media (max-width: 480px) {
+    flex-direction: row;
+    align-items: flex-start;
+    margin-bottom: 0;
+    padding-top: 5px;
+  }
+}
+
+.username {
+  font-size: 20px;
+  font-weight: 300;
+  margin-right: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  @media (max-width: 735px) {
+    margin-right: 0;
+    margin-bottom: 12px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 18px;
+    font-weight: 500;
+    margin-bottom: 0;
+    margin-top: 10px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+  }
+}
+
+.checkMark {
+  object-fit: contain;
+
+  @media (max-width: 480px) {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+.action_btn {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+
+  @media (max-width: 735px) {
+    justify-content: center;
+  }
+
+  @media (max-width: 480px) {
+    justify-content: flex-end;
+  }
+}
+
+.settingIcon {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+
+  @media (max-width: 480px) {
+    display: none;
+  }
+}
+
+.edit,
+.viewArchive {
+  background-color: #363636;
+  color: #f5f5f5;
+  border: none;
+  border-radius: 8px;
+  padding: 7px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-right: 8px;
+
+  @media (max-width: 480px) {
+    display: none;
+  }
+}
+
+.stats {
+  display: flex;
+  margin-bottom: 20px;
+
+  @media (max-width: 735px) {
+    justify-content: center;
+  }
+
+  @media (max-width: 480px) {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2px;
+    margin-bottom: 10px;
+    margin-top: 10px;
+    width: 100%;
+  }
+}
+
+.statItem {
+  margin-right: 40px;
+  font-size: 16px;
+  display: flex;
+  gap: 10px;
+
+  @media (max-width: 480px) {
+    margin-right: 0;
+    font-size: 13px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 5px 0;
+    gap: 0;
+  }
+}
+
+.statValue {
+  font-weight: 600;
+
+  @media (max-width: 480px) {
+    display: block;
+    font-size: 16px;
+    margin-bottom: 2px;
+  }
+}
+
+.fullName {
+  font-size: 14px;
+
+  @media (max-width: 735px) {
+    text-align: center;
+  }
+
+  @media (max-width: 480px) {
+    text-align: left;
+    font-size: 13px;
+    font-weight: 400;
+  }
 }

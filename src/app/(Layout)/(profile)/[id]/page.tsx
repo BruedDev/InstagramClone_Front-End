@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { getUser } from "@/server/user";
 import { GetUserResponse } from "@/types/user.type";
-import Profile from "@/app/ui/Profile/Infor/index";
-import Loading from "@/components/Loading/Loading";
+import Profile from "@/app/ui/Profile/index";
+import LoadingBar from "@/components/Loading/LoadingBar";
 
 export default function ProfileUserId() {
   const params = useParams();
@@ -40,7 +40,7 @@ export default function ProfileUserId() {
   }, [id]);
 
   if (loading) {
-    return <Loading />;
+    return <LoadingBar />;
   }
 
   if (error) {
@@ -63,7 +63,7 @@ export default function ProfileUserId() {
       <div className="flex flex-col justify-center items-center min-h-screen">
         <h1 className="text-2xl font-bold">Không tìm thấy người dùng</h1>
         <button
-          onClick={() => (window.location.href = "/")} // Use simple navigation since we can't use router push
+          onClick={() => (window.location.href = "/")}
           className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
         >
           Về trang chủ

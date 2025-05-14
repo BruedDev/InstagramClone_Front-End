@@ -5,6 +5,7 @@ import SiderBar from "@/components/SiderBar";
 import Footer from "@/components/Footer";
 import styles from "./Layout.module.scss";
 import GlobalProvider from "@/contexts/GlobalContext";
+import LoadingBar from "@/components/Loading/LoadingBar";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -34,6 +35,7 @@ export default function RootLayout({
       >
         <ProtectedRoute>
           <GlobalProvider>
+            <LoadingBar />
             <div
               style={{ display: "flex", height: "100vh", overflow: "hidden" }}
             >

@@ -19,4 +19,16 @@ export interface User {
   createdAt: string;
   updatedAt: string;
   post: number[];
+  checkMark: boolean;
+}
+
+export interface UploadAvatarResponse {
+  success: boolean;
+  message: string;
+  profilePicture: string;
+}
+
+export interface DeleteAvatarResponse {
+  success: boolean;
+  message: string;
 }
