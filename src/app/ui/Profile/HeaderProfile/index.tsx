@@ -2,6 +2,7 @@ import styles from "./HeaderProfile.module.scss";
 import { User } from "@/types/user.type";
 import { Lock, ChevronDown, CircleDollarSign, Plus, Menu } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 
 export default function HeaderProfile({ user }: { user: User }) {
   return (
@@ -29,9 +30,9 @@ export default function HeaderProfile({ user }: { user: User }) {
           <button className={styles.iconButton}>
             <Plus size={24} />
           </button>
-          <button className={styles.menuButton}>
+          <Link href="/setting" className={styles.menuButton}>
             <Menu size={24} />
-          </button>
+          </Link>
         </div>
       </div>
     </div>
