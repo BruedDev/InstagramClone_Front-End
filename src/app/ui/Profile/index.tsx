@@ -7,6 +7,7 @@ import AddStory from "./AddStory";
 import UploadAvatar from "@/components/Modal/upLoadAvatar";
 import IsProfile from "@/components/isProfile";
 import { useState } from "react";
+import HeaderProfile from "./HeaderProfile";
 
 export default function Profile({ user: initialUser }: { user: User }) {
   const [user, setUser] = useState<User>(initialUser);
@@ -25,6 +26,7 @@ export default function Profile({ user: initialUser }: { user: User }) {
 
   return (
     <div className={styles.container}>
+      <HeaderProfile user={user} />
       <div className={styles.content}>
         <div className={styles.header}>
           <IsProfile
@@ -38,6 +40,9 @@ export default function Profile({ user: initialUser }: { user: User }) {
                   height={150}
                   className={styles.avatarImage}
                 />
+                <div className={styles.fullName}>
+                  <h3>{user.fullName}</h3>
+                </div>
               </div>
             }
           >
@@ -53,6 +58,9 @@ export default function Profile({ user: initialUser }: { user: User }) {
                 height={150}
                 className={styles.avatarImage}
               />
+              <div className={styles.fullName}>
+                <h3>{user.fullName}</h3>
+              </div>
             </div>
           </IsProfile>
 

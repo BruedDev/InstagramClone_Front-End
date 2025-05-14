@@ -44,6 +44,7 @@ export const useNavItems = (actionStates: ActionStates = {}) => {
       ActiveIcon: <House color="#ffffff" strokeWidth={3} />,
       href: "/",
       type: "link",
+      className: "item1",
     },
     {
       label: "Khám phá",
@@ -51,6 +52,7 @@ export const useNavItems = (actionStates: ActionStates = {}) => {
       ActiveIcon: <Compass color="#ffffff" strokeWidth={3} />,
       href: "/explore",
       type: "link",
+      className: "item2",
     },
     {
       label: "Reels",
@@ -58,6 +60,7 @@ export const useNavItems = (actionStates: ActionStates = {}) => {
       ActiveIcon: <Clapperboard color="#ffffff" strokeWidth={3} />,
       href: "/reels",
       type: "link",
+      className: "item3",
     },
     {
       label: "Tin nhắn",
@@ -66,12 +69,14 @@ export const useNavItems = (actionStates: ActionStates = {}) => {
       href: "/messages",
       authOnly: true,
       type: "link",
+      className: "item4",
     },
     {
       label: "Tìm kiếm",
       icon: <Search color="#ffffff" strokeWidth={1.5} />,
       ActiveIcon: <Search color="#ffffff" strokeWidth={3} />,
       type: "action",
+      className: "item5",
     },
     {
       label: "Thông báo",
@@ -80,6 +85,7 @@ export const useNavItems = (actionStates: ActionStates = {}) => {
       authOnly: true,
       type: "action",
       alert: true,
+      className: "item6",
     },
     {
       label: "Tạo bài viết",
@@ -87,6 +93,7 @@ export const useNavItems = (actionStates: ActionStates = {}) => {
       ActiveIcon: <CirclePlus color="#ffffff" strokeWidth={3} />,
       authOnly: true,
       type: "action",
+      className: "item7",
     },
     {
       label: "Trang cá nhân",
@@ -100,6 +107,7 @@ export const useNavItems = (actionStates: ActionStates = {}) => {
       icon: <Menu color="#ffffff" strokeWidth={1.5} />,
       ActiveIcon: <Menu color="#ffffff" strokeWidth={3} />,
       type: "action",
+      className: "item8",
     },
   ].map((item, index) => {
     const isAction = item.type === "action";

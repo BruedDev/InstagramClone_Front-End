@@ -4,11 +4,46 @@ import Image from "next/image";
 import { useNavItems } from "@/app/hooks/useNavItems";
 import styles from "./SiderBar.module.scss";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import MoreMenu from "@/components/SeeMore";
+import { usePathname } from "next/navigation";
 
 export default function SiderBar() {
+  const pathname = usePathname();
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
+  const [windowWidth, setWindowWidth] = useState(0);
+
+  // Handle window resize
+  useEffect(() => {
+    // Set initial window width
+    setWindowWidth(window.innerWidth);
+
+    // Update window width on resize
+    const handleResize = () => {
+      setWindowWidth(window.innerWidth);
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, []);
+
+  // Handle sidebar collapse based on pathname and window width
+  useEffect(() => {
+    // Only collapse if both conditions are met: pathname is "/setting" AND window width is >= 768px
+    const shouldBeCollapsed = pathname === "/setting" && windowWidth >= 768;
+
+    // Set the collapsed state
+    setCollapsed(shouldBeCollapsed);
+
+    // Update sessionStorage
+    sessionStorage.setItem(
+      "activeSider",
+      shouldBeCollapsed ? "collapsed" : "expanded"
+    );
+  }, [pathname, windowWidth]);
 
   const actionStates = {
     "Xem Thêm": {
@@ -21,14 +56,14 @@ export default function SiderBar() {
   const navItems = Array.isArray(rawNavItems) ? rawNavItems : [];
 
   return (
-    <aside className={styles.sidebar}>
+    <aside className={`${styles.sidebar} ${collapsed ? styles.collapsed : ""}`}>
       <div className={styles.logo}>
         <Link href="/">
           <Image
             src="/Images/logoLogin.png"
             alt="Logo"
-            width={120}
-            height={40}
+            width={collapsed ? 30 : 120}
+            height={collapsed ? 30 : 40}
           />
         </Link>
       </div>
@@ -46,7 +81,10 @@ export default function SiderBar() {
                 href={item.href || "#"}
                 key={index}
                 onClick={item.onClick}
-                className={`${styles.navItem} ${isActive ? styles.active : ""}`}
+                className={`${styles.navItem} ${
+                  isActive ? styles.active : ""
+                } ${styles[item.className] || ""}`}
+                title={collapsed ? item.label : ""}
               >
                 {item.className === "avatar" ? (
                   <>
@@ -61,12 +99,12 @@ export default function SiderBar() {
                       height={30}
                       className="rounded-full"
                     />
-                    <span>{item.label}</span>
+                    {!collapsed && <span>{item.label}</span>}
                   </>
                 ) : (
                   <>
                     {icon}
-                    <span>{item.label}</span>
+                    {!collapsed && <span>{item.label}</span>}
                   </>
                 )}
               </Link>
@@ -80,10 +118,11 @@ export default function SiderBar() {
                   onClick={item.onClick}
                   className={`${styles.navItem} ${
                     isActive ? styles.active : ""
-                  }`}
+                  } ${styles[item.className] || ""}`}
+                  title={collapsed ? item.label : ""}
                 >
                   {icon}
-                  <span>{item.label}</span>
+                  {!collapsed && <span>{item.label}</span>}
                 </button>
               </div>
             );
@@ -101,9 +140,15 @@ export default function SiderBar() {
                 className={`${styles.navItemContainer} ${styles.bottomItem}`}
                 style={{ position: "relative" }}
               >
-                <button onClick={item.onClick} className={styles.navItem}>
+                <button
+                  onClick={item.onClick}
+                  className={`${styles.navItem} ${
+                    styles[item.className] || ""
+                  }`}
+                  title={collapsed ? item.label : ""}
+                >
                   {icon}
-                  <span>{item.label}</span>
+                  {!collapsed && <span>{item.label}</span>}
                 </button>
 
                 {isMoreMenuOpen && (

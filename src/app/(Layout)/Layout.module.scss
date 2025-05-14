@@ -4,6 +4,9 @@
   overflow-y: auto;
   flex: 1;
   height: 100vh;
-
   scrollbar-color: #808080 transparent;
+
+  @media (max-width: 768px) {
+    padding-bottom: 50px;
+  }
 }
