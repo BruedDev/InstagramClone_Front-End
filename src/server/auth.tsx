@@ -17,7 +17,7 @@ const handleTokenStorage = (response: AuthResponse): void => {
 };
 
 // Hàm lấy token từ localStorage (dùng khi cookies bị chặn)
-const getAuthToken = (): string | null => {
+export const getAuthToken = (): string | null => {
   return localStorage.getItem("authToken");
 };
 

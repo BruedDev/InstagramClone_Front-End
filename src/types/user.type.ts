@@ -18,7 +18,7 @@ export interface User {
   authType: string;
   createdAt: string;
   updatedAt: string;
-  post: number[];
+  posts?: string[];
   checkMark: boolean;
 }
 

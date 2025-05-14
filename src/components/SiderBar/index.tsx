@@ -7,19 +7,19 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import MoreMenu from "@/components/SeeMore";
 import { usePathname } from "next/navigation";
+import UploadPost from "../Modal/uploadPost";
 
 export default function SiderBar() {
   const pathname = usePathname();
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
+  const [isUploadPostOpen, setIsUploadPostOpen] = useState(false); // State cho UploadPost
   const [collapsed, setCollapsed] = useState(false);
   const [windowWidth, setWindowWidth] = useState(0);
 
   // Handle window resize
   useEffect(() => {
-    // Set initial window width
     setWindowWidth(window.innerWidth);
 
-    // Update window width on resize
     const handleResize = () => {
       setWindowWidth(window.innerWidth);
     };
@@ -32,13 +32,9 @@ export default function SiderBar() {
 
   // Handle sidebar collapse based on pathname and window width
   useEffect(() => {
-    // Only collapse if both conditions are met: pathname is "/setting" AND window width is >= 768px
     const shouldBeCollapsed = pathname === "/setting" && windowWidth >= 768;
-
-    // Set the collapsed state
     setCollapsed(shouldBeCollapsed);
 
-    // Update sessionStorage
     sessionStorage.setItem(
       "activeSider",
       shouldBeCollapsed ? "collapsed" : "expanded"
@@ -49,6 +45,10 @@ export default function SiderBar() {
     "Xem Thêm": {
       isOpen: isMoreMenuOpen,
       setIsOpen: setIsMoreMenuOpen,
+    },
+    "Tạo bài viết": {
+      isOpen: isUploadPostOpen,
+      setIsOpen: setIsUploadPostOpen,
     },
   };
 
@@ -128,9 +128,11 @@ export default function SiderBar() {
             );
           })}
 
-        {/* Phần dưới: chỉ hiển thị "Xem Thêm" và đẩy nó xuống bằng class đặc biệt */}
+        {/* Phần dưới: chỉ hiển thị "Xem Thêm" và "Tạo Bài Viết" */}
         {navItems
-          .filter((item) => item.label === "Xem Thêm")
+          .filter(
+            (item) => item.label === "Xem Thêm" || item.label === "Tạo Bài Viết"
+          )
           .map((item, index) => {
             const icon = item.icon;
 
@@ -141,7 +143,14 @@ export default function SiderBar() {
                 style={{ position: "relative" }}
               >
                 <button
-                  onClick={item.onClick}
+                  onClick={() => {
+                    if (item.label === "Tạo Bài Viết") {
+                      setIsUploadPostOpen(true); // Mở UploadPost khi click "Tạo Bài Viết"
+                    }
+                    if (item.label === "Xem Thêm") {
+                      setIsMoreMenuOpen(true); // Mở MoreMenu khi click "Xem Thêm"
+                    }
+                  }}
                   className={`${styles.navItem} ${
                     styles[item.className] || ""
                   }`}
@@ -153,6 +162,9 @@ export default function SiderBar() {
 
                 {isMoreMenuOpen && (
                   <MoreMenu onClose={() => setIsMoreMenuOpen(false)} />
+                )}
+                {isUploadPostOpen && (
+                  <UploadPost onClose={() => setIsUploadPostOpen(false)} />
                 )}
               </div>
             );

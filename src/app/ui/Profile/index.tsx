@@ -71,7 +71,7 @@ export default function Profile({ user: initialUser }: { user: User }) {
         <AddStory />
 
         {/* phần tab */}
-        <TabProfile />
+        <TabProfile user={user} />
       </div>
 
       {/* Modal upload avatar */}

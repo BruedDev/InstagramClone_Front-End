@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import { getUser } from "@/server/user";
 import { GetUserResponse } from "@/types/user.type";
 import Profile from "@/app/ui/Profile/index";
-import LoadingBar from "@/components/Loading/LoadingBar";
+import Loading from "@/components/Loading/Loading";
 
 export default function ProfileUserId() {
   const params = useParams();
@@ -40,7 +40,7 @@ export default function ProfileUserId() {
   }, [id]);
 
   if (loading) {
-    return <LoadingBar />;
+    return <Loading />;
   }
 
   if (error) {

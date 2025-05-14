@@ -4,6 +4,10 @@ import Image from "next/image";
 import Action from "../Action";
 
 export default function Infor({ user }: { user: User }) {
+  // Đảm bảo mảng posts tồn tại và lấy độ dài chính xác
+  const postCount =
+    user.posts && Array.isArray(user.posts) ? user.posts.length : 0;
+
   return (
     <div className={styles.information}>
       <div className={styles.action}>
@@ -23,7 +27,7 @@ export default function Infor({ user }: { user: User }) {
       </div>
       <div className={styles.stats}>
         <div className={styles.statItem}>
-          <span className={styles.statValue}>{user.post || 0}</span>
+          <span className={styles.statValue}>{postCount}</span>
           <span>bài viết</span>
         </div>
         <div className={styles.statItem}>

@@ -3,6 +3,7 @@ import { User } from "@/types/user.type";
 import IsProfile from "@/components/isProfile";
 import styles from "../Infor/Infor.module.scss";
 import Link from "next/link";
+
 export default function Action({ user }: { user: User }) {
   return (
     <>
