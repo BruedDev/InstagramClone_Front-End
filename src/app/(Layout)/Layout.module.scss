@@ -6,18 +6,13 @@
   height: 100vh;
   scrollbar-color: #808080 transparent;
 
-  /* Đặt padding-bottom mặc định cho tất cả các thiết bị có màn hình nhỏ hơn hoặc bằng 768px */
+  /* Media query chung cho các thiết bị di động có màn hình nhỏ hơn hoặc bằng 768px */
   @media (max-width: 768px) {
     padding-bottom: 20%;
   }
 
-  /* Đặt padding-bottom cho iOS, ví dụ như iPhone 6/7/8 */
-  @media only screen and (max-width: 768px) and (device-width: 375px) and (device-height: 667px) {
-    padding-bottom: 40%; /* Đặt padding-bottom cho iPhone 6, 7, 8 */
-  }
-
-  /* Đặt padding-bottom cho iOS, ví dụ như iPhone XR/iPhone 11 */
-  @media only screen and (max-width: 768px) and (device-width: 414px) and (device-height: 896px) {
-    padding-bottom: 40%; /* Đặt padding-bottom cho iPhone XR, iPhone 11 */
+  /* Media query dành riêng cho Safari trên iOS */
+  @media (max-width: 768px) and (pointer: coarse) {
+    padding-bottom: 40%; /* Đặt padding-bottom cho các thiết bị iOS */
   }
 }
