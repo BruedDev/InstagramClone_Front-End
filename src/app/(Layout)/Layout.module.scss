@@ -1,3 +1,5 @@
+/* Layout.module.scss */
+
 .container {
   display: flex;
   flex-direction: column;
@@ -6,8 +8,24 @@
   height: 100vh;
   scrollbar-color: #808080 transparent;
 
-  /* Media query chung cho các thiết bị di động có màn hình nhỏ hơn hoặc bằng 768px */
+  /* Mặc định cho các thiết bị (bao gồm Android) */
   @media (max-width: 768px) {
     padding-bottom: 20%;
+  }
+}
+
+/* CSS cho iOS sử dụng @supports */
+@supports (-webkit-touch-callout: none) {
+  .container {
+    @media (max-width: 768px) {
+      padding-bottom: 50%; /* Đặc biệt cho iOS */
+    }
+  }
+}
+
+/* Phương pháp thay thế sử dụng HTML class */
+:global(html.ios) .container {
+  @media (max-width: 768px) {
+    padding-bottom: 40%;
   }
 }

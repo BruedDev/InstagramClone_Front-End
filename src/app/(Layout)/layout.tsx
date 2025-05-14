@@ -6,6 +6,7 @@ import Footer from "@/components/Footer";
 import styles from "./Layout.module.scss";
 import GlobalProvider from "@/contexts/GlobalContext";
 import LoadingBar from "@/components/Loading/LoadingBar";
+import IOSDetector from "@/components/IOSDetector";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -36,6 +37,8 @@ export default function RootLayout({
         <ProtectedRoute>
           <GlobalProvider>
             <LoadingBar />
+            {/* Component phát hiện iOS sẽ thêm class "ios" khi cần */}
+            <IOSDetector />
             <div
               style={{ display: "flex", height: "100vh", overflow: "hidden" }}
             >
