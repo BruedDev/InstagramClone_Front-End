@@ -26,6 +26,6 @@
 /* Phương pháp thay thế sử dụng HTML class */
 :global(html.ios) .container {
   @media (max-width: 768px) {
-    padding-bottom: 40%;
+    padding-bottom: 50%;
   }
 }
