@@ -126,14 +126,6 @@ export default function UploadPost({
 
       // Cập nhật trạng thái thành công
       setUploadStatus("success");
-
-      // Chờ 2 giây để hiển thị thông báo thành công trước khi đóng
-      setTimeout(() => {
-        if (onPostCreated) {
-          onPostCreated();
-        }
-        handleCloseLoading();
-      }, 2000);
     } catch (error) {
       console.error("Lỗi khi đăng bài:", error);
 

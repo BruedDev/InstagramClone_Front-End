@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { Upload, Camera, Send, X, ArrowLeft } from "lucide-react";
 import { MutableRefObject } from "react";
-import styles from "@/components/Modal/UploadAvatar.module.scss";
+import styles from "./UploadPost.module.scss";
 
 export type UploadPostProps = {
   step: "select" | "edit";
@@ -47,7 +47,7 @@ export default function UploadPostUi({
       } ${styles.modalOverlay} ${isClosing ? styles.closing : ""}`}
     >
       <div
-        className={`bg-zinc-900 rounded-xl w-full max-w-4xl overflow-hidden shadow-xl md:max-h-[90vh] sm:max-h-[95vh] max-h-full h-auto sm:h-auto max-sm:h-full max-sm:rounded-none flex flex-col transition-all duration-400 ease-in-out ${
+        className={`bg-zinc-900 rounded-xl w-full max-w-4xl overflow-y-auto shadow-xl md:max-h-[90vh] max-h-[100vh] h-auto max-sm:rounded-none flex flex-col transition-all duration-400 ease-in-out ${
           isVisible && !isClosing
             ? "opacity-100 transform translate-y-0"
             : "opacity-0 transform translate-y-10"
@@ -125,15 +125,15 @@ export default function UploadPostUi({
             </div>
           </div>
         ) : (
-          <div className="flex flex-col md:flex-row h-full max-h-[70vh]">
+          <div className="flex flex-col md:flex-row h-auto">
             {/* Media Preview */}
             <div className="w-full md:w-3/5 bg-zinc-950 flex items-center justify-center">
               {mediaType === "image" && mediaPreview && (
-                <div className="relative w-full h-full max-h-[70vh]">
+                <div className="relative w-full">
                   <Image
                     src={mediaPreview}
                     alt="Preview"
-                    className="w-full h-full object-contain"
+                    className="w-full object-contain"
                     width={800}
                     height={600}
                   />
@@ -143,7 +143,7 @@ export default function UploadPostUi({
                 <video
                   src={mediaPreview}
                   controls
-                  className="w-full h-full max-h-[70vh] object-contain"
+                  className="w-full object-contain"
                 />
               )}
             </div>
@@ -159,8 +159,8 @@ export default function UploadPostUi({
                 value={caption}
                 onChange={(e) => setCaption(e.target.value)}
                 placeholder="Viết chú thích..."
-                className="flex-1 resize-none border-none focus:ring-0 text-sm bg-transparent text-white placeholder-zinc-500 min-h-[150px]"
-                rows={6}
+                className="flex-1 resize-none border-none focus:ring-0 text-sm bg-transparent text-white placeholder-zinc-500 min-h-[50px]"
+                rows={3}
               />
 
               <div className="flex justify-between items-center mt-4 pt-3 border-t border-zinc-700">

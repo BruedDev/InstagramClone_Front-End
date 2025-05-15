@@ -96,7 +96,7 @@ export default function Setting() {
               <button
                 onClick={onLogout}
                 disabled={isLoggingOut}
-                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed flex items-center"
+                className="bg-gray-800 hover:bg-red-700 text-white px-4 py-2 rounded-md transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed flex items-center"
               >
                 {isLoggingOut ? "Đang đăng xuất..." : "Đăng xuất"}
               </button>
@@ -154,9 +154,7 @@ export default function Setting() {
                 activeTab === tab.id && tab.id !== "logout"
                   ? "bg-gray-800"
                   : "hover:bg-gray-800"
-              } ${
-                tab.id === "logout" ? "text-red-500 hover:text-red-400" : ""
-              }`}
+              } ${tab.id === "logout" ? "text-gray-400" : ""}`}
             >
               <span
                 className={

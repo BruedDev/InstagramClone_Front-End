@@ -28,12 +28,15 @@ export const createPost = async (formData: FormData) => {
   return res.json();
 };
 
-export const getUserPosts = async (type?: "image" | "video") => {
-  const userId = localStorage.getItem("id");
-  const username = localStorage.getItem("username");
-
-  console.log(userId, username);
-
+export const getUserPosts = async ({
+  userId,
+  username,
+  type,
+}: {
+  userId?: string;
+  username?: string;
+  type?: "image" | "video";
+}) => {
   let url = "";
 
   if (userId) {
@@ -45,9 +48,7 @@ export const getUserPosts = async (type?: "image" | "video") => {
       ? `${BASE_URL}/getPostUser?username=${username}&type=${type}`
       : `${BASE_URL}/getPostUser?username=${username}`;
   } else {
-    throw new Error(
-      "Không có thông tin userId hoặc username trong localStorage"
-    );
+    throw new Error("Phải truyền vào userId hoặc username");
   }
 
   const res = await fetch(url, {

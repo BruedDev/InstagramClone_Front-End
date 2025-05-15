@@ -47,7 +47,7 @@ export default function Infor({ user }: { user: User }) {
         <h3>{user.fullName}</h3>
       </div>
       <div className={styles.bio}>
-        <p>hello xin chào mọi người hello xin chào mọi người</p>
+        <p>{user.bio}</p>
       </div>
     </div>
   );

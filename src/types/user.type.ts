@@ -6,6 +6,7 @@ export interface GetUserResponse {
 
 export interface User {
   id: string;
+  _id: string;
   username: string;
   fullName: string;
   email: string;
@@ -31,4 +32,15 @@ export interface UploadAvatarResponse {
 export interface DeleteAvatarResponse {
   success: boolean;
   message: string;
+}
+
+export interface UpdateBioResponse {
+  success: boolean;
+  message: string;
+  user: {
+    _id: string;
+    username: string;
+    bio: string;
+    profilePicture?: string;
+  };
 }

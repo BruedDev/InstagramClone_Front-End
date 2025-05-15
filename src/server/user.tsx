@@ -2,6 +2,7 @@
 import { GetUserResponse } from "@/types/user.type";
 import { UploadAvatarResponse } from "@/types/user.type";
 import { DeleteAvatarResponse } from "@/types/user.type";
+import { UpdateBioResponse } from "@/types/user.type";
 
 export interface DeleteUserResponse {
   success: boolean;
@@ -147,6 +148,38 @@ export const deleteAvatar = async (): Promise<DeleteAvatarResponse> => {
     return (await response.json()) as DeleteAvatarResponse;
   } catch (error) {
     console.error("Lỗi khi xóa ảnh đại diện:", error);
+    throw error;
+  }
+};
+
+export const updateBio = async (bio: string): Promise<UpdateBioResponse> => {
+  try {
+    const token = localStorage.getItem("authToken");
+
+    const headers: HeadersInit = {
+      "Content-Type": "application/json",
+    };
+
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(`${BASE_URL}/updateBio`, {
+      method: "PUT",
+      headers,
+      body: JSON.stringify({ bio }),
+      credentials: "include",
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Cập nhật bio thất bại");
+    }
+
+    const data = await response.json();
+    return data as UpdateBioResponse;
+  } catch (error) {
+    console.error("Lỗi khi cập nhật bio:", error);
     throw error;
   }
 };
