@@ -1,33 +1,67 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import styles from "./PostModal.module.scss";
 import { X, Heart, MessageCircle, Bookmark, Send, Smile } from "lucide-react";
 import { useTime } from "@/app/hooks/useTime";
 import PostSetting from "./PostSetting";
 import { deletePostById } from "@/server/posts";
-
-type Post = {
-  _id: string;
-  fileUrl: string;
-  caption?: string;
-  likes?: number;
-  comments?: Array<{ _id: string; comment: string }>;
-  createdAt?: string;
-  author?: {
-    username: string;
-    profilePicture?: string;
-  };
-};
+import { Post } from "@/types/home.type";
 
 type PostModalProps = {
   post: Post;
   onClose: () => void;
+  initialVideoTime?: number;
 };
 
-export default function PostModal({ post, onClose }: PostModalProps) {
+export default function PostModal({
+  post,
+  onClose,
+  initialVideoTime = 0,
+}: PostModalProps) {
   const [comment, setComment] = useState("");
   const { fromNow } = useTime();
-  const [showSettings, setShowSettings] = useState(false); // State to control settings modal
+  const [showSettings, setShowSettings] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const previousUrl = useRef<string>("");
+
+  // Thiết lập thời gian video khi component mount
+  useEffect(() => {
+    if (post.type === "video" && videoRef.current && initialVideoTime > 0) {
+      videoRef.current.currentTime = initialVideoTime;
+    }
+  }, [post.type, initialVideoTime]);
+
+  // Cập nhật URL khi modal mở
+  useEffect(() => {
+    // Lưu lại URL hiện tại trước khi thay đổi
+    previousUrl.current = window.location.pathname;
+
+    // Cập nhật URL mới với post ID
+    const newUrl = `/post/${post._id}`;
+    window.history.pushState({ path: newUrl }, "", newUrl);
+
+    // Khi component unmount (modal đóng), khôi phục URL cũ
+    return () => {
+      window.history.replaceState(
+        { path: previousUrl.current },
+        "",
+        previousUrl.current
+      );
+    };
+  }, [post._id]);
+
+  // Xử lý nút back của trình duyệt
+  useEffect(() => {
+    const handlePopState = () => {
+      onClose();
+    };
+
+    window.addEventListener("popstate", handlePopState);
+
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
+  }, [onClose]);
 
   const handleCommentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setComment(e.target.value);
@@ -77,13 +111,27 @@ export default function PostModal({ post, onClose }: PostModalProps) {
         <div className={styles.postContainer}>
           {/* Phần hình ảnh */}
           <div className={styles.imageContainer}>
-            <Image
-              src={post.fileUrl}
-              alt="Post"
-              className={styles.postImage}
-              layout="fill"
-              objectFit="contain"
-            />
+            {post.type === "image" ? (
+              <Image
+                src={post.fileUrl}
+                alt="Post"
+                className={styles.postImage}
+                layout="fill"
+                objectFit="contain"
+              />
+            ) : post.type === "video" ? (
+              <video
+                ref={videoRef}
+                className={styles.postVideo}
+                src={post.fileUrl}
+                controls
+                autoPlay={true}
+                loop={false}
+                muted={false}
+                playsInline
+                style={{ width: "100%", height: "100%", objectFit: "contain" }}
+              />
+            ) : null}
           </div>
 
           {/* Phần thông tin và tương tác */}

@@ -7,7 +7,6 @@ import TabSaved from "./TabSaved";
 import TabTagged from "./TabTagged";
 
 export default function TabProfile({ user }: { user: User }) {
-  // Trạng thái để theo dõi tab hiện tại
   const [activeTab, setActiveTab] = useState("posts");
 
   // Hàm chuyển tab

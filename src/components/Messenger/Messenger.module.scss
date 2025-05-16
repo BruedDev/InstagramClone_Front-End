@@ -1,0 +1,24 @@
+.container {
+  padding: 30px 85px;
+  position: fixed;
+  top: 50%;
+  left: 52%;
+  width: 100%;
+  transform: translate(-50%, -50%);
+
+  @media (max-width: 768px) {
+    padding: 0;
+    margin: 0;
+    left: 50%;
+    z-index: 997;
+  }
+
+  @media (max-width: 622px) {
+    .mainChat {
+      display: none;
+    }
+    .sidebar {
+      width: 100%;
+    }
+  }
+}

@@ -13,6 +13,13 @@
 
   @media (max-width: 480px) {
     overflow-y: auto;
+
+    .modal {
+      width: 100%;
+      height: 100vh;
+      padding-bottom: 5%;
+      padding-top: 1%;
+    }
   }
 }
 .modalOverlay.closing {

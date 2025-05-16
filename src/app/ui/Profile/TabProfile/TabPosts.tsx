@@ -1,20 +1,25 @@
-import { useEffect, useState } from "react";
-import { getUserPosts, getPostById } from "@/server/posts";
-import { Camera } from "lucide-react";
-import { User } from "@/types/user.type";
+import { usePost } from "@/app/hooks/usePost";
 import Image from "next/image";
+import { Camera } from "lucide-react";
+import { useEffect, useState } from "react";
+import { getUserPosts } from "@/server/posts";
+import { User } from "@/types/user.type";
 import PostModal from "@/components/Modal/PostModal";
 
-// Định nghĩa type cho post
 type Post = {
   _id: string;
   fileUrl: string;
 };
 
 export default function TabPosts({ user }: { user: User }) {
+  const {
+    selectedPost,
+    isModalOpen,
+    handlePostClick,
+    setIsModalOpen,
+    setSelectedPost,
+  } = usePost();
   const [posts, setPosts] = useState<Post[]>([]);
-  const [selectedPost, setSelectedPost] = useState<Post | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -36,17 +41,10 @@ export default function TabPosts({ user }: { user: User }) {
     }
   }, [user]);
 
-  const handlePostClick = async (postId: string) => {
-    try {
-      setIsLoading(true);
-      const postData = await getPostById(postId);
-      setSelectedPost(postData);
-      setIsModalOpen(true);
-    } catch (error) {
-      console.error("Lỗi khi lấy chi tiết bài đăng:", error);
-    } finally {
-      setIsLoading(false);
-    }
+  const handleClick = async (postId: string) => {
+    setIsLoading(true);
+    await handlePostClick(postId);
+    setIsLoading(false);
   };
 
   const handleCloseModal = () => {
@@ -56,8 +54,8 @@ export default function TabPosts({ user }: { user: User }) {
 
   return (
     <div className="mt-5">
-      {posts.length === 0 ? (
-        <div className="flex flex-col justify-center items-center text-center">
+      {(user?.posts?.length ?? 0) === 0 ? (
+        <div className="flex flex-col justify-center items-center text-center p-10">
           <div className="text-gray-400 mb-4">
             <Camera size={50} />
           </div>
@@ -72,7 +70,7 @@ export default function TabPosts({ user }: { user: User }) {
             <div
               key={post._id}
               className="relative aspect-square cursor-pointer hover:opacity-80 transition-opacity"
-              onClick={() => handlePostClick(post._id)}
+              onClick={() => handleClick(post._id)}
             >
               <Image
                 src={post.fileUrl}

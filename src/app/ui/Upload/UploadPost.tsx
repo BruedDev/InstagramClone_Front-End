@@ -47,11 +47,11 @@ export default function UploadPostUi({
       } ${styles.modalOverlay} ${isClosing ? styles.closing : ""}`}
     >
       <div
-        className={`bg-zinc-900 rounded-xl w-full max-w-4xl overflow-y-auto shadow-xl md:max-h-[90vh] max-h-[100vh] h-auto max-sm:rounded-none flex flex-col transition-all duration-400 ease-in-out ${
+        className={`bg-zinc-900 rounded-xl w-full max-w-2xl overflow-hidden shadow-xl md:max-h-[90vh] max-h-[100vh] h-auto max-sm:rounded-none flex flex-col transition-all duration-400 ease-in-out ${
           isVisible && !isClosing
             ? "opacity-100 transform translate-y-0"
             : "opacity-0 transform translate-y-10"
-        }`}
+        } ${styles.modal}`}
       >
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-700">
@@ -126,26 +126,32 @@ export default function UploadPostUi({
           </div>
         ) : (
           <div className="flex flex-col md:flex-row h-auto">
-            {/* Media Preview */}
-            <div className="w-full md:w-3/5 bg-zinc-950 flex items-center justify-center">
-              {mediaType === "image" && mediaPreview && (
-                <div className="relative w-full">
-                  <Image
-                    src={mediaPreview}
-                    alt="Preview"
-                    className="w-full object-contain"
-                    width={800}
-                    height={600}
-                  />
-                </div>
-              )}
-              {mediaType === "video" && mediaPreview && (
-                <video
-                  src={mediaPreview}
-                  controls
-                  className="w-full object-contain"
-                />
-              )}
+            {/* Media Preview - Enhanced with proper containment */}
+            <div className="w-full md:w-3/5 bg-zinc-950 relative flex items-center justify-center">
+              <div className="aspect-square w-full h-full md:aspect-auto md:h-[450px] flex items-center justify-center overflow-hidden">
+                {mediaType === "image" && mediaPreview && (
+                  <div className="relative w-full h-full flex items-center justify-center">
+                    <Image
+                      src={mediaPreview}
+                      alt="Preview"
+                      className="object-contain max-w-full max-h-full"
+                      layout="fill"
+                      objectFit="contain"
+                      sizes="(max-width: 768px) 100vw, 60vw"
+                    />
+                  </div>
+                )}
+                {mediaType === "video" && mediaPreview && (
+                  <div className="relative w-full h-full flex items-center justify-center">
+                    <video
+                      src={mediaPreview}
+                      controls
+                      className="max-w-full max-h-full w-auto h-auto object-contain"
+                      style={{ maxHeight: "100%", maxWidth: "100%" }}
+                    />
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Caption Form */}
@@ -193,6 +199,7 @@ export default function UploadPostUi({
           ref={fileInputRef}
           onChange={handleFileChange}
           className="hidden"
+          accept={mediaType === "image" ? "image/*" : "video/*"}
         />
       </div>
     </div>

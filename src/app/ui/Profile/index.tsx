@@ -3,7 +3,7 @@ import { User } from "@/types/user.type";
 import styles from "./Profile.module.scss";
 import Infor from "./Infor/Infor";
 import TabProfile from "./TabProfile";
-import AddStory from "./AddStory";
+import AddStory from "../../../components/AddStory";
 import UploadAvatar from "@/components/Modal/upLoadAvatar";
 import IsProfile from "@/components/isProfile";
 import { useState } from "react";

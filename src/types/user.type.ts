@@ -7,7 +7,7 @@ export interface GetUserResponse {
 export interface User {
   id: string;
   _id: string;
-  username: string;
+  username: string ;
   fullName: string;
   email: string;
   phoneNumber: number;
@@ -21,6 +21,20 @@ export interface User {
   updatedAt: string;
   posts?: string[];
   checkMark: boolean;
+}
+
+export interface Message {
+  id: string;
+  _id: string;
+  content: string;
+  senderId: string;
+  sender?: User;
+  receiverId: string;
+  receiver?: User;
+  read: boolean;
+  createdAt: string;
+  updatedAt: string;
+  message: string;
 }
 
 export interface UploadAvatarResponse {
@@ -43,4 +57,17 @@ export interface UpdateBioResponse {
     bio: string;
     profilePicture?: string;
   };
+}
+
+export interface SuggestedUser {
+  _id: string;
+  username: string;
+  profilePicture?: string;
+  checkMark: boolean;
+  // thêm các trường khác nếu cần
+}
+
+export interface SuggestUsersResponse {
+  success: boolean;
+  users: SuggestedUser[];
 }

@@ -9,7 +9,7 @@
   position: relative;
   z-index: 900;
 
-  @media (max-width: 972px) {
+  @media (max-width: 1264px) {
     width: 70px;
     padding: 20px 5px 30px 5px;
   }
@@ -78,7 +78,7 @@
     background-color: #1a1a1a;
   }
 
-  @media (max-width: 972px) {
+  @media (max-width: 1264px) {
     justify-content: center;
     padding: 12px 5px;
 
@@ -123,7 +123,7 @@
 }
 
 .sidebar.collapsed {
-  width: 50px;
+  width: 70px;
 
   .logo {
     display: flex;

@@ -32,7 +32,10 @@ export default function SiderBar() {
 
   // Handle sidebar collapse based on pathname and window width
   useEffect(() => {
-    const shouldBeCollapsed = pathname === "/setting" && windowWidth >= 768;
+    const shouldBeCollapsed =
+      (pathname === "/setting" || pathname === "/messages") &&
+      windowWidth >= 1264;
+
     setCollapsed(shouldBeCollapsed);
 
     sessionStorage.setItem(
