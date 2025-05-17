@@ -5,7 +5,7 @@
   left: 49.5%;
   width: 100%;
   transform: translate(-50%, -50%);
-  height: 100vh;
+  height: 100dvh;
   padding: 32px 85px;
   margin-left: 40px;
 
@@ -19,11 +19,12 @@
 
 .sidebar {
   width: 300px;
-
   overflow-y: auto;
+
   @media (max-width: 622px) {
     width: 100vw;
     z-index: 1000;
+    margin: auto 0;
   }
 }
 
@@ -37,7 +38,7 @@
     top: 0;
     left: 0;
     width: 100vw;
-    height: 100vh;
+    height: 100dvh;
     background: #111;
     z-index: 2000;
     transform: translateX(-100%);
@@ -46,6 +47,7 @@
     display: flex; // 🔄 dùng flex để bố trí theo chiều dọc
     flex-direction: column; // 🔽 sắp xếp theo trục dọc
     overflow: hidden; // Ngăn scroll toàn container nếu không cần
+    margin: auto 0;
 
     .chatHeader {
       position: sticky;

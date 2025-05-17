@@ -4,6 +4,7 @@ import styles from "./Messenger.module.scss";
 import type { User, Message } from "@/types/user.type";
 import { useEffect, useRef, useState } from "react";
 import Call from "./call";
+import { useTime } from "@/app/hooks/useTime";
 
 export type MainChatProps = {
   selectedUser: User | null;
@@ -43,7 +44,9 @@ export default function MainChat({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [isUserScrollUp, setIsUserScrollUp] = useState(false);
+  const { formatTime } = useTime();
 
+  // Khi cuộn lên đầu thì tự động load thêm tin nhắn
   const handleScroll = () => {
     if (!messagesContainerRef.current) return;
     const { scrollTop, scrollHeight, clientHeight } =
@@ -76,23 +79,26 @@ export default function MainChat({
       >
         {selectedUser ? (
           <>
-            <div className={`flex items-center`}>
+            <div className="flex items-center">
               {/* Nút back chỉ hiện trên mobile */}
-              <div className={`${styles.backBtnContainer}`}>
-                <button
-                  className={styles.backBtn}
-                  onClick={() => setShowMainChat(false)}
-                  style={{
-                    marginRight: 8,
-                    display: "none",
-                  }}
-                >
-                  <ArrowLeft className="h-6 w-6" />
-                </button>
-              </div>
-              <div
-                className={`w-10 h-10 rounded-full overflow-hidden mr-3 relative ${styles.avatar}`}
+              <button
+                className={styles.backBtn}
+                onClick={() => setShowMainChat(false)}
+                style={{
+                  marginRight: 8,
+                  display: "none",
+                }}
               >
+                <ArrowLeft className="h-6 w-6" />
+              </button>
+              <style jsx>{`
+                @media (max-width: 622px) {
+                  .${styles.backBtn} {
+                    display: block !important;
+                  }
+                }
+              `}</style>
+              <div className="w-10 h-10 rounded-full overflow-hidden mr-3 relative">
                 {selectedUser.profilePicture ? (
                   <Image
                     src={selectedUser.profilePicture}
@@ -101,18 +107,14 @@ export default function MainChat({
                     className="object-cover"
                   />
                 ) : (
-                  <div
-                    className={`w-full h-full bg-gray-600 flex items-center justify-center`}
-                  >
+                  <div className="w-full h-full bg-gray-600 flex items-center justify-center">
                     {selectedUser.username.charAt(0).toUpperCase()}
                   </div>
                 )}
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <p className={`font-medium ${styles.username}`}>
-                    {selectedUser.username}
-                  </p>
+                  <p className="font-medium">{selectedUser.username}</p>
                   {selectedUser.checkMark && (
                     <Image
                       src="/icons/checkMark/checkMark.png"
@@ -124,9 +126,7 @@ export default function MainChat({
                     />
                   )}
                 </div>
-                <p className={`text-xs text-gray-400 ${styles.timeOnline}`}>
-                  Active 20 min ago
-                </p>
+                <p className="text-xs text-gray-400">Active 20 min ago</p>
               </div>
             </div>
             <Call
@@ -151,18 +151,52 @@ export default function MainChat({
         >
           {hasMore && (
             <div className="flex justify-center mb-2">
-              {loadingMore ? (
-                <span className="text-xs text-gray-400">Đang tải thêm...</span>
-              ) : (
-                <span className="text-xs text-blue-400">
-                  Kéo lên để xem thêm
+              {loadingMore && (
+                <span className="flex items-center justify-center">
+                  <svg
+                    className="animate-spin h-5 w-5 text-gray-400"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                      fill="none"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                    />
+                  </svg>
                 </span>
               )}
             </div>
           )}
           {loading && messages.length === 0 ? (
             <div className="flex justify-center items-center h-full">
-              <p className="text-gray-400">Đang tải tin nhắn...</p>
+              <svg
+                className="animate-spin h-6 w-6 text-gray-400"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                  fill="none"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                />
+              </svg>
             </div>
           ) : messages.length > 0 ? (
             messages.map((msg, index) => {
@@ -216,7 +250,14 @@ export default function MainChat({
                       className={`flex ${isCurrentUser ? "justify-end" : ""}`}
                     >
                       <p className="text-xs text-gray-500">
-                        {new Date(msg.createdAt).toLocaleTimeString()}
+                        {formatTime(
+                          typeof msg.createdAt === "number"
+                            ? new Date(msg.createdAt)
+                            : !isNaN(Number(msg.createdAt))
+                            ? new Date(Number(msg.createdAt))
+                            : msg.createdAt,
+                          "HH:mm"
+                        )}
                       </p>
                     </div>
                   </div>
@@ -262,7 +303,11 @@ export default function MainChat({
               onClick={handleSendMessage}
             >
               <div className="flex items-center justify-center h-8 w-8">
-                {message ? <Send className="h-5 w-5" /> : <span>cu</span>}
+                {message ? (
+                  <Send className="h-5 w-5" />
+                ) : (
+                  <ArrowLeft className="h-5 w-5" />
+                )}
               </div>
             </button>
           </div>
