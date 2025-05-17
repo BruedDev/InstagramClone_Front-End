@@ -1,6 +1,6 @@
 import styles from "./HeaderProfile.module.scss";
 import { User } from "@/types/user.type";
-import { Lock, ChevronDown, CircleDollarSign, Plus, Menu } from "lucide-react";
+import { Lock, ChevronDown, MessageCircle, Plus, Menu } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -25,7 +25,9 @@ export default function HeaderProfile({ user }: { user: User }) {
 
         <div className={styles.actions}>
           <button className={styles.iconButton}>
-            <CircleDollarSign size={24} />
+            <Link href="/messages">
+              <MessageCircle size={24} />
+            </Link>
           </button>
           <button className={styles.iconButton}>
             <Plus size={24} />

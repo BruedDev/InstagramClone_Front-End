@@ -3,6 +3,7 @@ import Image from "next/image";
 import { Heart, MessageCircle, Send, Bookmark } from "lucide-react";
 import PostModal from "@/components/Modal/PostModal";
 import { useState, useRef, useEffect } from "react";
+import Link from "next/link";
 
 interface HomeUiProps {
   posts: Post[];
@@ -108,20 +109,25 @@ export default function HomeUi({ posts }: HomeUiProps) {
               className="rounded-full object-cover"
             />
             <div className="flex items-center gap-2 font-semibold text-[#fafafa]">
-              <span
-                className="cursor-pointer hover:underline"
-                style={{ color: "#fff" }}
+              <Link
+                href={`/${post.author.username}`}
+                className={`flex items-center gap-2`}
               >
-                {post.author.username}
-              </span>
-              {post.author.checkMark && (
-                <Image
-                  src="/icons/checkMark/checkMark.png"
-                  alt="Verified"
-                  width={14}
-                  height={14}
-                />
-              )}
+                <span
+                  className="cursor-pointer hover:underline"
+                  style={{ color: "#fff" }}
+                >
+                  {post.author.username}
+                </span>
+                {post.author.checkMark && (
+                  <Image
+                    src="/icons/checkMark/checkMark.png"
+                    alt="Verified"
+                    width={14}
+                    height={14}
+                  />
+                )}
+              </Link>
             </div>
           </div>
 
