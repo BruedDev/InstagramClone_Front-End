@@ -43,26 +43,32 @@
     transform: translateX(-100%);
     opacity: 0;
     pointer-events: none;
-    display: block;
-    overflow-y: scroll;
+    display: flex; // 🔄 dùng flex để bố trí theo chiều dọc
+    flex-direction: column; // 🔽 sắp xếp theo trục dọc
+    overflow: hidden; // Ngăn scroll toàn container nếu không cần
 
     .chatHeader {
       position: sticky;
-      left: 0;
       top: 0;
       height: 60px;
-      z-index: 9999;
       background-color: #0f0f0f;
+      z-index: 9999;
+      flex-shrink: 0;
     }
+
     .messageInput {
       position: sticky;
-      left: 0;
-      bottom: -1px;
+      bottom: 0;
       height: 70px;
       background-color: #0f0f0f;
+      z-index: 9999;
+      flex-shrink: 0;
     }
+
     .messages {
-      min-height: 450px;
+      flex: 1; // 🔥 chiếm toàn bộ không gian còn lại
+      overflow-y: auto; // scroll khi nội dung dài
+      min-height: 0; // cần để flex: 1 hoạt động chính xác
     }
   }
 }
