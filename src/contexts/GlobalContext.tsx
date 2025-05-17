@@ -1,3 +1,5 @@
+"use client";
+
 import React, { ReactNode } from "react";
 import { UserProvider } from "@/contexts/UserContext";
 import { LogoutProvider } from "@/contexts/LogoutContext";
@@ -9,11 +11,11 @@ interface GlobalProviderProps {
 
 export const GlobalProvider: React.FC<GlobalProviderProps> = ({ children }) => {
   return (
-    <LogoutProvider>
-      <UserProvider>
+    <UserProvider>
+      <LogoutProvider>
         <PostProvider>{children}</PostProvider>
-      </UserProvider>
-    </LogoutProvider>
+      </LogoutProvider>
+    </UserProvider>
   );
 };
 

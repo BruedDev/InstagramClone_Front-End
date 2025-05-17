@@ -1,15 +1,23 @@
+// src/components/Messenger/index.tsx
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import { User, Message } from "@/types/user.type";
+import { useEffect, useState } from "react";
+import { Message } from "@/types/user.type";
 import styles from "./Messenger.module.scss";
-import { getAvailableUsers, getMessages } from "@/server/messenger";
 import { socketService } from "@/server/socket";
+import { useSearchParams } from "next/navigation";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import {
+  fetchAvailableUsers,
+  fetchMessages,
+  setSelectedUser,
+  setMessage,
+  addMessage,
+  setShowMainChat,
+} from "@/store/messengerSlice";
 
 import SiderBar from "./SiderBar";
 import MainChat from "./MainChat";
-
-const PAGE_SIZE = 6;
 
 interface MessengerComponentProps {
   ringtoneRef: React.RefObject<HTMLAudioElement | null>;
@@ -18,17 +26,20 @@ interface MessengerComponentProps {
 export default function MessengerComponent({
   ringtoneRef,
 }: MessengerComponentProps) {
-  const [message, setMessage] = useState("");
-  const [availableUsers, setAvailableUsers] = useState<User[]>([]);
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [showMainChat, setShowMainChat] = useState(false);
+  const dispatch = useAppDispatch();
+  const {
+    availableUsers,
+    selectedUser,
+    messages,
+    message,
+    loading,
+    loadingMore,
+    hasMore,
+    showMainChat,
+  } = useAppSelector((state) => state.messenger);
 
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [loading, setLoading] = useState(false);
+  const searchParams = useSearchParams();
   const [userId, setUserId] = useState("");
-  const [offset, setOffset] = useState(0);
-  const [hasMore, setHasMore] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
 
   useEffect(() => {
     if (userId) {
@@ -58,6 +69,7 @@ export default function MessengerComponent({
         read: false,
         message: msg.message,
       };
+
       if (
         selectedUser &&
         ((convertedMsg.senderId === selectedUser._id &&
@@ -65,7 +77,7 @@ export default function MessengerComponent({
           (convertedMsg.senderId === userId &&
             convertedMsg.receiverId === selectedUser._id))
       ) {
-        setMessages((prev) => [...prev, convertedMsg]);
+        dispatch(addMessage(convertedMsg));
       }
     };
 
@@ -73,7 +85,7 @@ export default function MessengerComponent({
     return () => {
       socketService.offReceiveMessage(handleReceiveMessage);
     };
-  }, [selectedUser, userId]);
+  }, [selectedUser, userId, dispatch]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -83,61 +95,27 @@ export default function MessengerComponent({
       }
     }
 
-    const fetchAvailableUsers = async () => {
-      try {
-        const response = await getAvailableUsers();
-        const auThor: User[] = Array.isArray(response)
-          ? response
-          : Array.isArray(response) && Array.isArray(response[0])
-          ? (response[0] as User[])
-          : [];
-        setAvailableUsers(auThor);
-      } catch {
-        setAvailableUsers([]);
-      }
-    };
-
-    fetchAvailableUsers();
-  }, []);
+    dispatch(fetchAvailableUsers())
+      .unwrap()
+      .then((users) => {
+        // Auto-select user from URL if exists
+        const selectedId = searchParams.get("id");
+        if (selectedId) {
+          const foundUser = users.find((user) => user._id === selectedId);
+          if (foundUser) {
+            dispatch(setSelectedUser(foundUser));
+          }
+        }
+      });
+  }, [dispatch, searchParams]);
 
   useEffect(() => {
-    setMessages([]);
-    setOffset(0);
-    setHasMore(true);
     if (selectedUser && userId) {
-      fetchMessages(0, true);
+      dispatch(
+        fetchMessages({ userId: selectedUser._id, offset: 0, replace: true })
+      );
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedUser, userId]);
-
-  const fetchMessages = useCallback(
-    async (currentOffset = 0, replace = false) => {
-      if (!selectedUser || !userId) return;
-      if (replace) setLoading(true);
-      else setLoadingMore(true);
-      try {
-        const newMessages = await getMessages(
-          selectedUser._id,
-          PAGE_SIZE,
-          currentOffset
-        );
-        if (replace) {
-          setMessages(newMessages);
-        } else {
-          setMessages((prev) => [...newMessages, ...prev]);
-        }
-        setOffset(currentOffset + newMessages.length);
-        setHasMore(newMessages.length === PAGE_SIZE);
-      } catch (error) {
-        console.error("Lỗi xảy ra:", error);
-        if (replace) setMessages([]);
-      } finally {
-        if (replace) setLoading(false);
-        else setLoadingMore(false);
-      }
-    },
-    [selectedUser, userId]
-  );
+  }, [selectedUser, userId, dispatch]);
 
   const handleSendMessage = async () => {
     if (!message.trim() || !selectedUser || !userId) return;
@@ -146,7 +124,7 @@ export default function MessengerComponent({
       receiverId: selectedUser._id,
       message,
     });
-    setMessage("");
+    dispatch(setMessage(""));
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -156,8 +134,14 @@ export default function MessengerComponent({
   };
 
   const handleLoadMore = () => {
-    if (!loadingMore && hasMore) {
-      fetchMessages(offset, false);
+    if (!loadingMore && hasMore && selectedUser) {
+      dispatch(
+        fetchMessages({
+          userId: selectedUser._id,
+          // offset: useAppSelector((state) => state.messenger.offset),
+          replace: false,
+        })
+      );
     }
   };
 
@@ -168,15 +152,15 @@ export default function MessengerComponent({
       <SiderBar
         availableUsers={availableUsers}
         selectedUser={selectedUser}
-        setSelectedUser={setSelectedUser}
+        setSelectedUser={(user) => dispatch(setSelectedUser(user))}
         userId={userId}
-        setShowMainChat={setShowMainChat}
+        setShowMainChat={(show) => dispatch(setShowMainChat(show))}
       />
       <MainChat
         selectedUser={selectedUser}
         messages={messages}
         message={message}
-        setMessage={setMessage}
+        setMessage={(msg) => dispatch(setMessage(msg))}
         handleSendMessage={handleSendMessage}
         handleKeyPress={handleKeyPress}
         loading={loading}
@@ -187,7 +171,7 @@ export default function MessengerComponent({
         ringtoneRef={ringtoneRef}
         availableUsers={availableUsers}
         showMainChat={showMainChat}
-        setShowMainChat={setShowMainChat}
+        setShowMainChat={(show) => dispatch(setShowMainChat(show))}
       />
     </div>
   );

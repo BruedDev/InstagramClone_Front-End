@@ -1,16 +1,19 @@
+"use client";
+
 import Image from "next/image";
 import styles from "./Messenger.module.scss";
 import { ChevronDown, Edit } from "lucide-react";
 import type { User } from "@/types/user.type";
 import { useEffect, useState } from "react";
 import { getUnreadCount } from "@/server/messenger";
+import { useRouter } from "next/navigation"; // ✅ Thêm dòng này
 
 type SiderBarProps = {
   availableUsers: User[];
   selectedUser: User | null;
   setSelectedUser: (user: User) => void;
   userId: string;
-  setShowMainChat: (show: boolean) => void; // Thêm prop này
+  setShowMainChat: (show: boolean) => void;
 };
 
 type UnreadInfo = {
@@ -28,6 +31,7 @@ export default function SiderBar({
   setShowMainChat,
 }: SiderBarProps) {
   const [unreadInfo, setUnreadInfo] = useState<UnreadInfo>({});
+  const router = useRouter(); // ✅ Khởi tạo router
 
   useEffect(() => {
     const fetchUnread = async () => {
@@ -89,7 +93,8 @@ export default function SiderBar({
                 }`}
                 onClick={() => {
                   setSelectedUser(user);
-                  setShowMainChat(true); // Khi click user, show MainChat trên mobile
+                  setShowMainChat(true);
+                  router.push(`/messages?id=${user._id}`); // ✅ Thêm dòng này
                 }}
               >
                 <div className="w-12 h-12 rounded-full overflow-hidden mr-3 relative">

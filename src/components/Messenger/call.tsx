@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+// components/Call/Call.tsx - Phiên bản đã cập nhật
 import { Phone, Video, Info } from "lucide-react";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import { setInCall } from "@/store/messengerSlice";
 import { socketService } from "@/server/socket";
-import Image from "next/image";
-import type { User } from "@/types/user.type";
+import { User } from "@/types/user.type";
 
 interface CallProps {
   userId: string;
@@ -11,196 +12,88 @@ interface CallProps {
   availableUsers: User[];
 }
 
-export default function Call({
-  userId,
-  calleeId,
-  ringtoneRef,
-  availableUsers,
-}: CallProps) {
-  const [inCall, setInCall] = useState(false);
-  const [incoming, setIncoming] = useState<null | {
-    callerId: string;
-    callType: string;
-  }>(null);
-  const peerConnection = useRef<RTCPeerConnection | null>(null);
-  const localStream = useRef<MediaStream | null>(null);
-  const remoteAudioRef = useRef<HTMLAudioElement>(null);
+export default function Call({ userId, calleeId }: CallProps) {
+  const dispatch = useAppDispatch();
+  const { inCall } = useAppSelector((state) => state.messenger);
 
-  useEffect(() => {
-    const socket = socketService.initSocket();
-    socketService.registerUser(userId);
+  // Mở CallModal dạng popup
+  const openCallPopup = (callType: "audio" | "video") => {
+    const screenWidth = window.screen.availWidth;
+    const screenHeight = window.screen.availHeight;
 
-    socket.on(
-      "incomingCall",
-      (data: { callerId: string; callType: "audio" | "video" }) => {
-        setIncoming(data);
-      }
+    const width = Math.floor(screenWidth * 0.8); // dùng 80% chiều rộng
+    const height = Math.floor(screenHeight * 0.9); // dùng 90% chiều cao
+    const left = (screenWidth - width) / 2;
+    const top = (screenHeight - height) / 2;
+
+    // Truyền tham số cần thiết qua URL để CallModal có thể biết đang gọi ai và loại cuộc gọi
+    const callWindow = window.open(
+      `/call-modal?userId=${userId}&calleeId=${calleeId}&callType=${callType}`,
+      "CallWindow",
+      `width=${width},height=${height},top=${top},left=${left},resizable=yes,scrollbars=no`
     );
 
-    socket.on("callAccepted", async ({ calleeId }) => {
-      setInCall(true);
-      await startCall("caller", calleeId);
-    });
-
-    socket.on("callRejected", () => {
-      alert("Người nhận đã từ chối cuộc gọi!");
-      setInCall(false);
-    });
-
-    socket.on("webrtc-offer", async ({ from, offer }) => {
-      if (!peerConnection.current) return;
-      await peerConnection.current.setRemoteDescription(
-        new RTCSessionDescription(offer)
-      );
-      const answer = await peerConnection.current.createAnswer();
-      await peerConnection.current.setLocalDescription(answer);
-      socket.emit("webrtc-answer", { to: from, from: userId, answer });
-    });
-
-    socket.on("webrtc-answer", async ({ answer }) => {
-      if (!peerConnection.current) return;
-      await peerConnection.current.setRemoteDescription(
-        new RTCSessionDescription(answer)
-      );
-    });
-
-    socket.on("webrtc-ice-candidate", async ({ candidate }) => {
-      if (!peerConnection.current || !candidate) return;
-      try {
-        await peerConnection.current.addIceCandidate(
-          new RTCIceCandidate(candidate)
-        );
-      } catch (err) {
-        console.error("Lỗi addIceCandidate:", err);
-      }
-    });
-
-    return () => {
-      socket.off("incomingCall");
-      socket.off("callAccepted");
-      socket.off("callRejected");
-      socket.off("webrtc-offer");
-      socket.off("webrtc-answer");
-      socket.off("webrtc-ice-candidate");
-    };
-    // eslint-disable-next-line
-  }, [userId]);
-
-  // Phát hoặc dừng nhạc chuông khi có cuộc gọi đến
-  useEffect(() => {
-    if (incoming && ringtoneRef.current) {
-      ringtoneRef.current.currentTime = 0;
-      ringtoneRef.current.play();
-    } else if (!incoming && ringtoneRef.current) {
-      ringtoneRef.current.pause();
-      ringtoneRef.current.currentTime = 0;
-    }
-  }, [incoming, ringtoneRef]);
-
-  // Tạo peer connection và stream
-  const startCall = async (
-    role: "caller" | "receiver",
-    remoteUserId: string
-  ) => {
-    peerConnection.current = new RTCPeerConnection({
-      iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
-    });
-
-    peerConnection.current.onicecandidate = (event) => {
-      if (event.candidate) {
-        socketService.getSocket().emit("webrtc-ice-candidate", {
-          to: remoteUserId,
-          from: userId,
-          candidate: event.candidate,
-        });
-      }
-    };
-
-    peerConnection.current.ontrack = (event) => {
-      if (remoteAudioRef.current) {
-        remoteAudioRef.current.srcObject = event.streams[0];
-      }
-    };
-
-    try {
-      localStream.current = await navigator.mediaDevices.getUserMedia({
-        audio: true,
-      });
-    } catch {
-      alert("Không thể truy cập micro!");
-      return;
-    }
-
-    localStream.current.getTracks().forEach((track) => {
-      peerConnection.current?.addTrack(track, localStream.current!);
-    });
-
-    if (role === "caller") {
-      const offer = await peerConnection.current.createOffer();
-      await peerConnection.current.setLocalDescription(offer);
-      socketService.getSocket().emit("webrtc-offer", {
-        to: remoteUserId,
-        from: userId,
-        offer,
-      });
-    }
+    return callWindow;
   };
 
-  // Gọi audio
+  // Gọi audio - mở popup và xử lý
   const handleAudioCall = async () => {
-    setInCall(true);
-    socketService.getSocket().emit("callUser", {
-      callerId: userId,
-      calleeId,
-      callType: "audio",
-    });
-    // Chờ callAccepted mới startCall
+    const callWindow = openCallPopup("audio");
+
+    if (callWindow) {
+      dispatch(setInCall(true));
+
+      callWindow.onload = () => {
+        console.log("Emit callUser event:", {
+          callerId: userId,
+          calleeId,
+          callType: "audio",
+        });
+        socketService.getSocket().emit("callUser", {
+          callerId: userId,
+          calleeId,
+          callType: "audio",
+        });
+      };
+
+      callWindow.onbeforeunload = () => {
+        dispatch(setInCall(false));
+      };
+    } else {
+      alert(
+        "Không thể mở cửa sổ cuộc gọi. Vui lòng kiểm tra cài đặt trình duyệt của bạn."
+      );
+    }
   };
 
-  // Gọi video (có thể mở rộng tương tự)
   const handleVideoCall = async () => {
-    alert("Demo này chỉ hỗ trợ audio call. Bạn có thể mở rộng cho video.");
-  };
+    const callWindow = openCallPopup("video");
 
-  // Xử lý đồng ý cuộc gọi
-  const handleAccept = () => {
-    if (ringtoneRef.current) {
-      ringtoneRef.current.pause();
-      ringtoneRef.current.currentTime = 0;
-    }
-    if (incoming) {
-      socketService.getSocket().emit("acceptCall", {
-        callerId: incoming.callerId,
-        calleeId: userId,
-      });
-      setIncoming(null);
-      setInCall(true);
-      startCall("receiver", incoming.callerId);
-    }
-  };
+    if (callWindow) {
+      dispatch(setInCall(true));
 
-  // Xử lý từ chối cuộc gọi
-  const handleReject = () => {
-    if (ringtoneRef.current) {
-      ringtoneRef.current.pause();
-      ringtoneRef.current.currentTime = 0;
-    }
-    if (incoming) {
-      socketService.getSocket().emit("rejectCall", {
-        callerId: incoming.callerId,
-        calleeId: userId,
-      });
-      setIncoming(null);
-      setInCall(false);
+      callWindow.onload = () => {
+        console.log("Emit callUser event:", {
+          callerId: userId,
+          calleeId,
+          callType: "video",
+        });
+        socketService.getSocket().emit("callUser", {
+          callerId: userId,
+          calleeId,
+          callType: "video",
+        });
+      };
+
+      callWindow.onbeforeunload = () => {
+        dispatch(setInCall(false));
+      };
+    } else {
+      alert(
+        "Không thể mở cửa sổ cuộc gọi. Vui lòng kiểm tra cài đặt trình duyệt của bạn."
+      );
     }
   };
-
-  // Lấy đúng thông tin người gọi đến từ availableUsers
-  const callerInfo = incoming
-    ? availableUsers.find((u) => u._id === incoming.callerId)
-    : null;
-  const callerUsername = callerInfo?.username ?? incoming?.callerId;
-  const callerProfilePicture = callerInfo?.profilePicture;
 
   return (
     <div className="flex items-center">
@@ -223,113 +116,6 @@ export default function Call({
       <button className="p-2 text-gray-400 hover:text-gray-200">
         <Info className="h-5 w-5" />
       </button>
-      {/* Audio element để nghe đối phương */}
-      <audio ref={remoteAudioRef} autoPlay />
-      {/* Audio element cho nhạc chuông */}
-      <audio ref={ringtoneRef} src="/RingTone.mp3" loop />
-      {/* Modal xác nhận cuộc gọi đến */}
-      {incoming && (
-        <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: "rgba(0,0,0,0.5)",
-            zIndex: 1000,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <div
-            style={{
-              background: "#fff",
-              borderRadius: 8,
-              padding: 24,
-              minWidth: 280,
-              textAlign: "center",
-            }}
-          >
-            <div style={{ marginBottom: 16 }}>
-              <b>Có người gọi đến!</b>
-              <div
-                style={{
-                  marginTop: 8,
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                }}
-              >
-                {callerProfilePicture ? (
-                  <Image
-                    src={callerProfilePicture}
-                    width={48}
-                    height={48}
-                    alt={callerUsername ?? ""}
-                    style={{
-                      width: 48,
-                      height: 48,
-                      borderRadius: "50%",
-                      marginBottom: 8,
-                    }}
-                  />
-                ) : (
-                  <div
-                    style={{
-                      width: 48,
-                      height: 48,
-                      borderRadius: "50%",
-                      background: "#eee",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      marginBottom: 8,
-                      fontWeight: "bold",
-                      fontSize: 24,
-                      color: "#888",
-                    }}
-                  >
-                    {callerUsername?.charAt(0).toUpperCase() ?? "?"}
-                  </div>
-                )}
-                <span style={{ color: "#0070f3", fontWeight: "bold" }}>
-                  {callerUsername}
-                </span>
-              </div>
-              <div>Loại: {incoming.callType}</div>
-            </div>
-            <button
-              style={{
-                marginRight: 12,
-                padding: "8px 16px",
-                background: "#0070f3",
-                color: "#fff",
-                border: "none",
-                borderRadius: 4,
-                cursor: "pointer",
-              }}
-              onClick={handleAccept}
-            >
-              Đồng ý
-            </button>
-            <button
-              style={{
-                padding: "8px 16px",
-                background: "#e00",
-                color: "#fff",
-                border: "none",
-                borderRadius: 4,
-                cursor: "pointer",
-              }}
-              onClick={handleReject}
-            >
-              Từ chối
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

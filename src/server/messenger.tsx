@@ -7,7 +7,7 @@ const BASE_URL = `${process.env.NEXT_PUBLIC_API_URL}/api`;
 export type AvailableUser = {
   _id: string;
   username: string;
-  profilePicture?: string; // Có thể có hoặc không có ảnh đại diện
+  profilePicture?: string;
 };
 
 // Hàm tiện ích để lấy token từ localStorage
@@ -150,4 +150,29 @@ export const deleteMessage = async (messageId: string): Promise<void> => {
   }
 
   return;
+};
+
+// Kiểm tra trạng thái online/offline của người dùng
+export const getUserStatus = async (
+  userId: string
+): Promise<{ userId: string; status: "online" | "offline" }> => {
+  const token = getAuthToken();
+  if (!token) throw new Error("Không có token xác thực");
+
+  const response = await fetch(`${BASE_URL}/messenger/status/${userId}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error("Không thể kiểm tra trạng thái người dùng");
+  }
+
+  const data = await response.json();
+  if (!data || !data.userId || !data.status) {
+    throw new Error("Ph n h i tr  l i khi kiểm tra trạng thái người dùng");
+  }
+
+  return data;
 };

@@ -1,5 +1,10 @@
 import Image from "next/image";
-import { Send, Smile, Image as ImageIcon, ArrowLeft } from "lucide-react";
+import {
+  SendHorizontal,
+  Smile,
+  Image as ImageIcon,
+  ArrowLeft,
+} from "lucide-react";
 import styles from "./Messenger.module.scss";
 import type { User, Message } from "@/types/user.type";
 import { useEffect, useRef, useState } from "react";
@@ -44,16 +49,26 @@ export default function MainChat({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [isUserScrollUp, setIsUserScrollUp] = useState(false);
+  const [shouldMaintainScrollPosition, setShouldMaintainScrollPosition] =
+    useState(false);
+  const [previousScrollHeight, setPreviousScrollHeight] = useState(0);
   const { formatTime } = useTime();
 
-  // Khi cuộn lên đầu thì tự động load thêm tin nhắn
+  // Xử lý cuộn và load thêm tin nhắn
   const handleScroll = () => {
     if (!messagesContainerRef.current) return;
     const { scrollTop, scrollHeight, clientHeight } =
       messagesContainerRef.current;
+
+    // Nếu cuộn lên đầu và còn tin nhắn để load
     if (scrollTop === 0 && hasMore && !loadingMore) {
+      // Lưu lại chiều cao hiện tại để sau này điều chỉnh vị trí cuộn
+      setPreviousScrollHeight(scrollHeight);
+      setShouldMaintainScrollPosition(true);
       onLoadMore();
     }
+
+    // Xác định xem người dùng có đang cuộn lên hay không
     if (scrollHeight - scrollTop - clientHeight > 50) {
       setIsUserScrollUp(true);
     } else {
@@ -61,6 +76,31 @@ export default function MainChat({
     }
   };
 
+  // Điều chỉnh vị trí cuộn sau khi tin nhắn mới được tải
+  useEffect(() => {
+    if (
+      shouldMaintainScrollPosition &&
+      messagesContainerRef.current &&
+      !loadingMore
+    ) {
+      const { scrollHeight } = messagesContainerRef.current;
+      const newPosition = scrollHeight - previousScrollHeight;
+
+      // Đặt vị trí cuộn để duy trì vị trí tương đối sau khi load thêm tin nhắn
+      messagesContainerRef.current.scrollTop =
+        newPosition > 0 ? newPosition : 0;
+
+      // Reset các trạng thái
+      setShouldMaintainScrollPosition(false);
+    }
+  }, [
+    loadingMore,
+    shouldMaintainScrollPosition,
+    previousScrollHeight,
+    messages,
+  ]);
+
+  // Cuộn xuống dưới cùng khi có tin nhắn mới
   useEffect(() => {
     if (!isUserScrollUp && messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
@@ -137,9 +177,7 @@ export default function MainChat({
             />
           </>
         ) : (
-          <div className="w-full text-center text-gray-500">
-            Chọn một người dùng để bắt đầu trò chuyện
-          </div>
+          <div className="w-full text-center text-gray-500 min-h-[28px]"></div>
         )}
       </div>
       {/* Messages */}
@@ -304,9 +342,9 @@ export default function MainChat({
             >
               <div className="flex items-center justify-center h-8 w-8">
                 {message ? (
-                  <Send className="h-5 w-5" />
+                  <SendHorizontal className="h-5 w-5 text-blue-500" />
                 ) : (
-                  <ArrowLeft className="h-5 w-5" />
+                  <SendHorizontal className="h-5 w-5" />
                 )}
               </div>
             </button>

@@ -1,12 +1,9 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "../globals.css";
-import ProtectedRoute from "@/components/ProtectedRoute";
 import SiderBar from "@/components/SiderBar";
 import Footer from "@/components/Footer";
 import styles from "./Layout.module.scss";
-import GlobalProvider from "@/contexts/GlobalContext";
-import LoadingBar from "@/components/Loading/LoadingBar";
-import IOSDetector from "@/components/IOSDetector";
+import ClientProviders from "@/components/ClientProviders";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -25,34 +22,24 @@ export const metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         style={{ margin: 0, padding: 0, height: "100vh", overflow: "hidden" }}
       >
-        <ProtectedRoute>
-          <GlobalProvider>
-            <LoadingBar />
-            {/* Component phát hiện iOS sẽ thêm class "ios" khi cần */}
-            <IOSDetector />
-            <div
-              style={{ display: "flex", height: "100vh", overflow: "hidden" }}
-            >
-              {/* Sidebar cố định bên trái */}
-              <SiderBar />
-
-              {/* Nội dung chính + footer, có thể cuộn */}
-              <div className={styles.container}>
-                <main style={{ flex: 1 }}>{children}</main>
-                <Footer type="home" />
-              </div>
+        <ClientProviders>
+          <div style={{ display: "flex", height: "100vh", overflow: "hidden" }}>
+            <SiderBar />
+            <div className={styles.container}>
+              <main style={{ flex: 1 }}>{children}</main>
+              <Footer type="home" />
             </div>
-          </GlobalProvider>
-        </ProtectedRoute>
+          </div>
+        </ClientProviders>
       </body>
     </html>
   );
