@@ -1,10 +1,13 @@
 .container {
-  padding: 30px 85px;
+  display: flex;
   position: fixed;
   top: 50%;
-  left: 52%;
+  left: 49.5%;
   width: 100%;
   transform: translate(-50%, -50%);
+  height: 100vh;
+  padding: 32px 85px;
+  margin-left: 40px;
 
   @media (max-width: 768px) {
     padding: 0;
@@ -12,13 +15,98 @@
     left: 50%;
     z-index: 997;
   }
+}
+
+.sidebar {
+  width: 300px;
+
+  overflow-y: auto;
+  @media (max-width: 622px) {
+    width: 100vw;
+    z-index: 1000;
+  }
+}
+
+.mainChat {
+  flex: 1;
+  background: #111;
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s;
 
   @media (max-width: 622px) {
-    .mainChat {
-      display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: #111;
+    z-index: 2000;
+    transform: translateX(-100%);
+    opacity: 0;
+    pointer-events: none;
+    display: block;
+    overflow-y: scroll;
+
+    .chatHeader {
+      position: sticky;
+      left: 0;
+      top: 0;
+      height: 60px;
+      z-index: 9999;
+      background-color: #0f0f0f;
     }
-    .sidebar {
-      width: 100%;
+    .messageInput {
+      position: sticky;
+      left: 0;
+      bottom: -1px;
+      height: 70px;
+      background-color: #0f0f0f;
     }
+    .messages {
+      min-height: 450px;
+    }
+  }
+}
+
+.showMainChat {
+  @media (max-width: 622px) {
+    transform: translateX(0);
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+.backBtnContainer {
+  display: none;
+
+  @media (max-width: 622px) {
+    display: block;
+  }
+}
+
+.backBtn {
+  @media (max-width: 622px) {
+    display: block !important;
+    background: none;
+    color: #fff;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+  }
+}
+
+@media (max-width: 480px) {
+  .avatar {
+    width: 30px;
+    height: 30px;
+  }
+  .username {
+    font-size: 14px !important;
+  }
+  .checkMark {
+    width: 12px !important;
+    height: 12px !important;
+  }
+  .timeOnline {
+    font-size: 11px;
   }
 }

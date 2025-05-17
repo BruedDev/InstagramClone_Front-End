@@ -21,6 +21,7 @@ export default function MessengerComponent({
   const [message, setMessage] = useState("");
   const [availableUsers, setAvailableUsers] = useState<User[]>([]);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [showMainChat, setShowMainChat] = useState(false);
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
@@ -29,7 +30,6 @@ export default function MessengerComponent({
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
 
-  // Khởi tạo socket và đăng ký user khi có userId
   useEffect(() => {
     if (userId) {
       socketService.initSocket();
@@ -40,26 +40,23 @@ export default function MessengerComponent({
     };
   }, [userId]);
 
-  // Lắng nghe tin nhắn realtime
   useEffect(() => {
-    // Adapt the handler to match the expected socketService type
     const handleReceiveMessage = (msg: {
       senderId: string;
       message: string;
       timestamp: string;
       receiverId?: string;
     }) => {
-      // Convert to Message type as needed
       const convertedMsg: Message = {
-        id: msg.timestamp, // or generate a unique id if needed
-        _id: msg.timestamp, // or another unique identifier
+        id: msg.timestamp,
+        _id: msg.timestamp,
         senderId: msg.senderId,
         receiverId: msg.receiverId ?? "",
         content: msg.message,
         createdAt: msg.timestamp,
         updatedAt: msg.timestamp,
-        read: false, // or set according to your logic
-        message: msg.message, // assuming 'message' is the content
+        read: false,
+        message: msg.message,
       };
       if (
         selectedUser &&
@@ -78,7 +75,6 @@ export default function MessengerComponent({
     };
   }, [selectedUser, userId]);
 
-  // Lấy userId từ localStorage và danh sách user khả dụng
   useEffect(() => {
     if (typeof window !== "undefined") {
       const storedId = localStorage.getItem("id");
@@ -95,7 +91,6 @@ export default function MessengerComponent({
           : Array.isArray(response) && Array.isArray(response[0])
           ? (response[0] as User[])
           : [];
-
         setAvailableUsers(auThor);
       } catch {
         setAvailableUsers([]);
@@ -105,7 +100,6 @@ export default function MessengerComponent({
     fetchAvailableUsers();
   }, []);
 
-  // Khi đổi user, reset messages, offset, hasMore
   useEffect(() => {
     setMessages([]);
     setOffset(0);
@@ -116,7 +110,6 @@ export default function MessengerComponent({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedUser, userId]);
 
-  // Hàm fetch tin nhắn (phân trang)
   const fetchMessages = useCallback(
     async (currentOffset = 0, replace = false) => {
       if (!selectedUser || !userId) return;
@@ -146,7 +139,6 @@ export default function MessengerComponent({
     [selectedUser, userId]
   );
 
-  // Gửi tin nhắn
   const handleSendMessage = async () => {
     if (!message.trim() || !selectedUser || !userId) return;
     socketService.sendMessage({
@@ -163,7 +155,6 @@ export default function MessengerComponent({
     }
   };
 
-  // Xử lý load thêm khi cuộn lên đầu
   const handleLoadMore = () => {
     if (!loadingMore && hasMore) {
       fetchMessages(offset, false);
@@ -174,15 +165,13 @@ export default function MessengerComponent({
     <div
       className={`flex h-screen bg-[#0a0a0a] text-gray-200 ${styles.container}`}
     >
-      {/* Sidebar */}
       <SiderBar
         availableUsers={availableUsers}
         selectedUser={selectedUser}
         setSelectedUser={setSelectedUser}
         userId={userId}
+        setShowMainChat={setShowMainChat}
       />
-
-      {/* Main Chat Area */}
       <MainChat
         selectedUser={selectedUser}
         messages={messages}
@@ -197,6 +186,8 @@ export default function MessengerComponent({
         loadingMore={loadingMore}
         ringtoneRef={ringtoneRef}
         availableUsers={availableUsers}
+        showMainChat={showMainChat}
+        setShowMainChat={setShowMainChat}
       />
     </div>
   );

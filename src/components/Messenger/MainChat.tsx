@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { Send, Smile, Image as ImageIcon, ArrowUpRight } from "lucide-react";
+import { Send, Smile, Image as ImageIcon, ArrowLeft } from "lucide-react";
 import styles from "./Messenger.module.scss";
 import type { User, Message } from "@/types/user.type";
 import { useEffect, useRef, useState } from "react";
@@ -19,6 +19,8 @@ export type MainChatProps = {
   loadingMore: boolean;
   ringtoneRef: React.RefObject<HTMLAudioElement | null>;
   availableUsers: User[];
+  showMainChat: boolean;
+  setShowMainChat: (show: boolean) => void;
 };
 
 export default function MainChat({
@@ -35,25 +37,20 @@ export default function MainChat({
   loadingMore,
   ringtoneRef,
   availableUsers,
+  showMainChat,
+  setShowMainChat,
 }: MainChatProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [isUserScrollUp, setIsUserScrollUp] = useState(false);
 
-  // userId chính là người đang đăng nhập
-
-  // selectedUser chính là người đang nói chuyện trả về _id, username,profilePicture
-
-  // Theo dõi scroll, nếu user cuộn lên thì không auto scroll xuống nữa
   const handleScroll = () => {
     if (!messagesContainerRef.current) return;
     const { scrollTop, scrollHeight, clientHeight } =
       messagesContainerRef.current;
-    // Nếu user cuộn lên đầu thì load thêm tin nhắn
     if (scrollTop === 0 && hasMore && !loadingMore) {
       onLoadMore();
     }
-    // Nếu user không ở cuối, thì set isUserScrollUp = true
     if (scrollHeight - scrollTop - clientHeight > 50) {
       setIsUserScrollUp(true);
     } else {
@@ -61,7 +58,6 @@ export default function MainChat({
     }
   };
 
-  // Auto scroll xuống cuối khi có tin nhắn mới, trừ khi user đang cuộn lên
   useEffect(() => {
     if (!isUserScrollUp && messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
@@ -69,13 +65,34 @@ export default function MainChat({
   }, [messages, selectedUser, loading, isUserScrollUp]);
 
   return (
-    <div className={`flex-1 flex flex-col bg-[#111] ${styles.mainChat}`}>
+    <div
+      className={`flex-1 flex flex-col bg-[#111] ${styles.mainChat} ${
+        showMainChat ? styles.showMainChat : ""
+      }`}
+    >
       {/* Chat Header */}
-      <div className="flex justify-between items-center p-4 border-b border-[#222] bg-[#0f0f0f]">
+      <div
+        className={`flex justify-between items-center p-4 border-b border-[#222] position-relative bg-[#0f0f0f] ${styles.chatHeader}`}
+      >
         {selectedUser ? (
           <>
-            <div className="flex items-center">
-              <div className="w-10 h-10 rounded-full overflow-hidden mr-3 relative">
+            <div className={`flex items-center`}>
+              {/* Nút back chỉ hiện trên mobile */}
+              <div className={`${styles.backBtnContainer}`}>
+                <button
+                  className={styles.backBtn}
+                  onClick={() => setShowMainChat(false)}
+                  style={{
+                    marginRight: 8,
+                    display: "none",
+                  }}
+                >
+                  <ArrowLeft className="h-6 w-6" />
+                </button>
+              </div>
+              <div
+                className={`w-10 h-10 rounded-full overflow-hidden mr-3 relative ${styles.avatar}`}
+              >
                 {selectedUser.profilePicture ? (
                   <Image
                     src={selectedUser.profilePicture}
@@ -84,14 +101,18 @@ export default function MainChat({
                     className="object-cover"
                   />
                 ) : (
-                  <div className="w-full h-full bg-gray-600 flex items-center justify-center">
+                  <div
+                    className={`w-full h-full bg-gray-600 flex items-center justify-center`}
+                  >
                     {selectedUser.username.charAt(0).toUpperCase()}
                   </div>
                 )}
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <p className="font-medium">{selectedUser.username}</p>
+                  <p className={`font-medium ${styles.username}`}>
+                    {selectedUser.username}
+                  </p>
                   {selectedUser.checkMark && (
                     <Image
                       src="/icons/checkMark/checkMark.png"
@@ -103,11 +124,11 @@ export default function MainChat({
                     />
                   )}
                 </div>
-                <p className="text-xs text-gray-400">Active 20 min ago</p>
+                <p className={`text-xs text-gray-400 ${styles.timeOnline}`}>
+                  Active 20 min ago
+                </p>
               </div>
             </div>
-
-            {/* phần action call */}
             <Call
               userId={userId}
               calleeId={selectedUser._id}
@@ -121,11 +142,10 @@ export default function MainChat({
           </div>
         )}
       </div>
-
       {/* Messages */}
       {selectedUser ? (
         <div
-          className="flex-1 overflow-y-auto p-4 bg-[#111]"
+          className={`flex-1 overflow-y-auto p-4 bg-[#111] ${styles.messages}`}
           ref={messagesContainerRef}
           onScroll={handleScroll}
         >
@@ -168,7 +188,6 @@ export default function MainChat({
                       )}
                     </div>
                   )}
-
                   <div className="max-w-md">
                     <div
                       className={`flex items-start mb-1 ${
@@ -180,7 +199,6 @@ export default function MainChat({
                           <Smile className="h-4 w-4" />
                         </button>
                       )}
-
                       <div
                         className={`${
                           isCurrentUser ? "bg-blue-600" : "bg-[#222]"
@@ -188,14 +206,12 @@ export default function MainChat({
                       >
                         <p>{msg.message}</p>
                       </div>
-
                       {!isCurrentUser && (
                         <button className="ml-2 text-gray-500 hover:text-gray-300">
                           <Smile className="h-4 w-4" />
                         </button>
                       )}
                     </div>
-
                     <div
                       className={`flex ${isCurrentUser ? "justify-end" : ""}`}
                     >
@@ -214,7 +230,6 @@ export default function MainChat({
               </p>
             </div>
           )}
-          {/* Auto scroll xuống cuối */}
           <div ref={messagesEndRef} />
         </div>
       ) : (
@@ -222,10 +237,11 @@ export default function MainChat({
           Chọn một cuộc trò chuyện hoặc bắt đầu một cuộc trò chuyện mới
         </div>
       )}
-
       {/* Message Input */}
       {selectedUser && (
-        <div className="border-t border-[#222] p-4 bg-[#111]">
+        <div
+          className={`border-t border-[#222] p-4 bg-[#111] ${styles.messageInput}`}
+        >
           <div className="flex items-center">
             <Smile className="h-6 w-6 mr-3 text-gray-400 cursor-pointer hover:text-gray-200" />
             <div className="flex-1 bg-[#1a1a1a] rounded-full border border-[#222] flex items-center">
@@ -246,11 +262,7 @@ export default function MainChat({
               onClick={handleSendMessage}
             >
               <div className="flex items-center justify-center h-8 w-8">
-                {message ? (
-                  <Send className="h-5 w-5" />
-                ) : (
-                  <ArrowUpRight className="h-5 w-5" />
-                )}
+                {message ? <Send className="h-5 w-5" /> : <span>cu</span>}
               </div>
             </button>
           </div>

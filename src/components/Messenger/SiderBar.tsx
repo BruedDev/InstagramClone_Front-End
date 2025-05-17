@@ -10,6 +10,7 @@ type SiderBarProps = {
   selectedUser: User | null;
   setSelectedUser: (user: User) => void;
   userId: string;
+  setShowMainChat: (show: boolean) => void; // Thêm prop này
 };
 
 type UnreadInfo = {
@@ -24,6 +25,7 @@ export default function SiderBar({
   selectedUser,
   setSelectedUser,
   userId,
+  setShowMainChat,
 }: SiderBarProps) {
   const [unreadInfo, setUnreadInfo] = useState<UnreadInfo>({});
 
@@ -32,7 +34,6 @@ export default function SiderBar({
       const info: UnreadInfo = {};
       for (const user of availableUsers) {
         try {
-          // user._id là senderId (đối phương), userId là receiverId (bạn)
           const res = await getUnreadCount(user._id, userId);
           info[user._id] = res;
         } catch {
@@ -86,7 +87,10 @@ export default function SiderBar({
                     ? "bg-[#222]"
                     : ""
                 }`}
-                onClick={() => setSelectedUser(user)}
+                onClick={() => {
+                  setSelectedUser(user);
+                  setShowMainChat(true); // Khi click user, show MainChat trên mobile
+                }}
               >
                 <div className="w-12 h-12 rounded-full overflow-hidden mr-3 relative">
                   {user.profilePicture ? (
@@ -116,7 +120,6 @@ export default function SiderBar({
                       />
                     )}
                   </div>
-                  {/* Hiển thị message chưa đọc nếu có */}
                   {unread && unread.unreadCount > 0 && (
                     <div className="flex items-center gap-2 mt-0.5">
                       <span
