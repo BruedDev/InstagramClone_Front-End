@@ -7,7 +7,7 @@ import {
   setInCall,
 } from "@/store/messengerSlice";
 import Image from "next/image";
-// import { User } from "@/types/user.type";
+import { Phone, Video, PhoneOff, UserIcon, X } from "lucide-react";
 
 interface CallProviderProps {
   userId: string;
@@ -22,8 +22,6 @@ export default function CallProvider({ userId }: CallProviderProps) {
     callerId: string;
     callType: "audio" | "video";
   } | null>(null);
-
-  console.log("availableUsers", availableUsers);
 
   // Lấy thông tin người gọi
   const callerInfo = incomingCallData
@@ -76,12 +74,11 @@ export default function CallProvider({ userId }: CallProviderProps) {
     const screenWidth = window.screen.availWidth;
     const screenHeight = window.screen.availHeight;
 
-    const width = Math.floor(screenWidth * 0.8); // dùng 80% chiều rộng
-    const height = Math.floor(screenHeight * 0.9); // dùng 90% chiều cao
+    const width = Math.floor(screenWidth * 0.8);
+    const height = Math.floor(screenHeight * 0.9);
     const left = (screenWidth - width) / 2;
     const top = (screenHeight - height) / 2;
 
-    // Truyền tham số cần thiết qua URL để CallModal có thể biết đang gọi ai và loại cuộc gọi
     const callWindow = window.open(
       `/call-modal?userId=${userId}&calleeId=${remoteUserId}&callType=${callType}`,
       "CallWindow",
@@ -98,13 +95,11 @@ export default function CallProvider({ userId }: CallProviderProps) {
     }
 
     if (incomingCallData) {
-      // Thông báo chấp nhận cuộc gọi
       socketService.getSocket().emit("acceptCall", {
         callerId: incomingCallData.callerId,
         calleeId: userId,
       });
 
-      // Mở cửa sổ cuộc gọi
       const callWindow = openCallPopup(
         incomingCallData.callType,
         incomingCallData.callerId
@@ -121,10 +116,8 @@ export default function CallProvider({ userId }: CallProviderProps) {
         );
       }
 
-      // Đóng modal thông báo cuộc gọi
       setShowIncomingCall(false);
       setIncomingCallData(null);
-      // Xóa incoming call sau khi xử lý
       dispatch(setIncoming(null));
     }
   };
@@ -136,12 +129,13 @@ export default function CallProvider({ userId }: CallProviderProps) {
     }
 
     if (incomingCallData) {
+      // Gửi thông báo từ chối cuộc gọi với lý do
       socketService.getSocket().emit("rejectCall", {
         callerId: incomingCallData.callerId,
         calleeId: userId,
+        reason: "Người dùng đã từ chối cuộc gọi",
       });
 
-      // Đóng modal thông báo cuộc gọi
       setShowIncomingCall(false);
       setIncomingCallData(null);
       dispatch(setIncoming(null));
@@ -152,111 +146,109 @@ export default function CallProvider({ userId }: CallProviderProps) {
     <>
       <audio ref={ringtoneRef} src="/RingTone.mp3" loop />
 
-      {/* Hiển thị thông báo cuộc gọi đến */}
+      {/* Modal cuộc gọi đến */}
       {showIncomingCall && incomingCallData && (
         <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: "rgba(0,0,0,0.5)",
-            zIndex: 1200,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
+          className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center transition-opacity duration-300"
+          style={{ height: "100dvh" }}
         >
           <div
-            style={{
-              background: "#fff",
-              borderRadius: 8,
-              padding: 24,
-              minWidth: 280,
-              textAlign: "center",
-            }}
+            className="w-[320px] bg-[#121212] rounded-2xl overflow-hidden transition-all duration-300 transform translate-y-0 opacity-100"
+            style={{ boxShadow: "0 0 35px rgba(138, 43, 226, 0.25)" }}
           >
-            <div style={{ marginBottom: 16 }}>
-              <b>Có người gọi đến!</b>
-              <div
-                style={{
-                  marginTop: 8,
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                }}
-              >
-                {callerProfilePicture ? (
-                  <Image
-                    src={callerProfilePicture}
-                    width={48}
-                    height={48}
-                    alt={callerUsername ?? ""}
-                    style={{
-                      width: 48,
-                      height: 48,
-                      borderRadius: "50%",
-                      marginBottom: 8,
-                    }}
-                  />
-                ) : (
-                  <div
-                    style={{
-                      width: 48,
-                      height: 48,
-                      borderRadius: "50%",
-                      background: "#eee",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      marginBottom: 8,
-                      fontWeight: "bold",
-                      fontSize: 24,
-                      color: "#888",
-                    }}
-                  >
-                    {callerUsername?.charAt(0).toUpperCase() ?? "?"}
-                  </div>
-                )}
-                <span style={{ color: "#0070f3", fontWeight: "bold" }}>
-                  {callerUsername}
-                </span>
+            {/* Header */}
+            <div className="bg-gradient-to-r from-[#1f1f1f] to-[#252525] px-6 py-4 flex items-center justify-between border-b border-[#333333]">
+              <div className="flex items-center gap-2">
+                <span className="inline-block h-2.5 w-2.5 rounded-full bg-purple-500 animate-pulse"></span>
+                <span className="text-white font-medium">Cuộc gọi đến</span>
               </div>
-              <div>
-                Loại:{" "}
-                {incomingCallData.callType === "audio"
-                  ? "Cuộc gọi thoại"
-                  : "Cuộc gọi video"}
+              <button
+                onClick={handleReject}
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Nội dung */}
+            <div className="px-6 pt-8 pb-6">
+              <div className="flex flex-col items-center justify-center mb-8">
+                <div className="relative mb-5">
+                  {/* Hiệu ứng ping có sẵn trong Tailwind */}
+                  <div className="absolute -inset-1 rounded-full opacity-30 bg-purple-500/20 animate-ping"></div>
+
+                  {callerProfilePicture ? (
+                    <div className="relative w-28 h-28 mb-1 rounded-full ring-2 ring-purple-500 p-1 overflow-hidden z-10">
+                      <div className="absolute inset-0 bg-gradient-to-br from-purple-500/40 to-indigo-600/40 rounded-full z-10"></div>
+                      <Image
+                        src={callerProfilePicture}
+                        alt={callerUsername ?? ""}
+                        fill
+                        className="rounded-full object-cover z-0"
+                      />
+                    </div>
+                  ) : (
+                    <div className="w-28 h-28 rounded-full bg-[#191919] ring-2 ring-purple-500 flex items-center justify-center mb-1 relative overflow-hidden z-10">
+                      <div className="absolute inset-0 bg-gradient-to-br from-purple-500/20 to-indigo-600/20"></div>
+                      <UserIcon className="w-14 h-14 text-gray-300 z-10" />
+                    </div>
+                  )}
+                </div>
+
+                <h3 className="text-xl font-bold text-white mb-1 animate-pulse">
+                  {callerUsername}
+                </h3>
+
+                <div className="flex items-center px-3 py-1.5 bg-[#1a1a1a] rounded-full text-gray-200 text-sm border border-[#333333]">
+                  {incomingCallData.callType === "audio" ? (
+                    <Phone size={14} className="mr-1.5 text-purple-400" />
+                  ) : (
+                    <Video size={14} className="mr-1.5 text-purple-400" />
+                  )}
+                  <span>
+                    {incomingCallData.callType === "audio"
+                      ? "Cuộc gọi thoại"
+                      : "Cuộc gọi video"}
+                  </span>
+                </div>
+              </div>
+
+              {/* Call action buttons */}
+              <div className="flex justify-center space-x-8">
+                <button
+                  onClick={handleReject}
+                  className="flex flex-col items-center gap-1 group"
+                >
+                  <div className="w-16 h-16 flex items-center justify-center rounded-full bg-[#2a2a2a] hover:bg-gradient-to-r hover:from-[#4a1919] hover:to-[#6b2626] shadow-lg shadow-red-900/20 transition-all transform hover:scale-105 active:scale-95 border border-[#ff4d4d]/30">
+                    <PhoneOff
+                      size={24}
+                      className="text-[#ff4d4d] group-hover:text-white"
+                    />
+                  </div>
+                  <span className="text-gray-400 text-sm mt-1">Từ chối</span>
+                </button>
+
+                <button
+                  onClick={handleAccept}
+                  className="flex flex-col items-center gap-1 group"
+                >
+                  <div className="w-16 h-16 flex items-center justify-center rounded-full bg-[#2a2a2a] hover:bg-gradient-to-r hover:from-[#2a1f4a] hover:to-[#372e6b] shadow-lg shadow-purple-900/20 transition-all transform hover:scale-105 active:scale-95 border border-purple-500/30">
+                    {incomingCallData.callType === "audio" ? (
+                      <Phone
+                        size={24}
+                        className="text-purple-400 group-hover:text-white animate-bounce"
+                      />
+                    ) : (
+                      <Video
+                        size={24}
+                        className="text-purple-400 group-hover:text-white animate-bounce"
+                      />
+                    )}
+                  </div>
+                  <span className="text-gray-400 text-sm mt-1">Trả lời</span>
+                </button>
               </div>
             </div>
-            <button
-              style={{
-                marginRight: 12,
-                padding: "8px 16px",
-                background: "#0070f3",
-                color: "#fff",
-                border: "none",
-                borderRadius: 4,
-                cursor: "pointer",
-              }}
-              onClick={handleAccept}
-            >
-              Đồng ý
-            </button>
-            <button
-              style={{
-                padding: "8px 16px",
-                background: "#e00",
-                color: "#fff",
-                border: "none",
-                borderRadius: 4,
-                cursor: "pointer",
-              }}
-              onClick={handleReject}
-            >
-              Từ chối
-            </button>
           </div>
         </div>
       )}

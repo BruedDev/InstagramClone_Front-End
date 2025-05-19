@@ -176,3 +176,26 @@ export const getUserStatus = async (
 
   return data;
 };
+
+export const createPeerConnection = async () => {
+  try {
+    const res = await fetch(`${BASE_URL}/ice-token`);
+    if (!res.ok) {
+      throw new Error("Không thể lấy ice-token");
+    }
+
+    const data = await res.json();
+
+    const peer = new RTCPeerConnection({
+      iceServers: data.iceServers,
+    });
+
+    return {
+      peer,
+      iceData: data, // Trả về cả kết quả từ API
+    };
+  } catch (error) {
+    console.error("Lỗi lấy ICE servers:", error);
+    throw error; // Ném lỗi để người gọi hàm có thể xử lý
+  }
+};

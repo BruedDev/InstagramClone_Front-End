@@ -27,3 +27,22 @@ export interface MessengerState {
     status: "missed" | "answered" | "outgoing";
   }[];
 }
+
+
+export type PeerInstanceConfig = {
+  peer: RTCPeerConnection;
+  iceData?: Record<string, unknown>;
+};
+
+export type IceServersObjectConfig = {
+  iceServers: RTCIceServer[];
+  iceData?: Record<string, unknown>;
+};
+
+export type IceServersArrayConfig = RTCIceServer[];
+
+export type CreatePeerConnectionReturn =
+  | PeerInstanceConfig
+  | IceServersObjectConfig
+  | IceServersArrayConfig
+  | null;
