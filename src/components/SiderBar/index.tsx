@@ -18,30 +18,34 @@ export default function SiderBar() {
 
   // Handle window resize
   useEffect(() => {
-    setWindowWidth(window.innerWidth);
-
-    const handleResize = () => {
+    if (typeof window !== "undefined") {
       setWindowWidth(window.innerWidth);
-    };
 
-    window.addEventListener("resize", handleResize);
-    return () => {
-      window.removeEventListener("resize", handleResize);
-    };
+      const handleResize = () => {
+        setWindowWidth(window.innerWidth);
+      };
+
+      window.addEventListener("resize", handleResize);
+      return () => {
+        window.removeEventListener("resize", handleResize);
+      };
+    }
   }, []);
 
   // Handle sidebar collapse based on pathname and window width
   useEffect(() => {
-    const shouldBeCollapsed =
-      (pathname === "/setting" || pathname === "/messages") &&
-      windowWidth >= 1264;
+    if (typeof window !== "undefined") {
+      const shouldBeCollapsed =
+        (pathname === "/setting" || pathname === "/messages") &&
+        windowWidth >= 1264;
 
-    setCollapsed(shouldBeCollapsed);
+      setCollapsed(shouldBeCollapsed);
 
-    sessionStorage.setItem(
-      "activeSider",
-      shouldBeCollapsed ? "collapsed" : "expanded"
-    );
+      sessionStorage.setItem(
+        "activeSider",
+        shouldBeCollapsed ? "collapsed" : "expanded"
+      );
+    }
   }, [pathname, windowWidth]);
 
   const actionStates = {
@@ -57,6 +61,12 @@ export default function SiderBar() {
 
   const rawNavItems = useNavItems(actionStates);
   const navItems = Array.isArray(rawNavItems) ? rawNavItems : [];
+
+  // >>> THAY ĐỔI CHÍNH: Ẩn SiderBar nếu URL chứa "call-modal"
+  if (pathname && pathname.includes("call-modal")) {
+    return null; // Hoặc <></>
+  }
+  // <<< KẾT THÚC THAY ĐỔI CHÍNH
 
   return (
     <aside className={`${styles.sidebar} ${collapsed ? styles.collapsed : ""}`}>
@@ -132,12 +142,13 @@ export default function SiderBar() {
           })}
 
         {/* Phần dưới: chỉ hiển thị "Xem Thêm" và "Tạo Bài Viết" */}
+        {/* >>> LOGIC MODAL ĐƯỢC HOÀN LẠI NHƯ GỐC CỦA BẠN */}
         {navItems
           .filter(
             (item) => item.label === "Xem Thêm" || item.label === "Tạo Bài Viết"
           )
           .map((item, index) => {
-            const icon = item.icon;
+            const icon = item.icon; // Trong code gốc, active state không được dùng cho icon ở mục này
 
             return (
               <div
@@ -148,10 +159,10 @@ export default function SiderBar() {
                 <button
                   onClick={() => {
                     if (item.label === "Tạo Bài Viết") {
-                      setIsUploadPostOpen(true); // Mở UploadPost khi click "Tạo Bài Viết"
+                      setIsUploadPostOpen(true);
                     }
                     if (item.label === "Xem Thêm") {
-                      setIsMoreMenuOpen(true); // Mở MoreMenu khi click "Xem Thêm"
+                      setIsMoreMenuOpen(true);
                     }
                   }}
                   className={`${styles.navItem} ${
@@ -163,6 +174,7 @@ export default function SiderBar() {
                   {!collapsed && <span>{item.label}</span>}
                 </button>
 
+                {/* Đây là cách bạn hiển thị modal ban đầu */}
                 {isMoreMenuOpen && (
                   <MoreMenu onClose={() => setIsMoreMenuOpen(false)} />
                 )}
@@ -172,6 +184,7 @@ export default function SiderBar() {
               </div>
             );
           })}
+        {/* <<< KẾT THÚC PHẦN LOGIC MODAL ĐƯỢC HOÀN LẠI */}
       </nav>
     </aside>
   );
