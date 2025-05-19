@@ -1,4 +1,4 @@
-// server/user.ts
+// server/user.tsx
 import { GetUserResponse } from "@/types/user.type";
 import {
   UploadAvatarResponse,
