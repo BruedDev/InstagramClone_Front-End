@@ -10,7 +10,7 @@
 
   /* Mặc định cho các thiết bị (bao gồm Android) */
   @media (max-width: 768px) {
-    padding-bottom: 20%;
+    height: 100dvh;
 
     &::-webkit-scrollbar {
       display: none;
@@ -18,18 +18,18 @@
   }
 }
 
-/* CSS cho iOS sử dụng @supports */
-@supports (-webkit-touch-callout: none) {
-  .container {
-    @media (max-width: 768px) {
-      padding-bottom: 30%; /* Đặc biệt cho iOS */
-    }
-  }
-}
+// /* CSS cho iOS sử dụng @supports */
+// @supports (-webkit-touch-callout: none) {
+//   .container {
+//     @media (max-width: 768px) {
+//       padding-bottom: 30%; /* Đặc biệt cho iOS */
+//     }
+//   }
+// }
 
-/* Phương pháp thay thế sử dụng HTML class */
-:global(html.ios) .container {
-  @media (max-width: 768px) {
-    padding-bottom: 50%;
-  }
-}
+// /* Phương pháp thay thế sử dụng HTML class */
+// :global(html.ios) .container {
+//   @media (max-width: 768px) {
+//     padding-bottom: 50%;
+//   }
+// }
