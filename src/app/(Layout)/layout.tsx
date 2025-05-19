@@ -29,10 +29,12 @@ export default function RootLayout({
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-        style={{ margin: 0, padding: 0, height: "100vh", overflow: "hidden" }}
+        style={{ margin: 0, padding: 0, height: "100dvh", overflow: "hidden" }}
       >
         <ClientProviders>
-          <div style={{ display: "flex", height: "100vh", overflow: "hidden" }}>
+          <div
+            style={{ display: "flex", height: "100dvh", overflow: "hidden" }}
+          >
             <SiderBar />
             <div className={styles.container}>
               <main style={{ flex: 1 }}>{children}</main>

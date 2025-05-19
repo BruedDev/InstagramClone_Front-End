@@ -10,7 +10,7 @@
 
   /* Mặc định cho các thiết bị (bao gồm Android) */
   @media (max-width: 768px) {
-    height: 100dvh;
+    // padding-bottom: 20%;
 
     &::-webkit-scrollbar {
       display: none;
