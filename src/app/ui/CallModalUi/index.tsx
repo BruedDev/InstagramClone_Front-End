@@ -26,9 +26,9 @@ type CallModalUiProps = {
   callStatus: string;
   videoOff: boolean; // True nếu camera của bạn đang tắt
   remoteAudioRef: MutableRefObject<HTMLAudioElement | null>;
-  localVideoRef: MutableRefObject<HTMLVideoElement | null>;
-  remoteVideoRef: MutableRefObject<HTMLVideoElement | null>;
-  callType: "audio" | "video" | null;
+  localVideoRef: MutableRefObject<HTMLVideoElement | null>; // Ref cho video của bạn
+  remoteVideoRef: MutableRefObject<HTMLVideoElement | null>; // Ref cho video của đối phương
+  callType: "audio" | "video" | null; // Loại cuộc gọi để quyết định layout
   isRemoteVideoOff: boolean; // True nếu đối phương tắt video hoặc chưa có video
 };
 
@@ -49,10 +49,11 @@ export default function CallModalUi({
   return (
     <div
       className="w-full h-full bg-zinc-900 rounded-lg overflow-hidden flex flex-col relative"
-      // style={{ backgroundColor: "red" }} // Đã loại bỏ dòng này
+      style={{ backgroundColor: "red" }}
     >
       {/* Top bar */}
       <div className="absolute top-0 right-0 flex items-center gap-2 p-4 z-20">
+        {/* Các nút điều khiển cửa sổ giữ nguyên */}
         <button className="text-white p-2 rounded-full hover:bg-zinc-700">
           <Search size={20} />
         </button>
@@ -73,8 +74,7 @@ export default function CallModalUi({
       {/* Main content - video area / user info area */}
       <div className="flex-1 flex items-center justify-center bg-zinc-800 relative overflow-hidden">
         {/* Remote Video Display */}
-        {/* Điều kiện: là video call VÀ đối phương đang bật video VÀ có remoteVideoRef */}
-        {callType === "video" && !isRemoteVideoOff && remoteVideoRef ? (
+        {callType === "video" && !isRemoteVideoOff ? (
           <video
             ref={remoteVideoRef}
             autoPlay
@@ -89,35 +89,30 @@ export default function CallModalUi({
                 src={callerInfo.profilePicture}
                 alt={callerInfo.username || "Profile"}
                 className="w-full h-full object-cover"
-                layout="fill" // Hoặc width/height nếu Next.js yêu cầu cho Image component
-                // width={128} // Ví dụ
-                // height={128} // Ví dụ
+                layout="fill"
               />
             </div>
             <h2 className="text-xl md:text-2xl font-semibold">
               {callerInfo.username}
             </h2>
             <p className="text-gray-300 text-sm mt-1">{callStatus}</p>
-            {/* Hiển thị nếu mic của BẠN tắt */}
-            {micMuted && (
+            {micMuted && ( // Trạng thái mic của bạn
               <div className="mt-2 bg-red-500 text-white px-3 py-1 rounded-full text-xs">
                 Mic của bạn đã tắt
               </div>
             )}
-            {/* Thông báo nếu đối phương tắt camera TRONG VIDEO CALL và đã kết nối */}
             {callType === "video" &&
               isRemoteVideoOff &&
-              (callStatus === "Đã kết nối" ||
-                callStatus.startsWith("Đang kết nối...")) && ( // Mở rộng điều kiện callStatus
+              callStatus === "Đã kết nối" && (
                 <p className="text-gray-400 text-xs mt-1">
-                  {callerInfo.username} đang tắt camera
+                  Đối phương đang tắt camera
                 </p>
               )}
           </div>
         )}
 
         {/* Local Video Preview (Picture-in-Picture) */}
-        {/* Điều kiện: camera của BẠN đang bật VÀ có localVideoRef */}
+        {/* Hiển thị nếu có local stream và camera đang bật */}
         {!videoOff && localVideoRef && (
           <div className="absolute bottom-20 right-4 md:bottom-24 md:right-6 w-32 h-48 md:w-40 md:h-56 bg-black rounded-md overflow-hidden shadow-lg z-10 border-2 border-zinc-700">
             <video
@@ -131,11 +126,12 @@ export default function CallModalUi({
         )}
       </div>
 
-      {/* Audio element để nghe đối phương (ẩn) */}
-      <audio ref={remoteAudioRef} autoPlay playsInline />
+      {/* Audio element để nghe đối phương */}
+      <audio ref={remoteAudioRef} autoPlay />
 
       {/* Bottom controls */}
       <div className="bg-zinc-900 p-4 flex flex-col items-center gap-4 z-10">
+        {/* Trạng thái thiết bị (ví dụ: mic) - có thể mở rộng sau */}
         <div className="text-white text-xs mb-2">
           {callType === "video" && videoOff && (
             <span className="mr-2">(Camera của bạn đang tắt)</span>
@@ -143,6 +139,7 @@ export default function CallModalUi({
           Micrô {micMuted ? "đã tắt" : "đang bật"}
         </div>
 
+        {/* Call controls */}
         <div className="flex gap-3 sm:gap-4 items-center">
           <button
             className={`p-3 rounded-full ${
@@ -156,18 +153,20 @@ export default function CallModalUi({
             {micMuted ? <MicOff size={24} /> : <Mic size={24} />}
           </button>
 
-          {/* Luôn hiển thị nút video để có thể bật video trong audio call */}
-          <button
-            className={`p-3 rounded-full ${
-              videoOff // Màu nút dựa trên trạng thái videoOff (camera local)
-                ? "bg-red-600 hover:bg-red-700"
-                : "bg-zinc-700 hover:bg-zinc-600"
-            } text-white`}
-            onClick={handleToggleVideo}
-            title={videoOff ? "Bật camera" : "Tắt camera"}
-          >
-            {videoOff ? <VideoOff size={24} /> : <Video size={24} />}
-          </button>
+          {/* Nút bật/tắt video chỉ hiển thị nếu là cuộc gọi video, hoặc cho phép bật video trong audio call */}
+          {(callType === "video" || true) && ( // Điều kiện 'true' để luôn hiển thị nếu muốn cho phép bật cam trong audio call
+            <button
+              className={`p-3 rounded-full ${
+                videoOff
+                  ? "bg-red-600 hover:bg-red-700"
+                  : "bg-zinc-700 hover:bg-zinc-600"
+              } text-white`}
+              onClick={handleToggleVideo}
+              title={videoOff ? "Bật camera" : "Tắt camera"}
+            >
+              {videoOff ? <VideoOff size={24} /> : <Video size={24} />}
+            </button>
+          )}
 
           <button
             className="p-3 rounded-full bg-zinc-700 hover:bg-zinc-600 text-white"
