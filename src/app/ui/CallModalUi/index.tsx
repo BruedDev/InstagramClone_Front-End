@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { MutableRefObject, useEffect, useState } from "react";
+import styles from "./CallModalUi.module.scss";
 
 type CallModalUiProps = {
   callerInfo: {
@@ -110,10 +111,10 @@ export default function CallModalUi({
           ref={remoteVideoRef}
           autoPlay
           playsInline
-          className={`w-full ${
+          className={`w-full ${styles.remoteVideo} ${
             hasRemoteVideo && !isRemoteVideoOff ? "block" : "hidden"
           }`}
-          style={{ maxHeight: "90dvh", maxWidth: "100%" }}
+          style={{ maxWidth: "100%", height: "80dvh" }}
         />
 
         {/* Fallback: User Info when no remote video */}
