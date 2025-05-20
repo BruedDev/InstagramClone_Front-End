@@ -119,42 +119,34 @@ export default function CallModalUi({
 
         {/* Fallback: User Info when no remote video */}
         <div
-          className={`absolute inset-0 flex flex-col items-center justify-center text-white text-center p-4 bg-black ${
+          className={`absolute flex flex-col items-center text-white text-center p-4 ${
             hasRemoteVideo && !isRemoteVideoOff ? "hidden" : "block"
           }`}
         >
-          {/* Chỉ hiển thị thông tin người dùng khi chưa kết nối cuộc gọi */}
-          {callStatus !== "Đã kết nối" ? (
-            <>
-              <div className="h-24 w-24 md:h-32 md:w-32 rounded-full overflow-hidden mb-3 relative">
-                <Image
-                  src={callerInfo.profilePicture}
-                  alt={callerInfo.username || "Profile"}
-                  className="w-full h-full object-cover"
-                  layout="fill"
-                />
-              </div>
-              <h2 className="text-xl md:text-2xl font-semibold">
-                {callerInfo.username}
-              </h2>
-              <p className="text-gray-300 text-sm mt-1">{callStatus}</p>
-            </>
-          ) : (
-            <>
-              {/* Khi đã kết nối và đối phương tắt camera thì chỉ hiển thị màn hình đen */}
-              {callType === "video" && isRemoteVideoOff && (
-                <p className="text-gray-400 text-sm">
-                  Đối phương đang tắt camera
-                </p>
-              )}
-            </>
-          )}
-
+          <div className="h-24 w-24 md:h-32 md:w-32 rounded-full overflow-hidden mb-3 relative">
+            <Image
+              src={callerInfo.profilePicture}
+              alt={callerInfo.username || "Profile"}
+              className="w-full h-full object-cover"
+              layout="fill"
+            />
+          </div>
+          <h2 className="text-xl md:text-2xl font-semibold">
+            {callerInfo.username}
+          </h2>
+          <p className="text-gray-300 text-sm mt-1">{callStatus}</p>
           {micMuted && (
             <div className="mt-2 bg-red-500 text-white px-3 py-1 rounded-full text-xs">
               Mic của bạn đã tắt
             </div>
           )}
+          {callType === "video" &&
+            isRemoteVideoOff &&
+            callStatus === "Đã kết nối" && (
+              <p className="text-gray-400 text-xs mt-1">
+                Đối phương đang tắt camera
+              </p>
+            )}
         </div>
 
         {/* Local video (camera của bạn) */}
