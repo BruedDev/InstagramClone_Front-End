@@ -113,7 +113,7 @@ export default function CallModalUi({
           className={`w-full ${
             hasRemoteVideo && !isRemoteVideoOff ? "block" : "hidden"
           }`}
-          style={{ maxHeight: "100dvh", maxWidth: "100%" }}
+          style={{ maxHeight: "90dvh", maxWidth: "100%" }}
         />
 
         {/* Fallback: User Info when no remote video */}
