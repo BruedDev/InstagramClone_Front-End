@@ -544,7 +544,7 @@ export default function CallModal({ handleEndCall }: CallModalProps) {
   const handleToggleVideo = async () => {
     if (!peerConnection.current) return;
 
-    const newVideoOff = !videoOff; // Trạng thái mới của camera local
+    const newVideoOff = !videoOff;
     setVideoOff(newVideoOff);
 
     // Log khi người dùng hiện tại (local) thay đổi trạng thái camera
@@ -558,7 +558,6 @@ export default function CallModal({ handleEndCall }: CallModalProps) {
 
     try {
       if (newVideoOff) {
-        // ... (Logic tắt video)
         if (localStream.current) {
           const videoTracks = localStream.current.getVideoTracks();
           videoTracks.forEach((track) => {
@@ -570,7 +569,6 @@ export default function CallModal({ handleEndCall }: CallModalProps) {
           localVideoRef.current.srcObject = null;
         }
       } else {
-        // ... (Logic bật video)
         const videoStream = await navigator.mediaDevices.getUserMedia({
           video: {
             width: { ideal: 1280 },
