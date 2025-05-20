@@ -47,10 +47,7 @@ export default function CallModalUi({
   isRemoteVideoOff,
 }: CallModalUiProps) {
   return (
-    <div
-      className="w-full h-full bg-zinc-900 rounded-lg overflow-hidden flex flex-col relative"
-      style={{ backgroundColor: "red" }}
-    >
+    <div className="w-full h-full bg-zinc-900 rounded-lg overflow-hidden flex flex-col relative">
       {/* Top bar */}
       <div className="absolute top-0 right-0 flex items-center gap-2 p-4 z-20">
         {/* Các nút điều khiển cửa sổ giữ nguyên */}
@@ -72,7 +69,9 @@ export default function CallModalUi({
       </div>
 
       {/* Main content - video area / user info area */}
-      <div className="flex-1 flex items-center justify-center bg-zinc-800 relative overflow-hidden">
+      <div
+        className={`flex-1 flex items-center justify-center bg-zinc-800 relative overflow-hidden`} //phần video lớn nhất của người khac
+      >
         {/* Remote Video Display */}
         {callType === "video" && !isRemoteVideoOff ? (
           <video
