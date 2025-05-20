@@ -110,7 +110,7 @@ export default function CallModalUi({
           ref={remoteVideoRef}
           autoPlay
           playsInline
-          className={`max-h-[80vh] w-auto mx-auto object-contain ${
+          className={`w-full max-h-[calc(100vh-180px)] object-contain ${
             hasRemoteVideo && !isRemoteVideoOff ? "block" : "hidden"
           }`}
         />
