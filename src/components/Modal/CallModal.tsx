@@ -547,17 +547,9 @@ export default function CallModal({ handleEndCall }: CallModalProps) {
     const newVideoOff = !videoOff;
     setVideoOff(newVideoOff);
 
-    // Log khi người dùng hiện tại (local) thay đổi trạng thái camera
-    if (currentUserId) {
-      console.log(
-        `CONSOLE LOG (LOCAL): Người dùng ${currentUserId} (Bạn) đã ${
-          newVideoOff ? "TẮT" : "BẬT"
-        } camera.`
-      );
-    }
-
     try {
       if (newVideoOff) {
+        // Tắt video
         if (localStream.current) {
           const videoTracks = localStream.current.getVideoTracks();
           videoTracks.forEach((track) => {
@@ -569,52 +561,68 @@ export default function CallModal({ handleEndCall }: CallModalProps) {
           localVideoRef.current.srcObject = null;
         }
       } else {
-        const videoStream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            width: { ideal: 1280 },
-            height: { ideal: 720 },
-          },
-        });
-
-        const videoTrack = videoStream.getVideoTracks()[0];
-
-        if (localStream.current) {
-          const oldVideoTracks = localStream.current.getVideoTracks();
-          oldVideoTracks.forEach((track) => {
-            track.stop();
-            localStream.current?.removeTrack(track);
+        // Bật video
+        try {
+          const videoStream = await navigator.mediaDevices.getUserMedia({
+            video: {
+              width: { ideal: 1280 },
+              height: { ideal: 720 },
+            },
           });
-          localStream.current.addTrack(videoTrack);
-        } else {
-          localStream.current = videoStream;
-        }
 
-        if (localVideoRef.current) {
-          localVideoRef.current.srcObject = localStream.current;
-        }
+          const videoTrack = videoStream.getVideoTracks()[0];
 
-        const videoSender = peerConnection.current
-          .getSenders()
-          .find((sender) => sender.track?.kind === "video");
+          // Cập nhật localStream
+          if (localStream.current) {
+            const oldVideoTracks = localStream.current.getVideoTracks();
+            oldVideoTracks.forEach((track) => {
+              track.stop();
+              localStream.current?.removeTrack(track);
+            });
+            localStream.current.addTrack(videoTrack);
+          } else {
+            localStream.current = videoStream;
+          }
 
-        if (videoSender) {
-          await videoSender.replaceTrack(videoTrack);
-        } else {
-          peerConnection.current.addTrack(videoTrack, localStream.current);
+          // Hiển thị video local
+          if (localVideoRef.current) {
+            localVideoRef.current.srcObject = localStream.current;
+          }
+
+          // Nếu đang trong cuộc gọi audio, chuyển sang video
+          if (callType === "audio") {
+            setCallType("video");
+          }
+
+          // Cập nhật video track trong peer connection
+          const videoSender = peerConnection.current
+            .getSenders()
+            .find((sender) => sender.track?.kind === "video");
+
+          if (videoSender) {
+            await videoSender.replaceTrack(videoTrack);
+          } else {
+            peerConnection.current.addTrack(videoTrack, localStream.current);
+          }
+        } catch (error) {
+          console.error("Lỗi khi bật camera:", error);
+          setVideoOff(true);
+          return;
         }
       }
 
-      // Gửi trạng thái video mới cho đối phương
+      // Thông báo cho đối phương
       if (currentUserId && remoteUserId) {
         socketService.getSocket().emit("videoStatusChanged", {
           from: currentUserId,
           to: remoteUserId,
-          disabled: newVideoOff, // Gửi trạng thái mới
+          disabled: newVideoOff,
+          callType: callType,
         });
       }
     } catch (err) {
       console.error("Lỗi khi xử lý video:", err);
-      setVideoOff(true); // Nếu có lỗi, coi như video đang tắt
+      setVideoOff(true);
       setCallStatus("Lỗi khi xử lý camera");
     }
   };
