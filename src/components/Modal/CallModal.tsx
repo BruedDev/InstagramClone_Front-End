@@ -708,10 +708,9 @@ export default function CallModal({ handleEndCall }: CallModalProps) {
       else setCallStatus("Camera đang bật");
     } catch (err: unknown) {
       console.error("Lỗi khi xử lý video:", err);
-      setVideoOff(true); // Nếu lỗi, quay lại trạng thái video tắt
+      setVideoOff(true);
       if (localVideoRef.current) localVideoRef.current.srcObject = null;
 
-      // Đảm bảo dọn dẹp track video khỏi localStream nếu việc lấy video thất bại
       if (!newVideoOff && localStream.current) {
         // Nếu đang cố bật ON và thất bại
         localStream.current.getVideoTracks().forEach((t) => {
@@ -752,8 +751,7 @@ export default function CallModal({ handleEndCall }: CallModalProps) {
       });
     }
     cleanupResources();
-    handleEndCall(); // Gọi prop này từ parent component (ví dụ: để đóng modal)
-    // Cân nhắc không tự động window.close() ở đây, để handleEndCall của App quyết định
+    handleEndCall();
     // window.close();
   };
 

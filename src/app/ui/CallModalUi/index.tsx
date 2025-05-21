@@ -56,13 +56,12 @@ export default function CallModalUi({
         const videoTracks = (
           remoteVideoRef.current.srcObject as MediaStream
         ).getVideoTracks();
+        // QUAN TRỌNG: hasRemoteVideo sẽ là false nếu isRemoteVideoOff là true
         setHasRemoteVideo(videoTracks.length > 0 && !isRemoteVideoOff);
       } else {
         setHasRemoteVideo(false);
       }
     };
-
-    // Kiểm tra khi component được mount và khi isRemoteVideoOff thay đổi
     checkRemoteVideo();
 
     // Thêm event listener để theo dõi khi có video track mới
@@ -165,7 +164,7 @@ export default function CallModalUi({
         {/* Fallback khi bạn tắt camera */}
         <div
           className={`absolute bottom-20 right-4 md:bottom-24 md:right-6 w-32 h-48 md:w-40 md:h-56 bg-zinc-800 rounded-md overflow-hidden shadow-lg z-10 border-2 border-zinc-700 flex items-center justify-center ${
-            videoOff && !videoOff ? "block" : "hidden"
+            videoOff && !videoOff ? "block" : "hidden" // LỖI Ở ĐÂY
           }`}
         >
           <div className="text-white text-center">
