@@ -58,7 +58,7 @@ export default function CallModalUi({
     }
   }, [callType]);
 
-  // Kiểm tra khi remote video stream có sẵn
+  // Trong useEffect kiểm tra remote video
   useEffect(() => {
     const checkRemoteVideo = () => {
       if (remoteVideoRef.current && remoteVideoRef.current.srcObject) {
@@ -119,10 +119,7 @@ export default function CallModalUi({
           autoPlay
           playsInline
           className={`w-full ${styles.remoteVideo} ${
-            (hasRemoteVideo && !isRemoteVideoOff) ||
-            (callType === "audio" && hasRemoteVideo && !isRemoteVideoOff)
-              ? "block"
-              : "hidden"
+            hasRemoteVideo && !isRemoteVideoOff ? "block" : "hidden"
           }`}
           style={{ maxWidth: "100%", height: "80dvh" }}
         />
@@ -130,10 +127,7 @@ export default function CallModalUi({
         {/* Fallback: User Info when no remote video */}
         <div
           className={`absolute flex flex-col items-center text-white text-center p-4 ${
-            (hasRemoteVideo && !isRemoteVideoOff) ||
-            (callType === "audio" && hasRemoteVideo && !isRemoteVideoOff)
-              ? "hidden"
-              : "block"
+            hasRemoteVideo && !isRemoteVideoOff ? "hidden" : "block"
           }`}
         >
           <div className="h-24 w-24 md:h-32 md:w-32 rounded-full overflow-hidden mb-3 relative">
