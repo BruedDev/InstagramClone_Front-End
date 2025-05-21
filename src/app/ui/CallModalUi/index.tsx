@@ -42,7 +42,7 @@ export default function CallModalUi({
   callStatus,
   videoOff,
   remoteAudioRef,
-  localVideoRef,
+  // localVideoRef,
   remoteVideoRef,
   callType,
   isRemoteVideoOff,
@@ -65,17 +65,19 @@ export default function CallModalUi({
         const videoTracks = (
           remoteVideoRef.current.srcObject as MediaStream
         ).getVideoTracks();
-        setHasRemoteVideo(videoTracks.length > 0 && !isRemoteVideoOff);
+        // Chỉ dựa vào trạng thái isRemoteVideoOff để quyết định có hiển thị video từ xa hay không
+        setHasRemoteVideo(videoTracks.length > 0);
       } else {
         setHasRemoteVideo(false);
       }
     };
 
-    // Kiểm tra khi component được mount và khi isRemoteVideoOff thay đổi
     checkRemoteVideo();
 
-    // Thêm event listener để theo dõi khi có video track mới
-    const onTrackAdded = () => checkRemoteVideo();
+    const onTrackAdded = () => {
+      console.log("Track added to remote video");
+      checkRemoteVideo();
+    };
 
     const remoteVideoEl = remoteVideoRef.current;
     if (remoteVideoEl) {
@@ -87,7 +89,7 @@ export default function CallModalUi({
         remoteVideoEl.removeEventListener("loadedmetadata", onTrackAdded);
       }
     };
-  }, [isRemoteVideoOff, remoteVideoRef]);
+  }, [remoteVideoRef.current?.srcObject, isRemoteVideoOff]);
 
   return (
     <div className="w-full h-full bg-zinc-900 rounded-lg overflow-hidden flex flex-col relative">
@@ -163,11 +165,13 @@ export default function CallModalUi({
           }`}
         >
           <video
-            ref={localVideoRef}
+            ref={remoteVideoRef}
             autoPlay
             playsInline
-            muted
-            className="w-full h-full object-cover"
+            className={`w-full ${styles.remoteVideo} ${
+              !isRemoteVideoOff ? "block" : "hidden"
+            }`}
+            style={{ maxWidth: "100%", height: "80dvh" }}
           />
         </div>
 

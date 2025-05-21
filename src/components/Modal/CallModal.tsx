@@ -104,13 +104,16 @@ export default function CallModal({ handleEndCall }: CallModalProps) {
       });
 
       // Lắng nghe trạng thái video của đối phương
-      socket.on("videoStatusChanged", ({ from, disabled, newCallType }) => {
+      socket.on("videoStatusChanged", ({ from, disabled }) => {
         if (from === remoteUserId) {
           setIsRemoteVideoOff(disabled);
-          // Cập nhật callType nếu đối phương bật camera và muốn chuyển sang video call
-          if (newCallType === "video" && callType === "audio") {
+
+          // Nếu đối phương bật camera (disabled = false) và callType hiện tại là audio,
+          // có thể chuyển đổi thành video call
+          if (!disabled && callType === "audio") {
             setCallType("video");
           }
+
           console.log(
             `CONSOLE LOG (REMOTE): Người dùng ${from} (${
               callerInfo.username
@@ -369,18 +372,27 @@ export default function CallModal({ handleEndCall }: CallModalProps) {
         console.log("Received remote track:", event.track.kind);
         if (event.streams && event.streams[0]) {
           const remoteStream = event.streams[0];
+
+          // Luôn cập nhật audio
           if (event.track.kind === "audio" && remoteAudioRef.current) {
             remoteAudioRef.current.srcObject = remoteStream;
             remoteAudioRef.current
               .play()
               .catch((e) => console.error("Lỗi khi play remote audio:", e));
           }
+
+          // Luôn cập nhật video, bất kể callType là gì
           if (event.track.kind === "video" && remoteVideoRef.current) {
             remoteVideoRef.current.srcObject = remoteStream;
             remoteVideoRef.current
               .play()
               .catch((e) => console.error("Lỗi khi play remote video:", e));
             setIsRemoteVideoOff(false); // Video đối phương đã được nhận
+
+            // Nếu ban đầu là audio call, chuyển sang video call khi nhận được video
+            if (callType === "audio") {
+              setCallType("video");
+            }
 
             event.track.onended = () => {
               console.log("Remote video track ended.");
