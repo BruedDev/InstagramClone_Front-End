@@ -42,21 +42,12 @@ export default function CallModalUi({
   callStatus,
   videoOff,
   remoteAudioRef,
-  // localVideoRef,
+  localVideoRef,
   remoteVideoRef,
   callType,
   isRemoteVideoOff,
 }: CallModalUiProps) {
   const [hasRemoteVideo, setHasRemoteVideo] = useState(false);
-
-  // // Thêm vào trước return
-  // useEffect(() => {
-  //   // Nếu là cuộc gọi audio, mặc định sẽ tắt camera khi bắt đầu
-  //   if (callType === "audio") {
-  //     // Chỉ thực hiện khi component mount hoặc callType thay đổi từ null/video sang audio
-  //     handleToggleVideo();
-  //   }
-  // }, [callType, handleToggleVideo]);
 
   // Trong useEffect kiểm tra remote video
   useEffect(() => {
@@ -65,19 +56,17 @@ export default function CallModalUi({
         const videoTracks = (
           remoteVideoRef.current.srcObject as MediaStream
         ).getVideoTracks();
-        // Chỉ dựa vào trạng thái isRemoteVideoOff để quyết định có hiển thị video từ xa hay không
-        setHasRemoteVideo(videoTracks.length > 0);
+        setHasRemoteVideo(videoTracks.length > 0 && !isRemoteVideoOff);
       } else {
         setHasRemoteVideo(false);
       }
     };
 
+    // Kiểm tra khi component được mount và khi isRemoteVideoOff thay đổi
     checkRemoteVideo();
 
-    const onTrackAdded = () => {
-      console.log("Track added to remote video");
-      checkRemoteVideo();
-    };
+    // Thêm event listener để theo dõi khi có video track mới
+    const onTrackAdded = () => checkRemoteVideo();
 
     const remoteVideoEl = remoteVideoRef.current;
     if (remoteVideoEl) {
@@ -89,7 +78,7 @@ export default function CallModalUi({
         remoteVideoEl.removeEventListener("loadedmetadata", onTrackAdded);
       }
     };
-  }, [remoteVideoRef.current?.srcObject, isRemoteVideoOff]);
+  }, [isRemoteVideoOff, remoteVideoRef]);
 
   return (
     <div className="w-full h-full bg-zinc-900 rounded-lg overflow-hidden flex flex-col relative">
@@ -165,13 +154,11 @@ export default function CallModalUi({
           }`}
         >
           <video
-            ref={remoteVideoRef}
+            ref={localVideoRef}
             autoPlay
             playsInline
-            className={`w-full ${styles.remoteVideo} ${
-              !isRemoteVideoOff ? "block" : "hidden"
-            }`}
-            style={{ maxWidth: "100%", height: "80dvh" }}
+            muted
+            className="w-full h-full object-cover"
           />
         </div>
 

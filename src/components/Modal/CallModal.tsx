@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { socketService } from "@/server/socket";
 import { createPeerConnection } from "@/server/messenger";
-import CallModalUi from "@/app/ui/CallModalUi";
+import CallModalUi from "@/app/ui/CallModalUi"; // Đảm bảo đường dẫn đúng
 import { CreatePeerConnectionReturn } from "@/types/messenger.types";
 import { getUser } from "@/server/user";
 
@@ -11,7 +11,7 @@ export interface CallModalProps {
 
 export default function CallModal({ handleEndCall }: CallModalProps) {
   const [micMuted, setMicMuted] = useState(false);
-  const [videoOff, setVideoOff] = useState(false);
+  const [videoOff, setVideoOff] = useState(false); // Sẽ được đặt dựa trên initialCallType
   const [callerInfo, setCallerInfo] = useState({
     username: "Đang tải...",
     profilePicture: "/api/placeholder/96/96",
@@ -19,11 +19,11 @@ export default function CallModal({ handleEndCall }: CallModalProps) {
   const [callStatus, setCallStatus] = useState("Đang khởi tạo...");
   const [isConnected, setIsConnected] = useState(false);
   const [callType, setCallType] = useState<"audio" | "video" | null>(null);
-  const [isRemoteVideoOff, setIsRemoteVideoOff] = useState(true);
+  const [isRemoteVideoOff, setIsRemoteVideoOff] = useState(true); // Mặc định là video của đối phương tắt
+
   const localStream = useRef<MediaStream | null>(null);
   const peerConnection = useRef<RTCPeerConnection | null>(null);
 
-  // Refs cho các element media
   const remoteAudioRef = useRef<HTMLAudioElement>(null);
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
@@ -32,18 +32,22 @@ export default function CallModal({ handleEndCall }: CallModalProps) {
   const hasRemoteDescription = useRef<boolean>(false);
   const pendingCandidates = useRef<RTCIceCandidate[]>([]);
 
-  // Lấy userId, calleeId, callType từ URL params
   const urlParams = new URLSearchParams(window.location.search);
   const currentUserId = urlParams.get("userId");
   const remoteUserId = urlParams.get("calleeId");
-  const initialCallType = urlParams.get("callType") as "audio" | "video" | null;
+  const initialCallTypeParam = urlParams.get("callType") as
+    | "audio"
+    | "video"
+    | null;
   const role =
-    urlParams.get("role") || (initialCallType ? "caller" : "receiver"); // Xác định vai trò
+    urlParams.get("role") || (initialCallTypeParam ? "caller" : "receiver");
 
   useEffect(() => {
-    setCallType(initialCallType);
+    setCallType(initialCallTypeParam);
     // Nếu là video call, camera mặc định bật (videoOff = false)
-    setVideoOff(initialCallType === "audio");
+    // Nếu là audio call, camera mặc định tắt (videoOff = true)
+    setVideoOff(initialCallTypeParam === "audio");
+    setIsRemoteVideoOff(initialCallTypeParam === "audio"); // Giả định ban đầu cho audio call
 
     let socket = socketService.getSocket();
     if (!socket || !socket.connected) {
@@ -51,12 +55,12 @@ export default function CallModal({ handleEndCall }: CallModalProps) {
     }
 
     const performCallSetup = () => {
-      if (!currentUserId || !remoteUserId || !initialCallType) {
+      if (!currentUserId || !remoteUserId || !initialCallTypeParam) {
         setCallStatus("Lỗi: Thiếu thông tin cuộc gọi.");
         console.error("FIX: Missing call info in URL params", {
           currentUserId,
           remoteUserId,
-          initialCallType,
+          initialCallType: initialCallTypeParam,
         });
         return;
       }
@@ -70,22 +74,20 @@ export default function CallModal({ handleEndCall }: CallModalProps) {
           });
       });
 
-      // Chỉ register user nếu socket đã connect, nếu không, làm trong sự kiện 'connect'
       if (socket.connected) {
         socketService.registerUser(currentUserId);
       }
 
-      setupMediaStream(initialCallType, currentUserId, remoteUserId);
+      setupMediaStream(initialCallTypeParam, currentUserId, remoteUserId);
 
       window.onbeforeunload = () => {
-        // Thông báo cho user khác rằng cuộc gọi kết thúc khi đóng cửa sổ
         socket.emit("endCall", {
           callerId: currentUserId,
           calleeId: remoteUserId,
           endedBy: currentUserId,
         });
         cleanupResources();
-        handleEndCall();
+        handleEndCall(); // Gọi prop này từ parent component nếu có
       };
 
       socket.on("callConnected", () => {
@@ -100,25 +102,29 @@ export default function CallModal({ handleEndCall }: CallModalProps) {
           }`
         );
         cleanupResources();
-        setTimeout(() => window.close(), 2000);
+        setTimeout(() => window.close(), 3000); // Tăng thời gian chờ
       });
 
-      // Lắng nghe trạng thái video của đối phương
       socket.on("videoStatusChanged", ({ from, disabled }) => {
         if (from === remoteUserId) {
           setIsRemoteVideoOff(disabled);
-
-          // Nếu đối phương bật camera (disabled = false) và callType hiện tại là audio,
-          // có thể chuyển đổi thành video call
-          if (!disabled && callType === "audio") {
-            setCallType("video");
-          }
-
           console.log(
+            // SỬA LỖI LOGGING
             `CONSOLE LOG (REMOTE): Người dùng ${from} (${
               callerInfo.username
             }) đã ${disabled ? "TẮT" : "BẬT"} camera.`
           );
+        }
+      });
+      // Lắng nghe trạng thái mic của đối phương (nếu cần thiết cho UI)
+      socket.on("micStatusChanged", ({ from, muted }) => {
+        if (from === remoteUserId) {
+          console.log(
+            `CONSOLE LOG (REMOTE): Người dùng ${from} (${
+              callerInfo.username
+            }) đã ${muted ? "TẮT" : "BẬT"} mic.`
+          );
+          // Cập nhật UI nếu cần, ví dụ: setRemoteMicMuted(muted);
         }
       });
     };
@@ -128,7 +134,7 @@ export default function CallModal({ handleEndCall }: CallModalProps) {
     } else {
       socket.once("connect", () => {
         console.log("Socket connected, performing call setup.");
-        socketService.registerUser(currentUserId!);
+        if (currentUserId) socketService.registerUser(currentUserId);
         performCallSetup();
       });
       socket.once("disconnect", () => {
@@ -139,13 +145,17 @@ export default function CallModal({ handleEndCall }: CallModalProps) {
     return () => {
       cleanupResources();
       window.onbeforeunload = null;
-      socket.off("callConnected");
-      socket.off("callEnded");
-      socket.off("videoStatusChanged");
-      // Gỡ các listeners khác của WebRTC nếu cần
+      const currentSocket = socketService.getSocket();
+      if (currentSocket) {
+        currentSocket.off("callConnected");
+        currentSocket.off("callEnded");
+        currentSocket.off("videoStatusChanged");
+        currentSocket.off("micStatusChanged"); // Gỡ listener nếu có
+        // Gỡ các listeners khác của WebRTC nếu cần trong cleanupResources
+      }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentUserId, remoteUserId, initialCallType]);
+  }, [currentUserId, remoteUserId, initialCallTypeParam]); // Chỉ chạy 1 lần khi component mount hoặc các ID thay đổi
 
   const cleanupResources = () => {
     const socket = socketService.getSocket();
@@ -160,28 +170,30 @@ export default function CallModal({ handleEndCall }: CallModalProps) {
       localStream.current = null;
     }
     if (peerConnection.current) {
+      // Dừng các track đang được gửi trước khi đóng peer connection
       peerConnection.current.getSenders().forEach((sender) => {
-        if (sender.track) sender.track.stop();
+        if (sender.track) {
+          sender.track.stop();
+        }
       });
       peerConnection.current.close();
       peerConnection.current = null;
     }
 
-    // Reset refs cho video elements
     if (localVideoRef.current) localVideoRef.current.srcObject = null;
     if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
+    if (remoteAudioRef.current) remoteAudioRef.current.srcObject = null;
 
     isOfferCreated.current = false;
     hasRemoteDescription.current = false;
     pendingCandidates.current = [];
     setIsConnected(false);
-    // setCallStatus("Đã kết thúc"); // Trạng thái này sẽ được set bởi 'callEnded' event
   };
 
   const processPendingCandidates = async () => {
     if (
       !peerConnection.current ||
-      !hasRemoteDescription.current ||
+      !hasRemoteDescription.current || // Hoặc peerConnection.current.remoteDescription
       pendingCandidates.current.length === 0
     ) {
       return;
@@ -201,12 +213,10 @@ export default function CallModal({ handleEndCall }: CallModalProps) {
     userId: string,
     targetUserId: string
   ) => {
-    // Khởi tạo stream rỗng để thêm track vào một cách có kiểm soát
     const tempStream = new MediaStream();
 
     try {
       setCallStatus("Xin quyền truy cập micro...");
-      // 1. Luôn cố gắng lấy audio trước
       const audioStream = await navigator.mediaDevices.getUserMedia({
         audio: true,
       });
@@ -214,65 +224,55 @@ export default function CallModal({ handleEndCall }: CallModalProps) {
         .getAudioTracks()
         .forEach((track) => tempStream.addTrack(track));
 
-      // 2. Xử lý video nếu là video call
-      if (type === "video") {
-        if (!videoOff) {
-          // Chỉ thử lấy video nếu người dùng không chủ động tắt từ đầu (videoOff là false)
-          setCallStatus("Xin quyền truy cập camera...");
-          try {
-            const videoStream = await navigator.mediaDevices.getUserMedia({
-              video: true,
-            });
-            videoStream
-              .getVideoTracks()
-              .forEach((track) => tempStream.addTrack(track));
-          } catch (videoError: unknown) {
-            if (
-              typeof videoError === "object" &&
-              videoError !== null &&
-              "name" in videoError &&
-              "message" in videoError
-            ) {
-              const err = videoError as { name: string; message: string };
-              console.warn("Không thể truy cập camera:", err.name, err.message);
-            } else {
-              console.warn("Không thể truy cập camera:", videoError);
-            }
-            setVideoOff(true);
-            setCallStatus("Không thể truy cập camera, tiếp tục với âm thanh.");
+      // Nếu là video call và video không bị tắt từ đầu (videoOff là false)
+      if (type === "video" && !videoOff) {
+        setCallStatus("Xin quyền truygs cập camera...");
+        try {
+          const videoStream = await navigator.mediaDevices.getUserMedia({
+            video: true,
+          });
+          videoStream
+            .getVideoTracks()
+            .forEach((track) => tempStream.addTrack(track));
+        } catch (videoError: unknown) {
+          if (videoError instanceof Error) {
+            console.warn(
+              "Không thể truy cập camera:",
+              videoError.name,
+              videoError.message
+            );
+          } else {
+            console.warn("Không thể truy cập camera:", videoError);
           }
-        } else {
-        }
-      } else {
-        // type === "audio"
-        // Đối với audio call, đảm bảo videoOff là true
-        if (!videoOff) {
-          // Nếu vì lý do nào đó videoOff đang là false cho audio call
-          setVideoOff(true);
+          setVideoOff(true); // Nếu không lấy được video, tự động set videoOff = true
+          // Thông báo cho đối phương rằng video của mình đã tắt (nếu cần)
+          if (currentUserId && remoteUserId) {
+            socketService.getSocket().emit("videoStatusChanged", {
+              from: currentUserId,
+              to: remoteUserId,
+              disabled: true,
+            });
+          }
+          setCallStatus("Không thể truy cập camera, tiếp tục với âm thanh.");
         }
       }
+      // Nếu là audio call, videoOff sẽ là true do useEffect ban đầu.
+      // Không cần lấy video track cho audio call ở bước này.
 
-      // Sau khi đã thử lấy audio và video, gán kết quả cho localStream.current
       localStream.current = tempStream;
 
-      // Kiểm tra xem có audio track không, nếu không thì không thể tiếp tục
       if (localStream.current.getAudioTracks().length === 0) {
         throw new Error(
           "Không thể lấy được luồng âm thanh. Vui lòng kiểm tra quyền và thiết bị micro."
         );
       }
 
-      // Gán local stream vào local video element
-      // Cập nhật này cần chạy sau khi đã xác định được trạng thái cuối cùng của videoOff và localStream.current
+      // Gán local stream vào local video element (chỉ khi có video track và video không bị tắt)
       if (localVideoRef.current) {
-        if (
-          type === "video" &&
-          !videoOff &&
-          localStream.current.getVideoTracks().length > 0
-        ) {
+        if (localStream.current.getVideoTracks().length > 0 && !videoOff) {
           localVideoRef.current.srcObject = localStream.current;
         } else {
-          localVideoRef.current.srcObject = null; // Nếu là audio call, hoặc video call nhưng video tắt/lỗi
+          localVideoRef.current.srcObject = null;
         }
       }
 
@@ -280,6 +280,7 @@ export default function CallModal({ handleEndCall }: CallModalProps) {
 
       const peerConfigResult: CreatePeerConnectionReturn =
         await createPeerConnection();
+      // Xử lý peerConfigResult để khởi tạo peerConnection.current (giữ nguyên logic của bạn)
       if (peerConfigResult) {
         if (
           typeof peerConfigResult === "object" &&
@@ -325,6 +326,48 @@ export default function CallModal({ handleEndCall }: CallModalProps) {
         peerConnection.current?.addTrack(track, localStream.current!);
       });
 
+      // THÊM: Trình xử lý onnegotiationneeded
+      peerConnection.current.onnegotiationneeded = async () => {
+        if (
+          peerConnection.current?.signalingState === "stable" &&
+          (role === "caller" || isOfferCreated.current)
+        ) {
+          try {
+            console.log("Negotiation needed, creating offer...");
+            const offerOptions: RTCOfferOptions = {
+              offerToReceiveAudio: true,
+              offerToReceiveVideo: true, // Luôn sẵn sàng nhận video
+            };
+            const offer = await peerConnection.current!.createOffer(
+              offerOptions
+            );
+            await peerConnection.current!.setLocalDescription(offer);
+
+            socketService.getSocket().emit("webrtc-offer", {
+              to: targetUserId,
+              from: userId,
+              offer,
+            });
+            // isOfferCreated.current sẽ được set true khi offer đầu tiên được gửi
+          } catch (err) {
+            console.error(
+              "Error in onnegotiationneeded while creating offer:",
+              err
+            );
+          }
+        } else {
+          console.log(
+            "Negotiation needed, but conditions not met for auto-offer.",
+            "Signaling State:",
+            peerConnection.current?.signalingState,
+            "Role:",
+            role,
+            "isOfferCreated:",
+            isOfferCreated.current
+          );
+        }
+      };
+
       peerConnection.current.onicecandidate = (event) => {
         if (event.candidate) {
           socketService.getSocket().emit("webrtc-ice-candidate", {
@@ -336,6 +379,7 @@ export default function CallModal({ handleEndCall }: CallModalProps) {
       };
 
       peerConnection.current.oniceconnectionstatechange = () => {
+        // Giữ nguyên logic xử lý oniceconnectionstatechange của bạn
         const pc = peerConnection.current;
         if (!pc) return;
         const newIceState = pc.iceConnectionState;
@@ -354,6 +398,7 @@ export default function CallModal({ handleEndCall }: CallModalProps) {
           case "failed":
             setCallStatus("Kết nối thất bại");
             setIsConnected(false);
+            // cleanupResources(); // Có thể cân nhắc dọn dẹp nếu thất bại hoàn toàn
             break;
           case "disconnected":
             setCallStatus("Mất kết nối (đang thử lại...)");
@@ -361,7 +406,8 @@ export default function CallModal({ handleEndCall }: CallModalProps) {
             break;
           case "closed":
             setIsConnected(false);
-            cleanupResources(); // Dọn dẹp khi đóng kết nối
+            // setCallStatus("Kết nối đã đóng"); // Không set ở đây vì callEnded sẽ xử lý
+            cleanupResources();
             break;
           default:
             if (!isConnected) setCallStatus(`Đang kết nối... (${newIceState})`);
@@ -372,27 +418,18 @@ export default function CallModal({ handleEndCall }: CallModalProps) {
         console.log("Received remote track:", event.track.kind);
         if (event.streams && event.streams[0]) {
           const remoteStream = event.streams[0];
-
-          // Luôn cập nhật audio
           if (event.track.kind === "audio" && remoteAudioRef.current) {
             remoteAudioRef.current.srcObject = remoteStream;
             remoteAudioRef.current
               .play()
               .catch((e) => console.error("Lỗi khi play remote audio:", e));
           }
-
-          // Luôn cập nhật video, bất kể callType là gì
           if (event.track.kind === "video" && remoteVideoRef.current) {
             remoteVideoRef.current.srcObject = remoteStream;
             remoteVideoRef.current
               .play()
               .catch((e) => console.error("Lỗi khi play remote video:", e));
-            setIsRemoteVideoOff(false); // Video đối phương đã được nhận
-
-            // Nếu ban đầu là audio call, chuyển sang video call khi nhận được video
-            if (callType === "audio") {
-              setCallType("video");
-            }
+            setIsRemoteVideoOff(false); // Video đối phương đã được nhận và đang chạy
 
             event.track.onended = () => {
               console.log("Remote video track ended.");
@@ -400,13 +437,23 @@ export default function CallModal({ handleEndCall }: CallModalProps) {
               if (remoteVideoRef.current)
                 remoteVideoRef.current.srcObject = null;
             };
+            event.track.onmute = () => {
+              // Xử lý khi track bị mute (VD: đối phương tắt camera nhưng track vẫn còn)
+              console.log("Remote video track muted.");
+              setIsRemoteVideoOff(true);
+            };
+            event.track.onunmute = () => {
+              // Xử lý khi track được unmute
+              console.log("Remote video track unmuted.");
+              setIsRemoteVideoOff(false);
+            };
           }
         }
       };
 
       const socket = socketService.getSocket();
       socket.on("webrtc-offer", async ({ from, offer }) => {
-        if (!peerConnection.current || from === userId) return; // Không xử lý offer của chính mình
+        if (!peerConnection.current || from === userId) return;
         const pc = peerConnection.current;
         try {
           await pc.setRemoteDescription(new RTCSessionDescription(offer));
@@ -421,7 +468,7 @@ export default function CallModal({ handleEndCall }: CallModalProps) {
       });
 
       socket.on("webrtc-answer", async ({ answer, from }) => {
-        if (!peerConnection.current || from === userId) return; // Không xử lý answer của chính mình
+        if (!peerConnection.current || from === userId) return;
         const pc = peerConnection.current;
         try {
           await pc.setRemoteDescription(new RTCSessionDescription(answer));
@@ -433,11 +480,11 @@ export default function CallModal({ handleEndCall }: CallModalProps) {
       });
 
       socket.on("webrtc-ice-candidate", async ({ candidate, from }) => {
-        if (!peerConnection.current || !candidate || from === userId) return; // Không xử lý candidate của chính mình
+        if (!peerConnection.current || !candidate || from === userId) return;
         try {
           if (
-            !hasRemoteDescription.current ||
-            peerConnection.current.remoteDescription === null
+            !peerConnection.current.remoteDescription || // Sửa điều kiện check
+            !hasRemoteDescription.current
           ) {
             pendingCandidates.current.push(new RTCIceCandidate(candidate));
           } else {
@@ -459,7 +506,7 @@ export default function CallModal({ handleEndCall }: CallModalProps) {
           setCallStatus("Đang tạo lời mời...");
           const offerOptions: RTCOfferOptions = {
             offerToReceiveAudio: true,
-            offerToReceiveVideo: type === "video", // Yêu cầu nhận video nếu là video call
+            offerToReceiveVideo: true, // THAY ĐỔI: Luôn sẵn sàng nhận video
           };
           const offer = await peerConnection.current.createOffer(offerOptions);
           await peerConnection.current.setLocalDescription(offer);
@@ -470,7 +517,9 @@ export default function CallModal({ handleEndCall }: CallModalProps) {
             offer,
           });
           setCallStatus(
-            type === "video" ? "Đang gọi video..." : "Đang gọi thoại..."
+            type === "video" && !videoOff
+              ? "Đang gọi video..."
+              : "Đang gọi thoại..."
           );
         } catch (err) {
           console.error("Lỗi khi tạo offer:", err);
@@ -480,6 +529,7 @@ export default function CallModal({ handleEndCall }: CallModalProps) {
         setCallStatus("Đang chờ lời mời...");
       }
     } catch (error: unknown) {
+      // Giữ nguyên logic xử lý lỗi của bạn
       let errorMessage =
         "Lỗi thiết lập cuộc gọi. Kiểm tra quyền truy cập camera/mic.";
       if (error instanceof Error) {
@@ -496,7 +546,6 @@ export default function CallModal({ handleEndCall }: CallModalProps) {
       }
       setCallStatus(errorMessage);
       setIsConnected(false);
-      // Dọn dẹp stream nếu đã tạo một phần
       if (localStream.current) {
         localStream.current.getTracks().forEach((track) => track.stop());
         localStream.current = null;
@@ -507,6 +556,7 @@ export default function CallModal({ handleEndCall }: CallModalProps) {
   };
 
   const fetchUserInfo = async (userIdToFetch: string) => {
+    // Giữ nguyên logic fetchUserInfo của bạn
     try {
       const userData = await getUser(userIdToFetch);
       if (userData && userData.user) {
@@ -518,7 +568,7 @@ export default function CallModal({ handleEndCall }: CallModalProps) {
       } else {
         console.error(
           "Không thể lấy thông tin người dùng:",
-          userData.message || "Lỗi không xác định"
+          userData?.message || "Lỗi không xác định"
         );
         return {
           username: "Người dùng",
@@ -535,6 +585,7 @@ export default function CallModal({ handleEndCall }: CallModalProps) {
   };
 
   const handleToggleMic = () => {
+    // Giữ nguyên logic handleToggleMic của bạn, đảm bảo currentUserId và remoteUserId tồn tại trước khi emit
     if (localStream.current) {
       const audioTracks = localStream.current.getAudioTracks();
       if (audioTracks.length > 0) {
@@ -543,8 +594,8 @@ export default function CallModal({ handleEndCall }: CallModalProps) {
         });
         const newMicMuted = !audioTracks[0].enabled;
         setMicMuted(newMicMuted);
-        // Gửi trạng thái mic mới cho đối phương nếu cần
         if (currentUserId && remoteUserId) {
+          // Check IDs
           socketService.getSocket().emit("micStatusChanged", {
             from: currentUserId,
             to: remoteUserId,
@@ -556,100 +607,154 @@ export default function CallModal({ handleEndCall }: CallModalProps) {
   };
 
   const handleToggleVideo = async () => {
-    if (!peerConnection.current) return;
+    if (
+      !peerConnection.current ||
+      !localStream.current ||
+      !currentUserId ||
+      !remoteUserId
+    ) {
+      console.warn(
+        "Không thể bật/tắt video: PeerConnection, localStream hoặc UserID chưa sẵn sàng."
+      );
+      return;
+    }
 
     const newVideoOff = !videoOff;
+    // Cập nhật UI trước để phản hồi nhanh hơn
     setVideoOff(newVideoOff);
 
-    // Cập nhật callType nếu người dùng bật camera
-    if (!newVideoOff && callType === "audio") {
-      setCallType("video");
-    }
-
-    // Log khi người dùng hiện tại (local) thay đổi trạng thái camera
-    if (currentUserId) {
-      console.log(
-        `CONSOLE LOG (LOCAL): Người dùng ${currentUserId} (Bạn) đã ${
-          newVideoOff ? "TẮT" : "BẬT"
-        } camera.`
-      );
-    }
+    console.log(
+      `CONSOLE LOG (LOCAL): Người dùng ${currentUserId} (Bạn) đã ${
+        newVideoOff ? "TẮT" : "BẬT"
+      } camera.`
+    );
 
     try {
       if (newVideoOff) {
-        if (localStream.current) {
-          const videoTracks = localStream.current.getVideoTracks();
-          videoTracks.forEach((track) => {
-            track.stop();
-            localStream.current?.removeTrack(track);
-          });
-        }
+        // Tắt video
+        const videoTracks = localStream.current.getVideoTracks();
+        videoTracks.forEach((track) => {
+          track.stop();
+          localStream.current?.removeTrack(track);
+        });
+
         if (localVideoRef.current) {
           localVideoRef.current.srcObject = null;
         }
-      } else {
-        const videoStream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            width: { ideal: 1280 },
-            height: { ideal: 720 },
-          },
-        });
 
+        // Tìm video sender và xử lý (ví dụ: removeTrack hoặc replaceTrack(null) nếu muốn SDP update)
+        // Hiện tại, việc stop track và remove khỏi localStream là đủ để ngừng gửi.
+        // onnegotiationneeded có thể được kích hoạt nếu removeTrack(sender) được gọi.
+        const videoSender = peerConnection.current
+          .getSenders()
+          .find((s) => s.track?.kind === "video");
+        if (videoSender) {
+          // peerConnection.current.removeTrack(videoSender); // Sẽ trigger onnegotiationneeded
+          // Hoặc: await videoSender.replaceTrack(null); // Cũng trigger onnegotiationneeded
+        }
+      } else {
+        // Bật video
+        setCallStatus("Xin quyền truy cập camera...");
+        const videoStream = await navigator.mediaDevices.getUserMedia({
+          video: { width: { ideal: 1280 }, height: { ideal: 720 } },
+        });
         const videoTrack = videoStream.getVideoTracks()[0];
 
-        if (localStream.current) {
-          const oldVideoTracks = localStream.current.getVideoTracks();
-          oldVideoTracks.forEach((track) => {
-            track.stop();
-            localStream.current?.removeTrack(track);
-          });
-          localStream.current.addTrack(videoTrack);
-        } else {
-          localStream.current = videoStream;
+        if (!videoTrack) {
+          throw new Error("Không lấy được video track từ thiết bị.");
         }
+        setCallStatus("Đang xử lý camera...");
 
+        // Dừng và xóa các video track cũ khỏi localStream
+        localStream.current.getVideoTracks().forEach((track) => {
+          track.stop();
+          localStream.current?.removeTrack(track);
+        });
+        // Thêm video track mới vào localStream
+        localStream.current.addTrack(videoTrack);
+
+        // Cập nhật local video preview
         if (localVideoRef.current) {
-          localVideoRef.current.srcObject = localStream.current;
+          // Tạo một MediaStream mới từ các track hiện có trong localStream.current
+          // để đảm bảo React nhận diện sự thay đổi và cập nhật srcObject
+          localVideoRef.current.srcObject = new MediaStream(
+            localStream.current.getTracks()
+          );
         }
 
         const videoSender = peerConnection.current
           .getSenders()
-          .find((sender) => sender.track?.kind === "video");
+          .find((s) => s.track?.kind === "video");
 
         if (videoSender) {
           await videoSender.replaceTrack(videoTrack);
         } else {
           peerConnection.current.addTrack(videoTrack, localStream.current);
+          // onnegotiationneeded sẽ được kích hoạt ở đây nếu đây là video track đầu tiên
+        }
+        if (callType === "audio") {
+          // CẬP NHẬT callType
+          setCallType("video");
         }
       }
 
       // Gửi trạng thái video mới cho đối phương
-      if (currentUserId && remoteUserId) {
-        socketService.getSocket().emit("videoStatusChanged", {
-          from: currentUserId,
-          to: remoteUserId,
-          disabled: newVideoOff,
-          newCallType: !newVideoOff ? "video" : callType, // Nếu bật camera, chuyển sang video call
+      socketService.getSocket().emit("videoStatusChanged", {
+        from: currentUserId,
+        to: remoteUserId,
+        disabled: newVideoOff,
+      });
+      if (newVideoOff) setCallStatus("Camera đã tắt");
+      else setCallStatus("Camera đang bật");
+    } catch (err: unknown) {
+      console.error("Lỗi khi xử lý video:", err);
+      setVideoOff(true); // Nếu lỗi, quay lại trạng thái video tắt
+      if (localVideoRef.current) localVideoRef.current.srcObject = null;
+
+      // Đảm bảo dọn dẹp track video khỏi localStream nếu việc lấy video thất bại
+      if (!newVideoOff && localStream.current) {
+        // Nếu đang cố bật ON và thất bại
+        localStream.current.getVideoTracks().forEach((t) => {
+          t.stop();
+          localStream.current?.removeTrack(t);
         });
       }
-    } catch (err) {
-      console.error("Lỗi khi xử lý video:", err);
-      setVideoOff(true); // Nếu có lỗi, coi như video đang tắt
-      setCallStatus("Lỗi khi xử lý camera");
+
+      setCallStatus(
+        typeof err === "object" &&
+          err !== null &&
+          "message" in err &&
+          typeof (err as { message?: string }).message === "string" &&
+          (err as { message: string }).message.includes("Permission denied")
+          ? "Bạn đã từ chối quyền truy cập camera."
+          : "Lỗi khi xử lý camera"
+      );
+
+      // Thông báo cho đối phương rằng video của mình đã tắt (do lỗi)
+      socketService.getSocket().emit("videoStatusChanged", {
+        from: currentUserId,
+        to: remoteUserId,
+        disabled: true,
+      });
+      if (callType === "video" && newVideoOff) {
+        // Nếu đang là video call mà tắt do lỗi
+        // không cần đổi callType thành audio, chỉ là video đang tắt
+      }
     }
   };
 
   const handleEndCallLocal = () => {
     if (currentUserId && remoteUserId) {
       socketService.getSocket().emit("endCall", {
-        callerId: currentUserId,
+        callerId: currentUserId, // Hoặc người khởi tạo cuộc gọi thực sự
         calleeId: remoteUserId,
         endedBy: currentUserId,
       });
     }
     cleanupResources();
-    handleEndCall();
-    window.close();
+    handleEndCall(); // Gọi prop này từ parent component (ví dụ: để đóng modal)
+    // Cân nhắc không tự động window.close() ở đây, để handleEndCall của App quyết định
+    // window.close();
   };
 
   return (
@@ -662,10 +767,10 @@ export default function CallModal({ handleEndCall }: CallModalProps) {
       callStatus={callStatus}
       videoOff={videoOff}
       remoteAudioRef={remoteAudioRef}
-      localVideoRef={localVideoRef} // Truyền ref
-      remoteVideoRef={remoteVideoRef} // Truyền ref
-      callType={callType} // Truyền loại cuộc gọi
-      isRemoteVideoOff={isRemoteVideoOff} // Truyền trạng thái video của đối phương
+      localVideoRef={localVideoRef}
+      remoteVideoRef={remoteVideoRef}
+      callType={callType}
+      isRemoteVideoOff={isRemoteVideoOff}
     />
   );
 }
