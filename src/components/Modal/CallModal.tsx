@@ -105,32 +105,15 @@ export default function CallModal({ handleEndCall }: CallModalProps) {
         setTimeout(() => window.close(), 3000); // Tăng thời gian chờ
       });
 
-      // Bên trong useEffect chính của CallModal.tsx, nơi bạn lắng nghe sự kiện socket
       socket.on("videoStatusChanged", ({ from, disabled }) => {
         if (from === remoteUserId) {
+          setIsRemoteVideoOff(disabled);
           console.log(
-            `[MobileDebug] videoStatusChanged from socket: user ${from} video ${
-              disabled ? "disabled" : "enabled"
-            }`
+            // SỬA LỖI LOGGING
+            `CONSOLE LOG (REMOTE): Người dùng ${from} (${
+              callerInfo.username
+            }) đã ${disabled ? "TẮT" : "BẬT"} camera.`
           );
-          setIsRemoteVideoOff(disabled); // Cập nhật trạng thái
-
-          if (disabled && remoteVideoRef.current) {
-            // Nếu đối phương chủ động tắt video qua signaling
-            console.log(
-              "[MobileDebug] videoStatusChanged: disabling remote video via socket. Pausing and clearing srcObject."
-            );
-            remoteVideoRef.current.pause(); // Dừng video
-            remoteVideoRef.current.srcObject = null; // Xóa nguồn
-            // remoteVideoRef.current.load(); // Cân nhắc thêm dòng này
-          } else if (
-            !disabled &&
-            remoteVideoRef.current &&
-            remoteVideoRef.current.srcObject
-          ) {
-            // Nếu đối phương bật video lại và stream vẫn còn gán cho srcObject
-            // Có thể cần remoteVideoRef.current.play() ở đây nếu nó không tự chạy lại
-          }
         }
       });
       // Lắng nghe trạng thái mic của đối phương (nếu cần thiết cho UI)
@@ -431,14 +414,8 @@ export default function CallModal({ handleEndCall }: CallModalProps) {
         }
       };
 
-      // Bên trong hàm setupMediaStream, trong phần peerConnection.current.ontrack
       peerConnection.current.ontrack = (event) => {
-        console.log(
-          "Received remote track:",
-          event.track.kind,
-          "on device type:",
-          /Mobi|Android/i.test(navigator.userAgent) ? "Mobile" : "PC"
-        );
+        console.log("Received remote track:", event.track.kind);
         if (event.streams && event.streams[0]) {
           const remoteStream = event.streams[0];
           if (event.track.kind === "audio" && remoteAudioRef.current) {
@@ -448,55 +425,27 @@ export default function CallModal({ handleEndCall }: CallModalProps) {
               .catch((e) => console.error("Lỗi khi play remote audio:", e));
           }
           if (event.track.kind === "video" && remoteVideoRef.current) {
-            console.log(
-              `[MobileDebug] Assigning remote stream to remoteVideoRef. Video track state: ${event.track.readyState}, muted: ${event.track.muted}`
-            );
             remoteVideoRef.current.srcObject = remoteStream;
             remoteVideoRef.current
               .play()
               .catch((e) => console.error("Lỗi khi play remote video:", e));
-            // Ban đầu khi nhận track, giả định video đang bật (trừ khi track đã bị muted sẵn)
-            setIsRemoteVideoOff(event.track.muted);
+            setIsRemoteVideoOff(false); // Video đối phương đã được nhận và đang chạy
 
             event.track.onended = () => {
-              console.log("[MobileDebug] Remote video track.onended fired.");
+              console.log("Remote video track ended.");
               setIsRemoteVideoOff(true);
-              if (remoteVideoRef.current) {
-                remoteVideoRef.current.pause(); // Quan trọng: Dừng video
-                remoteVideoRef.current.srcObject = null; // Xóa nguồn
-                // remoteVideoRef.current.load(); // Cân nhắc thêm dòng này nếu chỉ pause và srcObject=null không đủ để xóa frame cuối trên mobile
-                console.log(
-                  "[MobileDebug] Remote video srcObject set to null and paused after onended."
-                );
-              }
+              if (remoteVideoRef.current)
+                remoteVideoRef.current.srcObject = null;
             };
-
             event.track.onmute = () => {
-              // Khi track bị mute (ví dụ: đối phương tắt camera nhưng kết nối vẫn còn)
-              console.log("[MobileDebug] Remote video track.onmute fired.");
+              // Xử lý khi track bị mute (VD: đối phương tắt camera nhưng track vẫn còn)
+              console.log("Remote video track muted.");
               setIsRemoteVideoOff(true);
-              if (remoteVideoRef.current) {
-                remoteVideoRef.current.pause(); // Cũng nên pause ở đây
-                // Không nhất thiết phải set srcObject = null nếu chỉ là mute,
-                // isRemoteVideoOff sẽ đảm bảo UI ẩn video và hiện fallback.
-                // Tuy nhiên, nếu muốn triệt để xóa frame, có thể làm tương tự onended.
-                console.log(
-                  "[MobileDebug] isRemoteVideoOff set to true and video paused due to onmute."
-                );
-              }
             };
-
             event.track.onunmute = () => {
-              // Khi track được unmute
-              console.log("[MobileDebug] Remote video track.onunmute fired.");
+              // Xử lý khi track được unmute
+              console.log("Remote video track unmuted.");
               setIsRemoteVideoOff(false);
-              if (remoteVideoRef.current && remoteVideoRef.current.srcObject) {
-                // Đảm bảo video được play lại nếu trình duyệt không tự động làm điều đó
-                // remoteVideoRef.current.play().catch(e => console.warn("[MobileDebug] Failed to play on unmute", e));
-              }
-              console.log(
-                "[MobileDebug] isRemoteVideoOff set to false due to onunmute."
-              );
             };
           }
         }
@@ -658,137 +607,194 @@ export default function CallModal({ handleEndCall }: CallModalProps) {
   };
 
   const handleToggleVideo = async () => {
-    if (
-      !peerConnection.current ||
-      !localStream.current ||
-      !currentUserId ||
-      !remoteUserId
-    ) {
+    if (!peerConnection.current || !currentUserId || !remoteUserId) {
       console.warn(
-        "Không thể bật/tắt video: PeerConnection, localStream hoặc UserID chưa sẵn sàng."
+        "[handleToggleVideo] Không thể bật/tắt video: PeerConnection hoặc UserID chưa sẵn sàng."
       );
       return;
     }
 
+    // Khởi tạo localStream nếu nó chưa tồn tại (ví dụ: cuộc gọi bắt đầu là audio)
+    if (!localStream.current) {
+      localStream.current = new MediaStream();
+      console.log("[handleToggleVideo] Initialized new localStream.current");
+    }
+
     const newVideoOff = !videoOff;
-    // Cập nhật UI trước để phản hồi nhanh hơn
-    setVideoOff(newVideoOff);
+    setVideoOff(newVideoOff); // Cập nhật UI trước
 
     console.log(
-      `CONSOLE LOG (LOCAL): Người dùng ${currentUserId} (Bạn) đã ${
+      `[handleToggleVideo] Người dùng ${currentUserId} (Bạn) đã ${
         newVideoOff ? "TẮT" : "BẬT"
       } camera.`
     );
 
     try {
       if (newVideoOff) {
-        // Tắt video
-        const videoTracks = localStream.current.getVideoTracks();
-        videoTracks.forEach((track) => {
-          track.stop();
-          localStream.current?.removeTrack(track);
-        });
+        // --- LOGIC TẮT VIDEO ---
+        console.log("[handleToggleVideo] Attempting to turn video OFF.");
 
-        if (localVideoRef.current) {
-          localVideoRef.current.srcObject = null;
-        }
-
-        // Tìm video sender và xử lý (ví dụ: removeTrack hoặc replaceTrack(null) nếu muốn SDP update)
-        // Hiện tại, việc stop track và remove khỏi localStream là đủ để ngừng gửi.
-        // onnegotiationneeded có thể được kích hoạt nếu removeTrack(sender) được gọi.
-        const videoSender = peerConnection.current
-          .getSenders()
-          .find((s) => s.track?.kind === "video");
-        if (videoSender) {
-          // peerConnection.current.removeTrack(videoSender); // Sẽ trigger onnegotiationneeded
-          // Hoặc: await videoSender.replaceTrack(null); // Cũng trigger onnegotiationneeded
-        }
-      } else {
-        // Bật video
-        setCallStatus("Xin quyền truy cập camera...");
-        const videoStream = await navigator.mediaDevices.getUserMedia({
-          video: { width: { ideal: 1280 }, height: { ideal: 720 } },
-        });
-        const videoTrack = videoStream.getVideoTracks()[0];
-
-        if (!videoTrack) {
-          throw new Error("Không lấy được video track từ thiết bị.");
-        }
-        setCallStatus("Đang xử lý camera...");
-
-        // Dừng và xóa các video track cũ khỏi localStream
+        // 1. Dừng và xóa video track khỏi localStream.current
         localStream.current.getVideoTracks().forEach((track) => {
           track.stop();
           localStream.current?.removeTrack(track);
+          console.log(
+            `[handleToggleVideo] Stopped and removed local video track from localStream: ${track.id}`
+          );
         });
-        // Thêm video track mới vào localStream
-        localStream.current.addTrack(videoTrack);
 
-        // Cập nhật local video preview
+        // 2. Cập nhật local video preview
         if (localVideoRef.current) {
-          // Tạo một MediaStream mới từ các track hiện có trong localStream.current
-          // để đảm bảo React nhận diện sự thay đổi và cập nhật srcObject
-          localVideoRef.current.srcObject = new MediaStream(
-            localStream.current.getTracks()
+          localVideoRef.current.srcObject = null;
+          console.log(
+            "[handleToggleVideo] Set localVideoRef.current.srcObject to null."
           );
         }
 
+        // 3. Tìm video sender và xóa nó khỏi RTCPeerConnection để trigger renegotiation
+        const videoSender = peerConnection.current
+          .getSenders()
+          .find((s) => s.track?.kind === "video" && s.track); // Quan trọng: s.track phải tồn tại
+
+        if (videoSender) {
+          peerConnection.current.removeTrack(videoSender);
+          console.log(
+            "[handleToggleVideo] Removed videoSender from PeerConnection. Renegotiation should be triggered."
+          );
+        } else {
+          console.log(
+            "[handleToggleVideo] No active videoSender found to remove (OFF state)."
+          );
+        }
+        setCallStatus("Camera đã tắt");
+      } else {
+        // --- LOGIC BẬT VIDEO ---
+        console.log("[handleToggleVideo] Attempting to turn video ON.");
+        setCallStatus("Xin quyền truy cập camera...");
+
+        const videoStreamConstraints = {
+          video: { width: { ideal: 1280 }, height: { ideal: 720 } },
+        };
+        const newVideoStream = await navigator.mediaDevices.getUserMedia(
+          videoStreamConstraints
+        );
+        const newVideoTrack = newVideoStream.getVideoTracks()[0];
+
+        if (!newVideoTrack) {
+          throw new Error("Không lấy được video track mới từ thiết bị.");
+        }
+        console.log(
+          `[handleToggleVideo] Got new video track from getUserMedia: ${newVideoTrack.id}, state: ${newVideoTrack.readyState}`
+        );
+        setCallStatus("Đang xử lý camera...");
+
+        // 1. Dừng và xóa các video track CŨ khỏi localStream.current (đảm bảo sạch)
+        localStream.current.getVideoTracks().forEach((track) => {
+          if (track.id !== newVideoTrack.id) {
+            // Không dừng track vừa mới lấy
+            track.stop();
+            localStream.current?.removeTrack(track);
+            console.log(
+              `[handleToggleVideo] Cleaned up OLD local video track from localStream: ${track.id}`
+            );
+          }
+        });
+
+        // 2. Thêm video track MỚI vào localStream.current (nếu chưa có)
+        if (
+          !localStream.current
+            .getVideoTracks()
+            .find((t) => t.id === newVideoTrack.id)
+        ) {
+          localStream.current.addTrack(newVideoTrack);
+          console.log(
+            `[handleToggleVideo] Added new video track to localStream: ${newVideoTrack.id}`
+          );
+        }
+
+        // 3. Cập nhật local video preview
+        if (localVideoRef.current) {
+          localVideoRef.current.srcObject = new MediaStream(
+            localStream.current.getTracks()
+          );
+          console.log(
+            "[handleToggleVideo] Updated localVideoRef.current.srcObject with new MediaStream."
+          );
+        }
+
+        // 4. Xử lý việc thêm/thay thế track trong RTCPeerConnection
         const videoSender = peerConnection.current
           .getSenders()
           .find((s) => s.track?.kind === "video");
 
         if (videoSender) {
-          await videoSender.replaceTrack(videoTrack);
+          await videoSender.replaceTrack(newVideoTrack);
+          console.log(
+            `[handleToggleVideo] Replaced track on existing videoSender with new track: ${newVideoTrack.id}. Renegotiation might be triggered.`
+          );
         } else {
-          peerConnection.current.addTrack(videoTrack, localStream.current);
-          // onnegotiationneeded sẽ được kích hoạt ở đây nếu đây là video track đầu tiên
+          peerConnection.current.addTrack(newVideoTrack, localStream.current);
+          console.log(
+            `[handleToggleVideo] Added new video track to PeerConnection (using addTrack): ${newVideoTrack.id}. Renegotiation should be triggered.`
+          );
         }
+
         if (callType === "audio") {
-          // CẬP NHẬT callType
           setCallType("video");
+          console.log("[handleToggleVideo] Changed callType to 'video'.");
         }
+        setCallStatus("Camera đang bật");
       }
 
-      // Gửi trạng thái video mới cho đối phương
-      socketService.getSocket().emit("videoStatusChanged", {
-        from: currentUserId,
-        to: remoteUserId,
-        disabled: newVideoOff,
-      });
-      if (newVideoOff) setCallStatus("Camera đã tắt");
-      else setCallStatus("Camera đang bật");
-    } catch (err: unknown) {
-      console.error("Lỗi khi xử lý video:", err);
-      setVideoOff(true);
-      if (localVideoRef.current) localVideoRef.current.srcObject = null;
-
-      if (!newVideoOff && localStream.current) {
-        // Nếu đang cố bật ON và thất bại
-        localStream.current.getVideoTracks().forEach((t) => {
-          t.stop();
-          localStream.current?.removeTrack(t);
+      // Gửi trạng thái video mới cho đối phương (chỉ mang tính thông báo UI)
+      if (currentUserId && remoteUserId) {
+        socketService.getSocket().emit("videoStatusChanged", {
+          from: currentUserId,
+          to: remoteUserId,
+          disabled: newVideoOff,
         });
       }
+    } catch (err: unknown) {
+      console.error("[handleToggleVideo] Lỗi nghiêm trọng:", err);
+      // Hoàn tác lại trạng thái UI nếu có lỗi khi cố gắng BẬT video
+      if (!newVideoOff) {
+        setVideoOff(true); // Đặt lại thành TẮT
+        if (localVideoRef.current) localVideoRef.current.srcObject = null;
+        localStream.current?.getVideoTracks().forEach((t) => {
+          if (t.readyState === "live") t.stop(); // Chỉ dừng track đang live
+          localStream.current?.removeTrack(t);
+        });
+        console.log(
+          "[handleToggleVideo] Error occurred, reverted video state to OFF."
+        );
+      }
 
-      setCallStatus(
+      let errorMessage = "Lỗi camera không xác định";
+      if (
         typeof err === "object" &&
-          err !== null &&
-          "message" in err &&
-          typeof (err as { message?: string }).message === "string" &&
-          (err as { message: string }).message.includes("Permission denied")
-          ? "Bạn đã từ chối quyền truy cập camera."
-          : "Lỗi khi xử lý camera"
-      );
+        err !== null &&
+        ("name" in err || "message" in err)
+      ) {
+        const name = (err as { name?: string }).name;
+        const message = (err as { message?: string }).message;
+        errorMessage =
+          name === "NotAllowedError" ||
+          (typeof message === "string" &&
+            message.includes("Permission denied")) ||
+          name === "NotFoundError"
+            ? "Không tìm thấy camera hoặc bạn đã từ chối quyền truy cập."
+            : `Lỗi camera: ${name || message}`;
+      }
 
-      // Thông báo cho đối phương rằng video của mình đã tắt (do lỗi)
-      socketService.getSocket().emit("videoStatusChanged", {
-        from: currentUserId,
-        to: remoteUserId,
-        disabled: true,
-      });
-      if (callType === "video" && newVideoOff) {
-        // Nếu đang là video call mà tắt do lỗi
-        // không cần đổi callType thành audio, chỉ là video đang tắt
+      setCallStatus(errorMessage);
+
+      // Thông báo cho đối phương video vẫn tắt (do lỗi)
+      if (currentUserId && remoteUserId) {
+        socketService.getSocket().emit("videoStatusChanged", {
+          from: currentUserId,
+          to: remoteUserId,
+          disabled: true,
+        });
       }
     }
   };
