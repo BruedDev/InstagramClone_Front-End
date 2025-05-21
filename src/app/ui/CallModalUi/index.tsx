@@ -49,14 +49,14 @@ export default function CallModalUi({
 }: CallModalUiProps) {
   const [hasRemoteVideo, setHasRemoteVideo] = useState(false);
 
-  // Thêm vào trước return
-  useEffect(() => {
-    // Nếu là cuộc gọi audio, mặc định sẽ tắt camera khi bắt đầu
-    if (callType === "audio") {
-      // Chỉ thực hiện khi component mount hoặc callType thay đổi từ null/video sang audio
-      handleToggleVideo();
-    }
-  }, [callType]);
+  // // Thêm vào trước return
+  // useEffect(() => {
+  //   // Nếu là cuộc gọi audio, mặc định sẽ tắt camera khi bắt đầu
+  //   if (callType === "audio") {
+  //     // Chỉ thực hiện khi component mount hoặc callType thay đổi từ null/video sang audio
+  //     handleToggleVideo();
+  //   }
+  // }, [callType, handleToggleVideo]);
 
   // Trong useEffect kiểm tra remote video
   useEffect(() => {

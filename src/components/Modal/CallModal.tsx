@@ -104,15 +104,17 @@ export default function CallModal({ handleEndCall }: CallModalProps) {
       });
 
       // Lắng nghe trạng thái video của đối phương
-      socket.on("videoStatusChanged", ({ from, disabled }) => {
+      socket.on("videoStatusChanged", ({ from, disabled, newCallType }) => {
         if (from === remoteUserId) {
           setIsRemoteVideoOff(disabled);
-          // Log khi trạng thái camera của người dùng từ xa thay đổi
+          // Cập nhật callType nếu đối phương bật camera và muốn chuyển sang video call
+          if (newCallType === "video" && callType === "audio") {
+            setCallType("video");
+          }
           console.log(
-            // <--- LOG CHO HÀNH ĐỘNG CỦA ĐỐI PHƯƠNG
-            `CONSOLE LOG (REMOTE): Người dùng <span class="math-inline">\{from\} \(</span>{callerInfo.username}) đã ${
-              disabled ? "TẮT" : "BẬT"
-            } camera.`
+            `CONSOLE LOG (REMOTE): Người dùng ${from} (${
+              callerInfo.username
+            }) đã ${disabled ? "TẮT" : "BẬT"} camera.`
           );
         }
       });
@@ -547,6 +549,11 @@ export default function CallModal({ handleEndCall }: CallModalProps) {
     const newVideoOff = !videoOff;
     setVideoOff(newVideoOff);
 
+    // Cập nhật callType nếu người dùng bật camera
+    if (!newVideoOff && callType === "audio") {
+      setCallType("video");
+    }
+
     // Log khi người dùng hiện tại (local) thay đổi trạng thái camera
     if (currentUserId) {
       console.log(
@@ -609,7 +616,8 @@ export default function CallModal({ handleEndCall }: CallModalProps) {
         socketService.getSocket().emit("videoStatusChanged", {
           from: currentUserId,
           to: remoteUserId,
-          disabled: newVideoOff, // Gửi trạng thái mới
+          disabled: newVideoOff,
+          newCallType: !newVideoOff ? "video" : callType, // Nếu bật camera, chuyển sang video call
         });
       }
     } catch (err) {
