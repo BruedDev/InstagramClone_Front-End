@@ -29,8 +29,8 @@ type CallModalUiProps = {
   remoteAudioRef: MutableRefObject<HTMLAudioElement | null>;
   localVideoRef: MutableRefObject<HTMLVideoElement | null>; // Ref cho video của bạn
   remoteVideoRef: MutableRefObject<HTMLVideoElement | null>; // Ref cho video của đối phương
-  callType: "audio" | "video" | null; // Loại cuộc gọi để quyết định layout
-  isRemoteVideoOff: boolean; // True nếu đối phương tắt video hoặc chưa có video
+  callType: "audio" | "video" | null;
+  isRemoteVideoOff: boolean;
 };
 
 export default function CallModalUi({
@@ -48,6 +48,15 @@ export default function CallModalUi({
   isRemoteVideoOff,
 }: CallModalUiProps) {
   const [hasRemoteVideo, setHasRemoteVideo] = useState(false);
+
+  // Thêm vào trước return
+  useEffect(() => {
+    // Nếu là cuộc gọi audio, mặc định sẽ tắt camera khi bắt đầu
+    if (callType === "audio") {
+      // Chỉ thực hiện khi component mount hoặc callType thay đổi từ null/video sang audio
+      handleToggleVideo();
+    }
+  }, [callType]);
 
   // Kiểm tra khi remote video stream có sẵn
   useEffect(() => {
@@ -68,16 +77,14 @@ export default function CallModalUi({
     // Thêm event listener để theo dõi khi có video track mới
     const onTrackAdded = () => checkRemoteVideo();
 
-    if (remoteVideoRef.current) {
-      remoteVideoRef.current.addEventListener("loadedmetadata", onTrackAdded);
+    const remoteVideoEl = remoteVideoRef.current;
+    if (remoteVideoEl) {
+      remoteVideoEl.addEventListener("loadedmetadata", onTrackAdded);
     }
 
     return () => {
-      if (remoteVideoRef.current) {
-        remoteVideoRef.current.removeEventListener(
-          "loadedmetadata",
-          onTrackAdded
-        );
+      if (remoteVideoEl) {
+        remoteVideoEl.removeEventListener("loadedmetadata", onTrackAdded);
       }
     };
   }, [isRemoteVideoOff, remoteVideoRef]);
@@ -112,7 +119,10 @@ export default function CallModalUi({
           autoPlay
           playsInline
           className={`w-full ${styles.remoteVideo} ${
-            hasRemoteVideo && !isRemoteVideoOff ? "block" : "hidden"
+            (hasRemoteVideo && !isRemoteVideoOff) ||
+            (callType === "audio" && hasRemoteVideo && !isRemoteVideoOff)
+              ? "block"
+              : "hidden"
           }`}
           style={{ maxWidth: "100%", height: "80dvh" }}
         />
@@ -120,7 +130,10 @@ export default function CallModalUi({
         {/* Fallback: User Info when no remote video */}
         <div
           className={`absolute flex flex-col items-center text-white text-center p-4 ${
-            hasRemoteVideo && !isRemoteVideoOff ? "hidden" : "block"
+            (hasRemoteVideo && !isRemoteVideoOff) ||
+            (callType === "audio" && hasRemoteVideo && !isRemoteVideoOff)
+              ? "hidden"
+              : "block"
           }`}
         >
           <div className="h-24 w-24 md:h-32 md:w-32 rounded-full overflow-hidden mb-3 relative">
@@ -167,7 +180,7 @@ export default function CallModalUi({
         {/* Fallback khi bạn tắt camera */}
         <div
           className={`absolute bottom-20 right-4 md:bottom-24 md:right-6 w-32 h-48 md:w-40 md:h-56 bg-zinc-800 rounded-md overflow-hidden shadow-lg z-10 border-2 border-zinc-700 flex items-center justify-center ${
-            videoOff ? "block" : "hidden"
+            videoOff && !videoOff ? "block" : "hidden"
           }`}
         >
           <div className="text-white text-center">
