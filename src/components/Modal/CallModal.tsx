@@ -105,15 +105,32 @@ export default function CallModal({ handleEndCall }: CallModalProps) {
         setTimeout(() => window.close(), 3000); // Tăng thời gian chờ
       });
 
+      // Bên trong useEffect chính của CallModal.tsx, nơi bạn lắng nghe sự kiện socket
       socket.on("videoStatusChanged", ({ from, disabled }) => {
         if (from === remoteUserId) {
-          setIsRemoteVideoOff(disabled);
           console.log(
-            // SỬA LỖI LOGGING
-            `CONSOLE LOG (REMOTE): Người dùng ${from} (${
-              callerInfo.username
-            }) đã ${disabled ? "TẮT" : "BẬT"} camera.`
+            `[MobileDebug] videoStatusChanged from socket: user ${from} video ${
+              disabled ? "disabled" : "enabled"
+            }`
           );
+          setIsRemoteVideoOff(disabled); // Cập nhật trạng thái
+
+          if (disabled && remoteVideoRef.current) {
+            // Nếu đối phương chủ động tắt video qua signaling
+            console.log(
+              "[MobileDebug] videoStatusChanged: disabling remote video via socket. Pausing and clearing srcObject."
+            );
+            remoteVideoRef.current.pause(); // Dừng video
+            remoteVideoRef.current.srcObject = null; // Xóa nguồn
+            // remoteVideoRef.current.load(); // Cân nhắc thêm dòng này
+          } else if (
+            !disabled &&
+            remoteVideoRef.current &&
+            remoteVideoRef.current.srcObject
+          ) {
+            // Nếu đối phương bật video lại và stream vẫn còn gán cho srcObject
+            // Có thể cần remoteVideoRef.current.play() ở đây nếu nó không tự chạy lại
+          }
         }
       });
       // Lắng nghe trạng thái mic của đối phương (nếu cần thiết cho UI)
@@ -414,8 +431,14 @@ export default function CallModal({ handleEndCall }: CallModalProps) {
         }
       };
 
+      // Bên trong hàm setupMediaStream, trong phần peerConnection.current.ontrack
       peerConnection.current.ontrack = (event) => {
-        console.log("Received remote track:", event.track.kind);
+        console.log(
+          "Received remote track:",
+          event.track.kind,
+          "on device type:",
+          /Mobi|Android/i.test(navigator.userAgent) ? "Mobile" : "PC"
+        );
         if (event.streams && event.streams[0]) {
           const remoteStream = event.streams[0];
           if (event.track.kind === "audio" && remoteAudioRef.current) {
@@ -425,27 +448,55 @@ export default function CallModal({ handleEndCall }: CallModalProps) {
               .catch((e) => console.error("Lỗi khi play remote audio:", e));
           }
           if (event.track.kind === "video" && remoteVideoRef.current) {
+            console.log(
+              `[MobileDebug] Assigning remote stream to remoteVideoRef. Video track state: ${event.track.readyState}, muted: ${event.track.muted}`
+            );
             remoteVideoRef.current.srcObject = remoteStream;
             remoteVideoRef.current
               .play()
               .catch((e) => console.error("Lỗi khi play remote video:", e));
-            setIsRemoteVideoOff(false); // Video đối phương đã được nhận và đang chạy
+            // Ban đầu khi nhận track, giả định video đang bật (trừ khi track đã bị muted sẵn)
+            setIsRemoteVideoOff(event.track.muted);
 
             event.track.onended = () => {
-              console.log("Remote video track ended.");
+              console.log("[MobileDebug] Remote video track.onended fired.");
               setIsRemoteVideoOff(true);
-              if (remoteVideoRef.current)
-                remoteVideoRef.current.srcObject = null;
+              if (remoteVideoRef.current) {
+                remoteVideoRef.current.pause(); // Quan trọng: Dừng video
+                remoteVideoRef.current.srcObject = null; // Xóa nguồn
+                // remoteVideoRef.current.load(); // Cân nhắc thêm dòng này nếu chỉ pause và srcObject=null không đủ để xóa frame cuối trên mobile
+                console.log(
+                  "[MobileDebug] Remote video srcObject set to null and paused after onended."
+                );
+              }
             };
+
             event.track.onmute = () => {
-              // Xử lý khi track bị mute (VD: đối phương tắt camera nhưng track vẫn còn)
-              console.log("Remote video track muted.");
+              // Khi track bị mute (ví dụ: đối phương tắt camera nhưng kết nối vẫn còn)
+              console.log("[MobileDebug] Remote video track.onmute fired.");
               setIsRemoteVideoOff(true);
+              if (remoteVideoRef.current) {
+                remoteVideoRef.current.pause(); // Cũng nên pause ở đây
+                // Không nhất thiết phải set srcObject = null nếu chỉ là mute,
+                // isRemoteVideoOff sẽ đảm bảo UI ẩn video và hiện fallback.
+                // Tuy nhiên, nếu muốn triệt để xóa frame, có thể làm tương tự onended.
+                console.log(
+                  "[MobileDebug] isRemoteVideoOff set to true and video paused due to onmute."
+                );
+              }
             };
+
             event.track.onunmute = () => {
-              // Xử lý khi track được unmute
-              console.log("Remote video track unmuted.");
+              // Khi track được unmute
+              console.log("[MobileDebug] Remote video track.onunmute fired.");
               setIsRemoteVideoOff(false);
+              if (remoteVideoRef.current && remoteVideoRef.current.srcObject) {
+                // Đảm bảo video được play lại nếu trình duyệt không tự động làm điều đó
+                // remoteVideoRef.current.play().catch(e => console.warn("[MobileDebug] Failed to play on unmute", e));
+              }
+              console.log(
+                "[MobileDebug] isRemoteVideoOff set to false due to onunmute."
+              );
             };
           }
         }
