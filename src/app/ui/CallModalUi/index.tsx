@@ -80,7 +80,9 @@ export default function CallModalUi({
   }, [isRemoteVideoOff, remoteVideoRef]);
 
   return (
-    <div className="w-full h-full bg-zinc-900 rounded-lg overflow-hidden flex flex-col relative">
+    <div
+      className={`w-full h-full bg-zinc-900 rounded-lg overflow-hidden flex flex-col relative ${styles.container}`}
+    >
       {/* Top bar */}
       <div className="absolute top-0 right-0 flex items-center gap-2 p-4 z-20">
         {/* Các nút điều khiển cửa sổ giữ nguyên */}
