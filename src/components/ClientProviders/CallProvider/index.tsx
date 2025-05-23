@@ -177,7 +177,7 @@ export default function CallProvider({ userId }: CallProviderProps) {
       {showIncomingCall && incomingCallData && (
         <div
           className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center transition-opacity duration-300"
-          style={{ height: "100dvh" }}
+          style={{ height: "100dvh", zIndex: 9999 }}
         >
           <div
             className="w-[320px] bg-[#121212] rounded-2xl overflow-hidden transition-all duration-300 transform translate-y-0 opacity-100"
