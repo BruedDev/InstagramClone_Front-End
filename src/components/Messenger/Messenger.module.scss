@@ -24,7 +24,7 @@
   @media (max-width: 622px) {
     width: 100vw;
     height: 100dvh;
-    z-index: 1000;
+    z-index: 997;
     margin: auto 0;
   }
 }
@@ -41,7 +41,7 @@
     width: 100vw;
     height: 100dvh;
     background: #111;
-    z-index: 1000;
+    z-index: 998;
     transform: translateX(-100%);
     opacity: 0;
     pointer-events: none;
@@ -55,7 +55,7 @@
       top: 0;
       height: 60px;
       background-color: #0f0f0f;
-      z-index: 9999;
+      z-index: 998;
       flex-shrink: 0;
     }
 
@@ -64,7 +64,7 @@
       bottom: 0;
       height: 70px;
       background-color: #0f0f0f;
-      z-index: 9999;
+      z-index: 998;
       flex-shrink: 0;
     }
 
