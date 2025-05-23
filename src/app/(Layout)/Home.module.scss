@@ -11,37 +11,19 @@
     }
   }
 }
-
 .header {
-  position: fixed; // Đổi từ sticky sang fixed để có thể control transform
+  position: sticky;
   top: 0;
   left: 0;
-  right: 0; // Thêm right: 0 để header full width
   background-color: #0d1015;
   z-index: 995;
   height: 50px;
   padding: 0 15px;
   display: none;
 
-  // Thêm transition cho smooth animation
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-
-  // Thêm border bottom để tách biệt với content
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-
   @media (max-width: 768px) {
     display: block;
   }
-}
-
-// Class khi header visible
-.headerVisible {
-  transform: translateY(0);
-}
-
-// Class khi header hidden
-.headerHidden {
-  transform: translateY(-100%);
 }
 
 .headerContent {
@@ -50,28 +32,12 @@
   align-items: center;
   height: 50px;
 }
-
 .action {
   display: flex;
   gap: 20px;
 
-  button,
-  a {
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 8px;
-    border-radius: 50%;
-    transition: background-color 0.2s ease;
-
-    &:hover {
-      background-color: rgba(255, 255, 255, 0.1);
-    }
-  }
-
   svg {
     width: 24px;
     height: 24px;
-    color: white;
   }
 }

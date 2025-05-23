@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useScrollDirection } from "use-scroll-direction";
 import HomeUi from "../ui/Home";
 import styles from "./Home.module.scss";
 import Suggestions from "@/components/Suggestions";
@@ -17,9 +18,23 @@ export default function Home() {
 
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
 
-  // State cho auto-hide header
-  const [isHeaderVisible, setIsHeaderVisible] = useState(true);
-  const [lastScrollY, setLastScrollY] = useState(0);
+  // Sử dụng useScrollDirection hook
+  const { isScrollingUp } = useScrollDirection({
+    wait: 100, // Debounce time in ms
+  });
+
+  // State để track scroll position
+  const [scrollY, setScrollY] = useState(0);
+
+  // Track scroll position
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrollY(window.scrollY);
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const actionStates = {
     "Thông báo": {
@@ -33,51 +48,8 @@ export default function Home() {
   const notificationItem = navItems.find((item) => item.label === "Thông báo");
   const messageItem = navItems.find((item) => item.label === "Tin nhắn");
 
-  // Effect để handle scroll và auto-hide header
-  useEffect(() => {
-    const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-
-      // Chỉ áp dụng trên mobile (màn hình <= 768px)
-      if (window.innerWidth <= 768) {
-        // Nếu scroll xuống và đã scroll hơn 50px
-        if (currentScrollY > lastScrollY && currentScrollY > 50) {
-          setIsHeaderVisible(false);
-        }
-        // Nếu scroll lên
-        else if (currentScrollY < lastScrollY) {
-          setIsHeaderVisible(true);
-        }
-        // Nếu ở đầu trang thì luôn hiện header
-        else if (currentScrollY <= 10) {
-          setIsHeaderVisible(true);
-        }
-      } else {
-        // Trên desktop luôn hiện header
-        setIsHeaderVisible(true);
-      }
-
-      setLastScrollY(currentScrollY);
-    };
-
-    // Throttle scroll event để tối ưu performance
-    let ticking = false;
-    const throttledScroll = () => {
-      if (!ticking) {
-        requestAnimationFrame(() => {
-          handleScroll();
-          ticking = false;
-        });
-        ticking = true;
-      }
-    };
-
-    window.addEventListener("scroll", throttledScroll, { passive: true });
-
-    return () => {
-      window.removeEventListener("scroll", throttledScroll);
-    };
-  }, [lastScrollY]);
+  // Determine header visibility based on scroll direction and position
+  const isHeaderVisible = isScrollingUp || scrollY < 50;
 
   useEffect(() => {
     async function fetchPosts() {
