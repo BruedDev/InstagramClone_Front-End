@@ -1,7 +1,7 @@
 import { Comment as CommentType } from "@/store/comment";
 import styles from "@/components/Modal/PostModal.module.scss";
 import Image from "next/image";
-import { useTime } from "@/app/hooks/useTime";
+// import { useTime } from "@/app/hooks/useTime";
 import { Heart } from "lucide-react";
 import { MentionText } from "@/components/MentionText";
 
@@ -22,7 +22,7 @@ export const CommentItem = ({
   isReply?: boolean;
   onReply: (replyData: ReplyData) => void;
 }) => {
-  const { fromNow } = useTime();
+  // const { fromNow } = useTime();
 
   const marginLeft = isReply ? 20 : 0;
   const showBorder = isReply;
@@ -107,7 +107,7 @@ export const CommentItem = ({
           </div>
 
           <MentionText
-            text={comment.text}
+            text={comment.text || ""}
             className={styles.text}
             style={{
               fontSize: isReply ? "14px" : "15px",
@@ -129,7 +129,7 @@ export const CommentItem = ({
               gap: "10px",
             }}
           >
-            {fromNow(comment.createdAt)}
+            {/* {fromNow(comment.createdAt)} */}
             <button
               onClick={handleReplyClick}
               style={{
