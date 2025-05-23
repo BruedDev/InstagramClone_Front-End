@@ -4,6 +4,7 @@ import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { setInCall } from "@/store/messengerSlice";
 import { socketService } from "@/server/socket";
 import { User } from "@/types/user.type";
+import styles from "./Messenger.module.scss";
 
 interface CallProps {
   userId: string;
@@ -113,7 +114,9 @@ export default function Call({ userId, calleeId }: CallProps) {
       >
         <Video className="h-5 w-5" />
       </button>
-      <button className="p-2 text-gray-400 hover:text-gray-200">
+      <button
+        className={`p-2 text-gray-400 hover:text-gray-200 ${styles.info}`}
+      >
         <Info className="h-5 w-5" />
       </button>
     </div>

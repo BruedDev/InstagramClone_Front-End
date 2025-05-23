@@ -98,8 +98,12 @@
     background: none;
     color: #fff;
     border: none;
-    font-size: 20px;
     cursor: pointer;
+
+    svg {
+      width: 22px;
+      height: 22px;
+    }
   }
 }
 
@@ -117,5 +121,32 @@
   }
   .timeOnline {
     font-size: 11px;
+  }
+}
+.text {
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+.text2 {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+.profilePicture {
+  min-width: 40px;
+  min-height: 40px;
+}
+.username {
+  @media (max-width: 480px) {
+    font-size: 13px !important;
+  }
+}
+.info {
+  @media (max-width: 480px) {
+    display: none;
   }
 }

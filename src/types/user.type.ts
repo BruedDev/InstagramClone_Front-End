@@ -26,6 +26,10 @@ export interface User {
   isFollowing?: boolean;
   followersCount?: number;
   followingCount?: number;
+  lastActive?: number | string | null;
+  lastOnline?: number | string | null;
+  lastActiveTime?: string;
+  lastOnlineTime?: string;
 }
 
 export interface Message {

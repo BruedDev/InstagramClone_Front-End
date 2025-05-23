@@ -1,3 +1,4 @@
+// server/services/messenger.ts (hoặc tên file service của bạn)
 "use client";
 
 import type { Message } from "@/types/user.type";
@@ -10,6 +11,26 @@ export type AvailableUser = {
   profilePicture?: string;
 };
 
+export type RecentChat = {
+  user: {
+    _id: string;
+    username: string;
+    profilePicture?: string;
+    checkMark: boolean;
+    isOnline: boolean;
+    lastActive: string;
+    lastOnline: string;
+  };
+  lastMessage: {
+    senderId: string | null;
+    _id: string;
+    message: string;
+    isOwnMessage: boolean;
+    createdAt: string;
+    isRead: boolean;
+  };
+};
+
 // Hàm tiện ích để lấy token từ localStorage
 const getAuthToken = (): string | null => {
   if (typeof window !== "undefined") {
@@ -18,8 +39,27 @@ const getAuthToken = (): string | null => {
   return null;
 };
 
+// Lấy danh sách chat gần đây
+export const getRecentChats = async (): Promise<RecentChat[]> => {
+  const token = getAuthToken();
+  if (!token) throw new Error("Không có token xác thực");
+
+  const response = await fetch(`${BASE_URL}/messenger/recent-chats`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error("Không thể lấy danh sách chat gần đây");
+  }
+
+  return response.json();
+};
+
 // Lấy danh sách người dùng có thể nhắn tin
-export const getAvailableUsers = async (): Promise<AvailableUser> => {
+export const getAvailableUsers = async (): Promise<AvailableUser[]> => {
+  // Sửa lại kiểu trả về nếu API trả về mảng
   const token = getAuthToken();
   if (!token) throw new Error("Không có token xác thực");
 
@@ -44,8 +84,6 @@ export const getMessages = async (
 ): Promise<Message[]> => {
   const token = getAuthToken();
   const url = `${BASE_URL}/messenger/messages/${userId}?limit=${limit}&offset=${offset}`;
-  console.log("Gọi API:", url);
-  console.log("Token:", token);
 
   const res = await fetch(url, {
     headers: {
@@ -89,23 +127,34 @@ export const sendMessage = async (
   return response.json();
 };
 
-// Đánh dấu tin nhắn đã đọc
-export const markMessageAsRead = async (messageId: string): Promise<void> => {
+// Đánh dấu tin nhắn đã đọc (ĐÃ SỬA)
+export const markMessagesAsRead = async (
+  messageIds: string[],
+  senderId: string
+): Promise<void> => {
+  // Hoặc Promise<{ success: boolean; message: string }> nếu bạn muốn dùng response
   const token = getAuthToken();
   if (!token) throw new Error("Không có token xác thực");
 
-  const response = await fetch(`${BASE_URL}/messenger/markRead/${messageId}`, {
-    method: "PUT",
+  const response = await fetch(`${BASE_URL}/messenger/mark-as-read`, {
+    // URL đúng
+    method: "POST", // Phương thức đúng
     headers: {
+      "Content-Type": "application/json", // Thêm Content-Type
       Authorization: `Bearer ${token}`,
     },
+    body: JSON.stringify({ messageIds, senderId }), // Body đúng
   });
 
   if (!response.ok) {
+    // Bạn có thể thêm log chi tiết lỗi từ server nếu muốn
+    // const errorData = await response.json().catch(() => ({ message: "Lỗi không xác định" }));
+    // throw new Error(errorData.message || "Không thể đánh dấu tin nhắn đã đọc");
     throw new Error("Không thể đánh dấu tin nhắn đã đọc");
   }
 
-  return;
+  // return response.json(); // Nếu bạn muốn trả về và sử dụng response từ server
+  return; // Nếu chỉ cần biết thành công hay không
 };
 
 // Lấy số lượng tin nhắn chưa đọc
@@ -116,7 +165,6 @@ export const getUnreadCount = async (
   const token = getAuthToken();
   if (!token) throw new Error("Không có token xác thực");
 
-  // Gọi endpoint: /messenger/unread-count/:senderId?receiverId=...
   const response = await fetch(
     `${BASE_URL}/messenger/unread-count/${senderId}?receiverId=${receiverId}`,
     {
@@ -154,12 +202,19 @@ export const deleteMessage = async (messageId: string): Promise<void> => {
 
 // Kiểm tra trạng thái online/offline của người dùng
 export const getUserStatus = async (
-  userId: string
-): Promise<{ userId: string; status: "online" | "offline" }> => {
+  identifier: string // có thể là userId hoặc username
+): Promise<{
+  success: boolean;
+  userId: string;
+  username: string;
+  status: "online" | "offline";
+  lastActive: string;
+  lastOnline: string;
+}> => {
   const token = getAuthToken();
   if (!token) throw new Error("Không có token xác thực");
 
-  const response = await fetch(`${BASE_URL}/messenger/status/${userId}`, {
+  const response = await fetch(`${BASE_URL}/messenger/status/${identifier}`, {
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -170,8 +225,8 @@ export const getUserStatus = async (
   }
 
   const data = await response.json();
-  if (!data || !data.userId || !data.status) {
-    throw new Error("Ph n h i tr  l i khi kiểm tra trạng thái người dùng");
+  if (!data || !data.success) {
+    throw new Error("Phản hồi trả lời khi kiểm tra trạng thái người dùng");
   }
 
   return data;
@@ -192,10 +247,10 @@ export const createPeerConnection = async () => {
 
     return {
       peer,
-      iceData: data, // Trả về cả kết quả từ API
+      iceData: data,
     };
   } catch (error) {
     console.error("Lỗi lấy ICE servers:", error);
-    throw error; // Ném lỗi để người gọi hàm có thể xử lý
+    throw error;
   }
 };

@@ -10,6 +10,9 @@ import type { User, Message } from "@/types/user.type";
 import { useEffect, useRef, useState } from "react";
 import Call from "./call";
 import { useTime } from "@/app/hooks/useTime";
+import { useCheckOnline } from "@/app/hooks/useCheckOnline";
+import { useTimeOffline } from "@/app/hooks/useTimeOffline"; // Import hook mới
+import { OnlineIndicator } from "@/components/OnlineIndicator";
 
 export type MainChatProps = {
   selectedUser: User | null;
@@ -54,21 +57,32 @@ export default function MainChat({
   const [previousScrollHeight, setPreviousScrollHeight] = useState(0);
   const { formatTime } = useTime();
 
+  // Thêm hook useCheckOnline
+  const { isUserOnline } = useCheckOnline(availableUsers);
+
+  // Sử dụng useTimeOffline cho selectedUser
+  const { timeOffline } = useTimeOffline(
+    selectedUser?.lastActive !== null && selectedUser?.lastActive !== undefined
+      ? String(selectedUser.lastActive)
+      : null,
+    selectedUser?.lastOnline !== null && selectedUser?.lastOnline !== undefined
+      ? String(selectedUser.lastOnline)
+      : null,
+    isUserOnline(selectedUser?._id || "") ? "online" : "offline"
+  );
+
   // Xử lý cuộn và load thêm tin nhắn
   const handleScroll = () => {
     if (!messagesContainerRef.current) return;
     const { scrollTop, scrollHeight, clientHeight } =
       messagesContainerRef.current;
 
-    // Nếu cuộn lên đầu và còn tin nhắn để load
     if (scrollTop === 0 && hasMore && !loadingMore) {
-      // Lưu lại chiều cao hiện tại để sau này điều chỉnh vị trí cuộn
       setPreviousScrollHeight(scrollHeight);
       setShouldMaintainScrollPosition(true);
       onLoadMore();
     }
 
-    // Xác định xem người dùng có đang cuộn lên hay không
     if (scrollHeight - scrollTop - clientHeight > 50) {
       setIsUserScrollUp(true);
     } else {
@@ -86,11 +100,9 @@ export default function MainChat({
       const { scrollHeight } = messagesContainerRef.current;
       const newPosition = scrollHeight - previousScrollHeight;
 
-      // Đặt vị trí cuộn để duy trì vị trí tương đối sau khi load thêm tin nhắn
       messagesContainerRef.current.scrollTop =
         newPosition > 0 ? newPosition : 0;
 
-      // Reset các trạng thái
       setShouldMaintainScrollPosition(false);
     }
   }, [
@@ -106,6 +118,25 @@ export default function MainChat({
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages, selectedUser, loading, isUserScrollUp]);
+
+  // Hàm hiển thị trạng thái hoạt động - UPDATED
+  const getActivityStatus = (user: User) => {
+    if (!user) return "";
+
+    // Sử dụng timeOffline từ hook thay vì hardcode
+    return timeOffline;
+  };
+
+  // Tạo unique key cho mỗi message
+  const generateMessageKey = (msg: Message, index: number) => {
+    // Nếu tin nhắn có _id, sử dụng _id kết hợp với index
+    if (msg._id) {
+      return `${msg._id}-${index}`;
+    }
+
+    // Nếu là tin nhắn tạm thời, tạo key duy nhất từ nhiều thông tin
+    return `temp-${msg.senderId}-${Date.now()}-${index}`;
+  };
 
   return (
     <div
@@ -138,23 +169,32 @@ export default function MainChat({
                   }
                 }
               `}</style>
-              <div className="w-10 h-10 rounded-full overflow-hidden mr-3 relative">
+              <div className="w-10 h-10 rounded-full mr-3 relative">
                 {selectedUser.profilePicture ? (
                   <Image
                     src={selectedUser.profilePicture}
                     alt={selectedUser.username}
                     fill
-                    className="object-cover"
+                    className={`object-cover ${styles.profilePicture}`}
+                    style={{ borderRadius: "50%" }}
                   />
                 ) : (
-                  <div className="w-full h-full bg-gray-600 flex items-center justify-center">
+                  <div
+                    className={`w-full h-full bg-gray-600 flex items-center justify-center`}
+                  >
                     {selectedUser.username.charAt(0).toUpperCase()}
                   </div>
                 )}
+                {/* Thêm OnlineIndicator */}
+                <OnlineIndicator isOnline={isUserOnline(selectedUser._id)} />
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <p className="font-medium">{selectedUser.username}</p>
+                  <p
+                    className={`font-medium ${styles.text2} ${styles.username}`}
+                  >
+                    {selectedUser.username}
+                  </p>
                   {selectedUser.checkMark && (
                     <Image
                       src="/icons/checkMark/checkMark.png"
@@ -166,7 +206,10 @@ export default function MainChat({
                     />
                   )}
                 </div>
-                <p className="text-xs text-gray-400">Active 20 min ago</p>
+                {/* Hiển thị trạng thái hoạt động với real-time update */}
+                <p className={`text-xs text-gray-400 ${styles.text2}`}>
+                  {getActivityStatus(selectedUser)}
+                </p>
               </div>
             </div>
             <Call
@@ -190,58 +233,26 @@ export default function MainChat({
           {hasMore && (
             <div className="flex justify-center mb-2">
               {loadingMore && (
-                <span className="flex items-center justify-center">
-                  <svg
-                    className="animate-spin h-5 w-5 text-gray-400"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                      fill="none"
-                    />
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                    />
-                  </svg>
-                </span>
+                <div className="flex items-center justify-center">
+                  {/* Tailwind CSS Loading Spinner */}
+                  <div className="w-5 h-5 border-2 border-gray-600 border-t-gray-400 rounded-full animate-spin"></div>
+                </div>
               )}
             </div>
           )}
           {loading && messages.length === 0 ? (
             <div className="flex justify-center items-center h-full">
-              <svg
-                className="animate-spin h-6 w-6 text-gray-400"
-                viewBox="0 0 24 24"
-              >
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                  fill="none"
-                />
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                />
-              </svg>
+              {/* Tailwind CSS Loading Spinner */}
+              <div className="w-6 h-6 border-2 border-gray-600 border-t-gray-400 rounded-full animate-spin"></div>
             </div>
           ) : messages.length > 0 ? (
             messages.map((msg, index) => {
               const isCurrentUser = msg.senderId === userId;
+              const messageKey = generateMessageKey(msg, index);
+
               return (
                 <div
-                  key={msg._id || index}
+                  key={messageKey}
                   className={`flex mb-4 ${isCurrentUser ? "justify-end" : ""}`}
                 >
                   {!isCurrentUser && (
@@ -276,7 +287,7 @@ export default function MainChat({
                           isCurrentUser ? "bg-blue-600" : "bg-[#222]"
                         } rounded-lg p-3`}
                       >
-                        <p>{msg.message}</p>
+                        <p className={`${styles.text}`}>{msg.message}</p>
                       </div>
                       {!isCurrentUser && (
                         <button className="ml-2 text-gray-500 hover:text-gray-300">

@@ -26,6 +26,11 @@ export interface MessengerState {
     duration?: number;
     status: "missed" | "answered" | "outgoing";
   }[];
+  userStatus: unknown | null;
+  checkingStatus: boolean;
+  timestamp: number;
+  duration?: number;
+  status: "missed" | "answered" | "outgoing";
 }
 
 
