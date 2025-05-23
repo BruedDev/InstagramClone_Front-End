@@ -1,9 +1,9 @@
 import { Geist, Geist_Mono } from "next/font/google";
-import "../globals.css"; // Điều chỉnh đường dẫn nếu globals.css ở thư mục gốc dự án
+import "../globals.css";
 import SiderBar from "@/components/SiderBar";
-import Footer from "@/components/Footer"; // Footer sẽ được truyền vào ScrollableArea
+import Footer from "@/components/Footer";
 import ClientProviders from "@/components/ClientProviders";
-import ScrollableArea from "@/components/ScrollableArea"; // Component Client mới
+import ScrollableArea from "@/components/ScrollableArea";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
