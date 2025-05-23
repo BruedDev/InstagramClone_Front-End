@@ -13,11 +13,7 @@ export default function ScrollableArea({ children }: ScrollableAreaProps) {
 
   return (
     <ScrollContainerContext.Provider value={scrollableContainerRef}>
-      <div
-        ref={scrollableContainerRef}
-        className={layoutStyles.container}
-        style={{ overflowY: "auto", height: "100%" }}
-      >
+      <div ref={scrollableContainerRef} className={layoutStyles.container}>
         {children}
       </div>
     </ScrollContainerContext.Provider>

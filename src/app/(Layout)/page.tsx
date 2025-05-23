@@ -37,7 +37,7 @@ export default function Home() {
     const handleScroll = () => {
       const currentScrollY = scrollContainer.scrollTop;
 
-      if (currentScrollY > prevScrollY && currentScrollY > 50) {
+      if (currentScrollY > prevScrollY && currentScrollY > 20) {
         setShowHeader(false);
       } else {
         setShowHeader(true);
