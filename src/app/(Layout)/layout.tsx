@@ -1,9 +1,9 @@
 import { Geist, Geist_Mono } from "next/font/google";
-import "../globals.css";
+import "../globals.css"; // Điều chỉnh đường dẫn nếu globals.css ở thư mục gốc dự án
 import SiderBar from "@/components/SiderBar";
-import Footer from "@/components/Footer";
-import styles from "./Layout.module.scss";
+import Footer from "@/components/Footer"; // Footer sẽ được truyền vào ScrollableArea
 import ClientProviders from "@/components/ClientProviders";
+import ScrollableArea from "@/components/ScrollableArea"; // Component Client mới
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -21,7 +21,7 @@ export const metadata = {
 };
 
 export default function RootLayout({
-  children,
+  children, // Đây là nội dung cho <main>
 }: {
   children: React.ReactNode;
 }) {
@@ -36,10 +36,11 @@ export default function RootLayout({
             style={{ display: "flex", height: "100dvh", overflow: "hidden" }}
           >
             <SiderBar />
-            <div className={styles.container}>
+            <ScrollableArea>
+              {/* Nội dung được truyền cho ScrollableArea */}
               <main style={{ flex: 1 }}>{children}</main>
               <Footer type="home" />
-            </div>
+            </ScrollableArea>
           </div>
         </ClientProviders>
       </body>

@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useScrollDirection } from "use-scroll-direction";
+import { useEffect, useState, useContext } from "react"; // Bỏ useRef vì không tạo ref ở đây
 import HomeUi from "../ui/Home";
 import styles from "./Home.module.scss";
 import Suggestions from "@/components/Suggestions";
@@ -10,31 +9,16 @@ import AddStory from "@/components/AddStory";
 import Image from "next/image";
 import Link from "next/link";
 import { useNavItems } from "@/app/hooks/useNavItems";
+import { ScrollContainerContext } from "@/contexts/ScrollContainerContext"; // Đường dẫn tới context
 
 export default function Home() {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [prevScrollY, setPrevScrollY] = useState(0);
+  const [showHeader, setShowHeader] = useState(true);
 
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
-
-  // Sử dụng useScrollDirection hook
-  const { isScrollingUp } = useScrollDirection({
-    wait: 100, // Debounce time in ms
-  });
-
-  // State để track scroll position
-  const [scrollY, setScrollY] = useState(0);
-
-  // Track scroll position
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrollY(window.scrollY);
-    };
-
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
 
   const actionStates = {
     "Thông báo": {
@@ -43,13 +27,34 @@ export default function Home() {
     },
   };
 
-  const navItems = useNavItems(actionStates);
+  const scrollableContainerRef = useContext(ScrollContainerContext); // Lấy ref từ context
 
+  useEffect(() => {
+    const scrollContainer = scrollableContainerRef?.current;
+
+    if (!scrollContainer) return;
+
+    const handleScroll = () => {
+      const currentScrollY = scrollContainer.scrollTop;
+
+      if (currentScrollY > prevScrollY && currentScrollY > 50) {
+        setShowHeader(false);
+      } else {
+        setShowHeader(true);
+      }
+      setPrevScrollY(currentScrollY);
+    };
+
+    scrollContainer.addEventListener("scroll", handleScroll);
+
+    return () => {
+      scrollContainer.removeEventListener("scroll", handleScroll);
+    };
+  }, [prevScrollY, scrollableContainerRef]);
+
+  const navItems = useNavItems(actionStates);
   const notificationItem = navItems.find((item) => item.label === "Thông báo");
   const messageItem = navItems.find((item) => item.label === "Tin nhắn");
-
-  // Determine header visibility based on scroll direction and position
-  const isHeaderVisible = isScrollingUp || scrollY < 50;
 
   useEffect(() => {
     async function fetchPosts() {
@@ -63,7 +68,6 @@ export default function Home() {
         setLoading(false);
       }
     }
-
     fetchPosts();
   }, []);
 
@@ -72,11 +76,8 @@ export default function Home() {
 
   return (
     <div className={styles.container}>
-      <div
-        className={`${styles.header} ${
-          isHeaderVisible ? styles.headerVisible : styles.headerHidden
-        }`}
-      >
+      <div className={`${styles.header} ${!showHeader ? styles.hidden : ""}`}>
+        {/* ... header content ... */}
         <div className={styles.headerContent}>
           <div className={styles.logo}>
             <Image src="/Images/logoLogin.png" alt="" width={100} height={50} />

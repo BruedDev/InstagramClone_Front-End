@@ -20,6 +20,11 @@
   height: 50px;
   padding: 0 15px;
   display: none;
+  transition: transform 0.3s ease;
+
+  &.hidden {
+    transform: translateY(-100%);
+  }
 
   @media (max-width: 768px) {
     display: block;
