@@ -89,7 +89,9 @@ const InnerCallModal = () => {
   return (
     <>
       {/* Component CallModal sẽ hiển thị UI của cuộc gọi */}
-      <CallModal handleEndCall={handleEndCall} />
+      <div style={{ height: "100dvh" }}>
+        <CallModal handleEndCall={handleEndCall} />
+      </div>
     </>
   );
 };
