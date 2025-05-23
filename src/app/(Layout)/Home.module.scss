@@ -11,19 +11,35 @@
     }
   }
 }
+
 .header {
-  position: sticky;
+  position: fixed; // Đổi từ sticky sang fixed
   top: 0;
   left: 0;
+  right: 0; // Thêm right để header full width
   background-color: #0d1015;
   z-index: 995;
   height: 50px;
   padding: 0 15px;
   display: none;
 
+  // Animation mượt mà
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform; // Tối ưu performance
+
   @media (max-width: 768px) {
     display: block;
   }
+}
+
+// Class cho trạng thái hiện
+.headerVisible {
+  transform: translateY(0);
+}
+
+// Class cho trạng thái ẩn
+.headerHidden {
+  transform: translateY(-100%);
 }
 
 .headerContent {
@@ -32,12 +48,31 @@
   align-items: center;
   height: 50px;
 }
+
 .action {
   display: flex;
   gap: 20px;
 
+  button,
+  a {
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+    border-radius: 50%;
+    transition: background-color 0.2s ease;
+
+    &:hover {
+      background-color: rgba(255, 255, 255, 0.1);
+    }
+  }
+
   svg {
     width: 24px;
     height: 24px;
+    color: white;
   }
 }

@@ -1,5 +1,4 @@
 "use client";
-
 import { useEffect, useState } from "react";
 import HomeUi from "../ui/Home";
 import styles from "./Home.module.scss";
@@ -15,6 +14,10 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // State cho header scroll animation
+  const [isHeaderVisible, setIsHeaderVisible] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
+
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
 
   const actionStates = {
@@ -28,6 +31,32 @@ export default function Home() {
 
   const notificationItem = navItems.find((item) => item.label === "Thông báo");
   const messageItem = navItems.find((item) => item.label === "Tin nhắn");
+
+  // Effect cho scroll header
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+
+      // Chỉ thực hiện khi scroll hơn 10px để tránh flicker
+      if (Math.abs(currentScrollY - lastScrollY) < 10) return;
+
+      if (currentScrollY > lastScrollY && currentScrollY > 50) {
+        // Cuộn xuống - ẩn header
+        setIsHeaderVisible(false);
+      } else {
+        // Cuộn lên - hiện header
+        setIsHeaderVisible(true);
+      }
+
+      setLastScrollY(currentScrollY);
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, [lastScrollY]);
 
   useEffect(() => {
     async function fetchPosts() {
@@ -50,7 +79,11 @@ export default function Home() {
 
   return (
     <div className={styles.container}>
-      <div className={styles.header}>
+      <div
+        className={`${styles.header} ${
+          isHeaderVisible ? styles.headerVisible : styles.headerHidden
+        }`}
+      >
         <div className={styles.headerContent}>
           <div className={styles.logo}>
             <Image src="/Images/logoLogin.png" alt="" width={100} height={50} />
