@@ -13,31 +13,33 @@
 }
 
 .header {
-  position: fixed; // Đổi từ sticky sang fixed
+  position: fixed; // Đổi từ sticky sang fixed để có thể control transform
   top: 0;
   left: 0;
-  right: 0; // Thêm right để header full width
+  right: 0; // Thêm right: 0 để header full width
   background-color: #0d1015;
   z-index: 995;
   height: 50px;
   padding: 0 15px;
   display: none;
 
-  // Animation mượt mà
+  // Thêm transition cho smooth animation
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  will-change: transform; // Tối ưu performance
+
+  // Thêm border bottom để tách biệt với content
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 
   @media (max-width: 768px) {
     display: block;
   }
 }
 
-// Class cho trạng thái hiện
+// Class khi header visible
 .headerVisible {
   transform: translateY(0);
 }
 
-// Class cho trạng thái ẩn
+// Class khi header hidden
 .headerHidden {
   transform: translateY(-100%);
 }
@@ -58,9 +60,6 @@
     background: none;
     border: none;
     cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
     padding: 8px;
     border-radius: 50%;
     transition: background-color 0.2s ease;

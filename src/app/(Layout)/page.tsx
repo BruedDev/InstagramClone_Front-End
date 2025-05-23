@@ -1,4 +1,5 @@
 "use client";
+
 import { useEffect, useState } from "react";
 import HomeUi from "../ui/Home";
 import styles from "./Home.module.scss";
@@ -14,11 +15,11 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // State cho header scroll animation
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+
+  // State cho auto-hide header
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
-
-  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
 
   const actionStates = {
     "Thông báo": {
@@ -32,29 +33,49 @@ export default function Home() {
   const notificationItem = navItems.find((item) => item.label === "Thông báo");
   const messageItem = navItems.find((item) => item.label === "Tin nhắn");
 
-  // Effect cho scroll header
+  // Effect để handle scroll và auto-hide header
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
 
-      // Chỉ thực hiện khi scroll hơn 10px để tránh flicker
-      if (Math.abs(currentScrollY - lastScrollY) < 10) return;
-
-      if (currentScrollY > lastScrollY && currentScrollY > 50) {
-        // Cuộn xuống - ẩn header
-        setIsHeaderVisible(false);
+      // Chỉ áp dụng trên mobile (màn hình <= 768px)
+      if (window.innerWidth <= 768) {
+        // Nếu scroll xuống và đã scroll hơn 50px
+        if (currentScrollY > lastScrollY && currentScrollY > 50) {
+          setIsHeaderVisible(false);
+        }
+        // Nếu scroll lên
+        else if (currentScrollY < lastScrollY) {
+          setIsHeaderVisible(true);
+        }
+        // Nếu ở đầu trang thì luôn hiện header
+        else if (currentScrollY <= 10) {
+          setIsHeaderVisible(true);
+        }
       } else {
-        // Cuộn lên - hiện header
+        // Trên desktop luôn hiện header
         setIsHeaderVisible(true);
       }
 
       setLastScrollY(currentScrollY);
     };
 
-    window.addEventListener("scroll", handleScroll, { passive: true });
+    // Throttle scroll event để tối ưu performance
+    let ticking = false;
+    const throttledScroll = () => {
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          handleScroll();
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    window.addEventListener("scroll", throttledScroll, { passive: true });
 
     return () => {
-      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("scroll", throttledScroll);
     };
   }, [lastScrollY]);
 
