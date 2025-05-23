@@ -27,53 +27,66 @@ export default function CallProvider({ userId }: CallProviderProps) {
   const callerInfo = incomingCallData
     ? availableUsers.find((u) => u._id === incomingCallData.callerId)
     : null;
-  const callerUsername = callerInfo?.username ?? incomingCallData?.callerId;
+  // Provide a fallback for callerUsername if incomingCallData is null initially
+  const callerUsername =
+    callerInfo?.username ??
+    (incomingCallData ? incomingCallData.callerId : "Đang tải...");
   const callerProfilePicture = callerInfo?.profilePicture;
 
   useEffect(() => {
     // Fetch available users khi component được mount
-    dispatch(fetchAvailableUsers());
-  }, [dispatch]);
+    // Consider if this should be fetched here or at a higher level if needed sooner/elsewhere
+    if (userId) {
+      // Ensure userId is present before fetching
+      dispatch(fetchAvailableUsers());
+    }
+  }, [dispatch, userId]);
 
   useEffect(() => {
-    const socket = socketService.initSocket();
+    if (!userId) return; // Don't proceed if userId is not available
 
-    // Đăng ký người dùng với socket
+    // socketService.initSocket() returns Socket | null.
+    // The socket instance from initSocket is used for listeners in this effect.
+    const socketInstance = socketService.initSocket();
+
+    // socketService.registerUser already handles if its internal getSocket() returns null.
     socketService.registerUser(userId);
 
-    // Lắng nghe các sự kiện cuộc gọi
-    if (socket) {
-      socket.on(
-        "incomingCall",
-        (data: { callerId: string; callType: "audio" | "video" }) => {
-          console.log("Incoming call received:", data);
+    const handleIncomingCall = (data: {
+      callerId: string;
+      callType: "audio" | "video";
+    }) => {
+      console.log("Incoming call received:", data);
 
-          // Hiển thị thông báo cuộc gọi đến
-          setIncomingCallData(data);
-          setShowIncomingCall(true);
+      setIncomingCallData(data);
+      setShowIncomingCall(true);
+      dispatch(setIncoming(data));
 
-          // Lưu thông tin cuộc gọi vào Redux store
-          dispatch(setIncoming(data));
+      if (ringtoneRef.current) {
+        ringtoneRef.current.currentTime = 0;
+        ringtoneRef.current.play().catch((error) => {
+          console.error("Không thể phát nhạc chuông:", error);
+        });
+      }
+    };
 
-          // Phát nhạc chuông khi có cuộc gọi đến
-          if (ringtoneRef.current) {
-            ringtoneRef.current.currentTime = 0;
-            ringtoneRef.current.play().catch((error) => {
-              console.error("Không thể phát nhạc chuông:", error);
-            });
-          }
-        }
+    if (socketInstance) {
+      socketInstance.on("incomingCall", handleIncomingCall);
+    } else {
+      console.warn(
+        "CallProvider: Socket not initialized, incoming call listener not attached."
       );
     }
 
     return () => {
-      if (socket) {
-        socket.off("incomingCall");
+      if (socketInstance) {
+        socketInstance.off("incomingCall", handleIncomingCall);
       }
     };
-  }, [userId, dispatch, availableUsers]);
+    // Removed `availableUsers` from dependency array as it's not directly related to socket setup/teardown.
+    // Re-running this effect on `availableUsers` change is likely not desired.
+  }, [userId, dispatch]);
 
-  // Mở CallModal dạng popup
   const openCallPopup = (callType: "audio" | "video", remoteUserId: string) => {
     const screenWidth = window.screen.availWidth;
     const screenHeight = window.screen.availHeight;
@@ -99,25 +112,31 @@ export default function CallProvider({ userId }: CallProviderProps) {
     }
 
     if (incomingCallData) {
-      socketService.getSocket().emit("acceptCall", {
-        callerId: incomingCallData.callerId,
-        calleeId: userId,
-      });
+      const currentSocket = socketService.getSocket(); // Returns Socket | null
+      if (currentSocket) {
+        currentSocket.emit("acceptCall", {
+          callerId: incomingCallData.callerId,
+          calleeId: userId,
+        });
 
-      const callWindow = openCallPopup(
-        incomingCallData.callType,
-        incomingCallData.callerId
-      );
-
-      if (callWindow) {
-        callWindow.onbeforeunload = () => {
-          dispatch(setInCall(false));
-        };
-        dispatch(setInCall(true));
-      } else {
-        alert(
-          "Không thể mở cửa sổ cuộc gọi. Vui lòng kiểm tra cài đặt trình duyệt của bạn."
+        const callWindow = openCallPopup(
+          incomingCallData.callType,
+          incomingCallData.callerId
         );
+
+        if (callWindow) {
+          callWindow.onbeforeunload = () => {
+            dispatch(setInCall(false));
+          };
+          dispatch(setInCall(true));
+        } else {
+          alert(
+            "Không thể mở cửa sổ cuộc gọi. Vui lòng kiểm tra cài đặt trình duyệt của bạn."
+          );
+        }
+      } else {
+        console.error("Cannot accept call: Socket not available.");
+        alert("Lỗi kết nối, không thể chấp nhận cuộc gọi."); // User-friendly feedback
       }
 
       setShowIncomingCall(false);
@@ -133,12 +152,17 @@ export default function CallProvider({ userId }: CallProviderProps) {
     }
 
     if (incomingCallData) {
-      // Gửi thông báo từ chối cuộc gọi với lý do
-      socketService.getSocket().emit("rejectCall", {
-        callerId: incomingCallData.callerId,
-        calleeId: userId,
-        reason: "Người dùng đã từ chối cuộc gọi",
-      });
+      const currentSocket = socketService.getSocket(); // Returns Socket | null
+      if (currentSocket) {
+        currentSocket.emit("rejectCall", {
+          callerId: incomingCallData.callerId,
+          calleeId: userId,
+          reason: "Người dùng đã từ chối cuộc gọi",
+        });
+      } else {
+        console.error("Cannot reject call: Socket not available.");
+        // Optionally, provide user feedback if the action fails due to no socket
+      }
 
       setShowIncomingCall(false);
       setIncomingCallData(null);
@@ -150,7 +174,6 @@ export default function CallProvider({ userId }: CallProviderProps) {
     <>
       <audio ref={ringtoneRef} src="/RingTone.mp3" loop />
 
-      {/* Modal cuộc gọi đến */}
       {showIncomingCall && incomingCallData && (
         <div
           className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center transition-opacity duration-300"
@@ -178,9 +201,7 @@ export default function CallProvider({ userId }: CallProviderProps) {
             <div className="px-6 pt-8 pb-6">
               <div className="flex flex-col items-center justify-center mb-8">
                 <div className="relative mb-5">
-                  {/* Hiệu ứng ping có sẵn trong Tailwind */}
                   <div className="absolute -inset-1 rounded-full opacity-30 bg-purple-500/20 animate-ping"></div>
-
                   {callerProfilePicture ? (
                     <div className="relative w-28 h-28 mb-1 rounded-full ring-2 ring-purple-500 p-1 overflow-hidden z-10">
                       <div className="absolute inset-0 bg-gradient-to-br from-purple-500/40 to-indigo-600/40 rounded-full z-10"></div>
@@ -198,11 +219,9 @@ export default function CallProvider({ userId }: CallProviderProps) {
                     </div>
                   )}
                 </div>
-
                 <h3 className="text-xl font-bold text-white mb-1 animate-pulse">
                   {callerUsername}
                 </h3>
-
                 <div className="flex items-center px-3 py-1.5 bg-[#1a1a1a] rounded-full text-gray-200 text-sm border border-[#333333]">
                   {incomingCallData.callType === "audio" ? (
                     <Phone size={14} className="mr-1.5 text-purple-400" />
@@ -231,7 +250,6 @@ export default function CallProvider({ userId }: CallProviderProps) {
                   </div>
                   <span className="text-gray-400 text-sm mt-1">Từ chối</span>
                 </button>
-
                 <button
                   onClick={handleAccept}
                   className="flex flex-col items-center gap-1 group"

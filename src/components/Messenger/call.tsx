@@ -45,12 +45,19 @@ export default function Call({ userId, calleeId }: CallProps) {
       dispatch(setInCall(true));
 
       callWindow.onload = () => {
+        const socket = socketService.getSocket();
+        if (!socket) {
+          console.error("Socket connection not available");
+          return;
+        }
+
         console.log("Emit callUser event:", {
           callerId: userId,
           calleeId,
           callType: "audio",
         });
-        socketService.getSocket().emit("callUser", {
+
+        socket.emit("callUser", {
           callerId: userId,
           calleeId,
           callType: "audio",
@@ -74,12 +81,19 @@ export default function Call({ userId, calleeId }: CallProps) {
       dispatch(setInCall(true));
 
       callWindow.onload = () => {
+        const socket = socketService.getSocket();
+        if (!socket) {
+          console.error("Socket connection not available");
+          return;
+        }
+
         console.log("Emit callUser event:", {
           callerId: userId,
           calleeId,
           callType: "video",
         });
-        socketService.getSocket().emit("callUser", {
+
+        socket.emit("callUser", {
           callerId: userId,
           calleeId,
           callType: "video",
