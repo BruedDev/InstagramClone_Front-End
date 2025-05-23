@@ -2,6 +2,7 @@ export interface GetUserResponse {
   success: boolean;
   user: User;
   message?: string;
+
 }
 
 export interface User {
@@ -13,14 +14,18 @@ export interface User {
   phoneNumber: number;
   profilePicture: string;
   bio: string;
-  followers: number[];
-  following: number[];
+  followers: string[];
+  following: string[];
   isPrivate: boolean;
   authType: string;
   createdAt: string;
   updatedAt: string;
   posts?: string[];
   checkMark: boolean;
+  currentUserId?: string;
+  isFollowing?: boolean;
+  followersCount?: number;
+  followingCount?: number;
 }
 
 export interface Message {

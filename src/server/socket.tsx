@@ -3,34 +3,30 @@
 
 import { io, Socket } from "socket.io-client";
 
-// Định nghĩa địa chỉ API
 const API_URL = process.env.NEXT_PUBLIC_SOCKET_URL;
-console.log("Socket URL:", API_URL);
+// console.log("Socket URL:", API_URL);
 
-// Hàm singleton để tạo và quản lý kết nối socket
 let socket: Socket | null = null;
 
 export const socketService = {
-  // Khởi tạo socket và kết nối
   initSocket: () => {
-    if (!socket) {
+    if (!socket && API_URL) {
       socket = io(API_URL);
-      console.log("Socket initialized");
+      // console.log("Socket initialized");
     }
     return socket;
   },
 
-  // Lấy instance socket hiện tại
-  getSocket: () => {
+  getSocket: (): Socket => {
     if (!socket) {
-      return socketService.initSocket();
+      return socketService.initSocket() as Socket;
     }
     return socket;
   },
 
-  // Đăng ký user online
   registerUser: (userId: string) => {
     const currentSocket = socketService.getSocket();
+    if (!currentSocket) return;
     currentSocket.emit("userOnline", userId);
     currentSocket.emit("joinUserRoom", userId);
   },
@@ -41,10 +37,10 @@ export const socketService = {
     message: string;
   }) => {
     const currentSocket = socketService.getSocket();
+    if (!currentSocket) return;
     currentSocket.emit("sendMessage", data);
   },
 
-  // Lắng nghe tin nhắn mới
   onReceiveMessage: (
     callback: (msg: {
       senderId: string;
@@ -53,10 +49,10 @@ export const socketService = {
     }) => void
   ) => {
     const currentSocket = socketService.getSocket();
+    if (!currentSocket) return;
     currentSocket.on("receiveMessage", callback);
   },
 
-  // Hủy lắng nghe tin nhắn mới
   offReceiveMessage: (
     callback: (msg: {
       senderId: string;
@@ -65,44 +61,42 @@ export const socketService = {
     }) => void
   ) => {
     const currentSocket = socketService.getSocket();
+    if (!currentSocket) return;
     currentSocket.off("receiveMessage", callback);
   },
 
-  // ------- Các phương thức cho tính năng gọi điện -------
-
-  // Người gọi: Gửi yêu cầu gọi đến server
   callUser: (data: {
     to: string;
     from: string;
     signal: RTCSessionDescriptionInit;
   }) => {
     const currentSocket = socketService.getSocket();
+    if (!currentSocket) return;
     currentSocket.emit("callUser", data);
   },
 
-  // Người nhận: Trả lời cuộc gọi
   answerCall: (data: {
     to: string;
     from: string;
     signal: RTCSessionDescriptionInit;
   }) => {
     const currentSocket = socketService.getSocket();
+    if (!currentSocket) return;
     currentSocket.emit("answerCall", data);
   },
 
-  // Gửi ICE candidate trong quá trình kết nối WebRTC
   sendIceCandidate: (data: { to: string; candidate: RTCIceCandidate }) => {
     const currentSocket = socketService.getSocket();
+    if (!currentSocket) return;
     currentSocket.emit("iceCandidate", data);
   },
 
-  // Kết thúc cuộc gọi
   endCall: (data: { to: string; from: string }) => {
     const currentSocket = socketService.getSocket();
+    if (!currentSocket) return;
     currentSocket.emit("endCall", data);
   },
 
-  // Lắng nghe sự kiện có cuộc gọi đến
   onCallIncoming: (
     callback: (data: {
       from: string;
@@ -110,10 +104,10 @@ export const socketService = {
     }) => void
   ) => {
     const currentSocket = socketService.getSocket();
+    if (!currentSocket) return;
     currentSocket.on("callIncoming", callback);
   },
 
-  // Lắng nghe sự kiện cuộc gọi được trả lời
   onCallAnswered: (
     callback: (data: {
       from: string;
@@ -121,38 +115,276 @@ export const socketService = {
     }) => void
   ) => {
     const currentSocket = socketService.getSocket();
+    if (!currentSocket) return;
     currentSocket.on("callAnswered", callback);
   },
 
-  // Lắng nghe sự kiện nhận ICE candidate
   onIceCandidate: (
     callback: (data: { from: string; candidate: RTCIceCandidate }) => void
   ) => {
     const currentSocket = socketService.getSocket();
+    if (!currentSocket) return;
     currentSocket.on("iceCandidate", callback);
   },
 
-  // Lắng nghe sự kiện cuộc gọi kết thúc
   onCallEnded: (callback: (data: { from: string }) => void) => {
     const currentSocket = socketService.getSocket();
+    if (!currentSocket) return;
     currentSocket.on("callEnded", callback);
   },
 
-  // Hủy các listener khi không cần thiết
   offCallListeners: () => {
     const currentSocket = socketService.getSocket();
+    if (!currentSocket) return;
     currentSocket.off("callIncoming");
     currentSocket.off("callAnswered");
     currentSocket.off("iceCandidate");
     currentSocket.off("callEnded");
   },
 
-  // Ngắt kết nối socket
   disconnect: () => {
     if (socket) {
       socket.disconnect();
       socket = null;
       console.log("Socket disconnected");
     }
+  },
+
+  joinPostRoom: (postId: string) => {
+    const currentSocket = socketService.getSocket();
+    if (!currentSocket) return;
+    currentSocket.emit("joinPostRoom", postId);
+  },
+
+  leavePostRoom: (postId: string) => {
+    const currentSocket = socketService.getSocket();
+    if (!currentSocket) return;
+    currentSocket.emit("leavePostRoom", postId);
+  },
+
+  joinReelRoom: (reelId: string) => {
+    const currentSocket = socketService.getSocket();
+    if (!currentSocket) return;
+    currentSocket.emit("joinReelRoom", reelId);
+  },
+
+  leaveReelRoom: (reelId: string) => {
+    const currentSocket = socketService.getSocket();
+    if (!currentSocket) return;
+    currentSocket.emit("leaveReelRoom", reelId);
+  },
+
+  emitCommentTyping: (data: {
+    itemId: string;
+    itemType: "post" | "reel";
+    user: { id: string; username: string; profilePicture?: string };
+  }) => {
+    const currentSocket = socketService.getSocket();
+    if (!currentSocket) return;
+    currentSocket.emit("comment:typing", data);
+  },
+
+  emitCommentStopTyping: (data: {
+    itemId: string;
+    itemType: "post" | "reel";
+    userId: string;
+  }) => {
+    const currentSocket = socketService.getSocket();
+    if (!currentSocket) return;
+    currentSocket.emit("comment:stopTyping", data);
+  },
+
+  emitCommentCreate: (data: {
+    authorId: string;
+    itemId: string;
+    itemType: "post" | "reel";
+    text: string;
+  }) => {
+    const currentSocket = socketService.getSocket();
+    if (!currentSocket) return;
+    currentSocket.emit("comment:create", data);
+  },
+
+  emitCommentEdit: (data: {
+    commentId: string;
+    newText: string;
+    itemId: string;
+    itemType: "post" | "reel";
+  }) => {
+    const currentSocket = socketService.getSocket();
+    if (!currentSocket) return;
+    currentSocket.emit("comment:edit", data);
+  },
+
+  emitCommentDelete: (data: {
+    commentId: string;
+    itemId: string;
+    itemType: "post" | "reel";
+  }) => {
+    const currentSocket = socketService.getSocket();
+    if (!currentSocket) return;
+    currentSocket.emit("comment:delete", data);
+  },
+
+  emitCommentReact: (data: {
+    commentId: string;
+    reaction: string;
+    user: { id: string; username: string; profilePicture?: string };
+  }) => {
+    const currentSocket = socketService.getSocket();
+    if (!currentSocket) return;
+    currentSocket.emit("comment:react", data);
+  },
+
+  onCommentTyping: (
+    callback: (data: {
+      itemId: string;
+      user: { id: string; username: string; profilePicture?: string };
+    }) => void
+  ) => {
+    const currentSocket = socketService.getSocket();
+    if (!currentSocket) return;
+    currentSocket.on("comment:typing", callback);
+  },
+
+  offCommentTyping: (
+    callback: (data: {
+      itemId: string;
+      user: { id: string; username: string; profilePicture?: string };
+    }) => void
+  ) => {
+    const currentSocket = socketService.getSocket();
+    if (!currentSocket) return;
+    currentSocket.off("comment:typing", callback);
+  },
+
+  onCommentStopTyping: (
+    callback: (data: { itemId: string; userId: string }) => void
+  ) => {
+    const currentSocket = socketService.getSocket();
+    if (!currentSocket) return;
+    currentSocket.on("comment:stopTyping", callback);
+  },
+
+  offCommentStopTyping: (
+    callback: (data: { itemId: string; userId: string }) => void
+  ) => {
+    const currentSocket = socketService.getSocket();
+    if (!currentSocket) return;
+    currentSocket.off("comment:stopTyping", callback);
+  },
+
+  onCommentCreated: (
+    callback: (data: {
+      itemId: string;
+      itemType: "post" | "reel";
+      comment: {
+        id: string;
+        authorId: string;
+        text: string;
+        createdAt: string;
+        updatedAt?: string;
+        [key: string]: unknown;
+      };
+    }) => void
+  ) => {
+    const currentSocket = socketService.getSocket();
+    if (!currentSocket) return;
+    currentSocket.on("comment:created", callback);
+  },
+
+  offCommentCreated: (
+    callback: (data: {
+      itemId: string;
+      itemType: "post" | "reel";
+      comment: {
+        id: string;
+        authorId: string;
+        text: string;
+        createdAt: string;
+        updatedAt?: string;
+        [key: string]: unknown;
+      };
+    }) => void
+  ) => {
+    const currentSocket = socketService.getSocket();
+    if (!currentSocket) return;
+    currentSocket.off("comment:created", callback);
+  },
+
+  onCommentEdited: (
+    callback: (data: {
+      commentId: string;
+      newText: string;
+      itemId: string;
+    }) => void
+  ) => {
+    const currentSocket = socketService.getSocket();
+    if (!currentSocket) return;
+    currentSocket.on("comment:edited", callback);
+  },
+
+  offCommentEdited: (
+    callback: (data: {
+      commentId: string;
+      newText: string;
+      itemId: string;
+    }) => void
+  ) => {
+    const currentSocket = socketService.getSocket();
+    if (!currentSocket) return;
+    currentSocket.off("comment:edited", callback);
+  },
+
+  onCommentDeleted: (
+    callback: (data: { commentId: string; itemId: string }) => void
+  ) => {
+    const currentSocket = socketService.getSocket();
+    if (!currentSocket) return;
+    currentSocket.on("comment:deleted", callback);
+  },
+
+  offCommentDeleted: (
+    callback: (data: { commentId: string; itemId: string }) => void
+  ) => {
+    const currentSocket = socketService.getSocket();
+    if (!currentSocket) return;
+    currentSocket.off("comment:deleted", callback);
+  },
+
+  onCommentReacted: (
+    callback: (data: {
+      commentId: string;
+      reaction: string;
+      user: { id: string; username: string; profilePicture?: string };
+    }) => void
+  ) => {
+    const currentSocket = socketService.getSocket();
+    if (!currentSocket) return;
+    currentSocket.on("comment:reacted", callback);
+  },
+
+  offCommentReacted: (
+    callback: (data: {
+      commentId: string;
+      reaction: string;
+      user: { id: string; username: string; profilePicture?: string };
+    }) => void
+  ) => {
+    const currentSocket = socketService.getSocket();
+    if (!currentSocket) return;
+    currentSocket.off("comment:reacted", callback);
+  },
+
+  onCommentError: (callback: (data: { message: string }) => void) => {
+    const currentSocket = socketService.getSocket();
+    if (!currentSocket) return;
+    currentSocket.on("comment:error", callback);
+  },
+
+  offCommentError: (callback: (...args: unknown[]) => void) => {
+    const currentSocket = socketService.getSocket();
+    if (!currentSocket) return;
+    currentSocket.off("comment:error", callback);
   },
 };

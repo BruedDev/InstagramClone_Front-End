@@ -20,4 +20,5 @@ export interface Post {
   likes: string[];
   isLiked: boolean;
   isBookmarked: boolean;
+  totalComments: number;
 }

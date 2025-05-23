@@ -84,6 +84,7 @@ export default function UploadAvatar({
           ? "bg-black bg-opacity-80"
           : "bg-black bg-opacity-0"
       } ${styles.modalOverlay} ${isClosing ? styles.closing : ""}`}
+      // style={{ zIndex: 998 }}
     >
       <div
         className={`bg-zinc-900 rounded-xl w-full max-w-md overflow-hidden shadow-xl md:max-h-[90vh] sm:max-h-[95vh] max-h-full h-auto sm:h-auto max-sm:h-full max-sm:rounded-none flex flex-col transition-all duration-400 ease-in-out ${

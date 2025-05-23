@@ -15,17 +15,16 @@
   }
 
   @media (max-width: 768px) {
-    width: 100%;
+    width: 100% !important;
     height: auto;
     position: fixed;
     bottom: 0;
-    left: 5px;
+    left: 0;
     flex-direction: row;
     align-items: center;
     padding: 10px;
     border-right: none;
-    border-top: 1px solid #333;
-    background-color: #000;
+    background-color: #0d1015;
   }
 }
 
@@ -41,7 +40,7 @@
   }
 
   @media (max-width: 768px) {
-    display: none;
+    display: none !important;
   }
 }
 
@@ -60,6 +59,7 @@
     margin: 0;
     padding: 0;
     gap: 0;
+    margin-left: 10px;
   }
 }
 
@@ -67,7 +67,7 @@
   display: flex;
   align-items: center;
   gap: 14px;
-  padding: 12px 15px;
+  padding: 10px 15px;
   border-radius: 8px;
   transition: background 0.2s ease;
   font-size: 14px;
@@ -137,6 +137,21 @@
 
     span {
       display: none;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .navItem {
+    padding: 8px 12px;
+  }
+
+  .item1,
+  .item5,
+  .item6 {
+    svg {
+      width: 24px;
+      height: 24px;
     }
   }
 }

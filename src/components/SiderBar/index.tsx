@@ -62,18 +62,31 @@ export default function SiderBar() {
   const rawNavItems = useNavItems(actionStates);
   const navItems = Array.isArray(rawNavItems) ? rawNavItems : [];
 
-  // >>> THAY ĐỔI CHÍNH: Ẩn SiderBar nếu URL chứa "call-modal"
   if (pathname && pathname.includes("call-modal")) {
-    return null; // Hoặc <></>
+    return null;
   }
-  // <<< KẾT THÚC THAY ĐỔI CHÍNH
+
+  // Helper function to ensure absolute path
+  const getAbsolutePath = (href: string | undefined) => {
+    if (!href || href === "#") return "#";
+
+    // Nếu href đã bắt đầu bằng '/', trả về như cũ
+    if (href.startsWith("/")) return href;
+
+    // Nếu không, thêm '/' vào đầu
+    return `/${href}`;
+  };
 
   return (
     <aside className={`${styles.sidebar} ${collapsed ? styles.collapsed : ""}`}>
       <div className={styles.logo}>
         <Link href="/">
           <Image
-            src="/Images/logoLogin.png"
+            src={
+              collapsed
+                ? "/Images/Instagram_logo_2016.svg.png"
+                : "/Images/logoLogin.png"
+            }
             alt="Logo"
             width={collapsed ? 30 : 120}
             height={collapsed ? 30 : 40}
@@ -91,7 +104,7 @@ export default function SiderBar() {
 
             return item.type === "link" ? (
               <Link
-                href={item.href || "#"}
+                href={getAbsolutePath(item.href)} // Sử dụng helper function
                 key={index}
                 onClick={item.onClick}
                 className={`${styles.navItem} ${
@@ -142,13 +155,12 @@ export default function SiderBar() {
           })}
 
         {/* Phần dưới: chỉ hiển thị "Xem Thêm" và "Tạo Bài Viết" */}
-        {/* >>> LOGIC MODAL ĐƯỢC HOÀN LẠI NHƯ GỐC CỦA BẠN */}
         {navItems
           .filter(
             (item) => item.label === "Xem Thêm" || item.label === "Tạo Bài Viết"
           )
           .map((item, index) => {
-            const icon = item.icon; // Trong code gốc, active state không được dùng cho icon ở mục này
+            const icon = item.icon;
 
             return (
               <div
@@ -174,7 +186,6 @@ export default function SiderBar() {
                   {!collapsed && <span>{item.label}</span>}
                 </button>
 
-                {/* Đây là cách bạn hiển thị modal ban đầu */}
                 {isMoreMenuOpen && (
                   <MoreMenu onClose={() => setIsMoreMenuOpen(false)} />
                 )}
@@ -184,7 +195,6 @@ export default function SiderBar() {
               </div>
             );
           })}
-        {/* <<< KẾT THÚC PHẦN LOGIC MODAL ĐƯỢC HOÀN LẠI */}
       </nav>
     </aside>
   );

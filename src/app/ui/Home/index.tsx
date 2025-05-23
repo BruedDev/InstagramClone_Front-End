@@ -1,9 +1,12 @@
 import { Post } from "@/types/home.type";
 import Image from "next/image";
-import { Heart, MessageCircle, Send, Bookmark } from "lucide-react";
 import PostModal from "@/components/Modal/PostModal";
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import styles from "./Home.module.scss";
+import InteractionButton from "../InteractionButton";
+import CommentInput from "../CommentInput";
+import Comment from "../Comment";
 
 interface HomeUiProps {
   posts: Post[];
@@ -15,8 +18,30 @@ export default function HomeUi({ posts }: HomeUiProps) {
   const [currentVideoTime, setCurrentVideoTime] = useState<number>(0);
   const videoRefs = useRef<{ [key: string]: HTMLVideoElement | null }>({});
   const postRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+  const [isMobileView, setIsMobileView] = useState(false);
+  const [showComments, setShowComments] = useState(false);
+  const [commentsAnimationClass, setCommentsAnimationClass] = useState("");
+  const [overlayAnimationClass, setOverlayAnimationClass] = useState("");
 
-  // Theo dõi các video trong viewport để phát/dừng
+  // console.log("posts", posts);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobileView(window.innerWidth <= 768);
+    };
+
+    if (typeof window !== "undefined") {
+      handleResize(); // Kiểm tra kích thước ban đầu
+      window.addEventListener("resize", handleResize);
+    }
+
+    return () => {
+      if (typeof window !== "undefined") {
+        window.removeEventListener("resize", handleResize);
+      }
+    };
+  }, []);
+
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -28,20 +53,17 @@ export default function HomeUi({ posts }: HomeUiProps) {
           if (!videoElement) return;
 
           if (entry.isIntersecting) {
-            // Phát video khi hiển thị trong viewport
             videoElement
               .play()
               .catch((err) => console.log("Autoplay prevented:", err));
           } else {
-            // Dừng video khi không còn trong viewport
             videoElement.pause();
           }
         });
       },
-      { threshold: 0.7 } // Ngưỡng hiển thị 70% của video trong viewport
+      { threshold: 0.7 }
     );
 
-    // Đăng ký theo dõi tất cả các post
     Object.keys(postRefs.current).forEach((postId) => {
       const postElement = postRefs.current[postId];
       if (postElement) {
@@ -50,7 +72,6 @@ export default function HomeUi({ posts }: HomeUiProps) {
     });
 
     return () => {
-      // Cleanup khi component unmount
       observer.disconnect();
     };
   }, [posts]);
@@ -65,27 +86,63 @@ export default function HomeUi({ posts }: HomeUiProps) {
     if (post.type === "video" && videoRefs.current[post._id]) {
       const videoElement = videoRefs.current[post._id];
       if (videoElement) {
-        // Lưu thời gian hiện tại của video
         setCurrentVideoTime(videoElement.currentTime);
-        // Dừng video
         videoElement.pause();
       }
     }
 
     setSelectedPost(post);
-    setIsModalOpen(true);
+
+    if (isMobileView) {
+      setShowComments(true);
+      setOverlayAnimationClass("");
+      setCommentsAnimationClass("");
+
+      // Trigger animation sau khi component đã mount
+      setTimeout(() => {
+        setOverlayAnimationClass("fadeIn");
+        setCommentsAnimationClass("slideIn");
+      }, 10);
+    } else {
+      // Nếu là desktop thì mở modal
+      setIsModalOpen(true);
+    }
+  };
+
+  const handleCloseComments = () => {
+    if (isMobileView) {
+      // Bắt đầu animation tắt
+      setOverlayAnimationClass("fadeOut");
+      setCommentsAnimationClass("slideOut");
+
+      // Sau khi animation xong mới unmount component
+      setTimeout(() => {
+        setShowComments(false);
+        setSelectedPost(null);
+        setOverlayAnimationClass("");
+        setCommentsAnimationClass("");
+      }, 400); // Match với transition duration
+    } else {
+      setShowComments(false);
+      setSelectedPost(null);
+    }
   };
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setSelectedPost(null);
-    // Reset thời gian video khi đóng modal
     setCurrentVideoTime(0);
+  };
+
+  // Handle click outside để đóng comments
+  const handleOverlayClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    handleCloseComments();
   };
 
   return (
     <div
-      className="max-w-xl mx-auto space-y-8 bg-black font-sans"
+      className={`${styles.homeContainerResponsiveBg} max-w-xl mx-auto space-y-8 font-sans`}
       style={{ color: "#fff" }}
     >
       {posts.map((post) => (
@@ -96,10 +153,9 @@ export default function HomeUi({ posts }: HomeUiProps) {
             return undefined;
           }}
           data-post-id={post._id}
-          className="border border-[#262626] rounded-md bg-black"
+          className={`${styles.postItemResponsiveBg} border border-[#262626] rounded-md`}
           onClick={() => handlePostClick(post)}
         >
-          {/* Header: avatar + username + verified */}
           <div className="flex items-center gap-3 p-3">
             <Image
               src={post.author.profilePicture}
@@ -131,14 +187,16 @@ export default function HomeUi({ posts }: HomeUiProps) {
             </div>
           </div>
 
-          {/* Media */}
-          <div className="relative w-full aspect-square bg-black">
+          <div
+            className={`${styles.mediaContainerResponsiveBg} relative w-full aspect-square`}
+          >
             {post.type === "image" ? (
               <Image
                 src={post.fileUrl}
                 alt={post.caption}
                 fill
                 className="object-cover"
+                style={{ borderRadius: "8px", padding: "2px" }}
               />
             ) : post.type === "video" ? (
               <video
@@ -158,35 +216,23 @@ export default function HomeUi({ posts }: HomeUiProps) {
             ) : null}
           </div>
 
-          {/* Actions */}
           <div className="flex items-center justify-between px-3 py-2">
-            <div className="flex items-center gap-4">
-              <Heart
-                size={24}
-                className="cursor-pointer text-white hover:text-[#ed4956] transition-colors duration-200"
-              />
-              <MessageCircle
-                size={24}
-                className="cursor-pointer text-white hover:text-[#8e8e8e] transition-colors duration-200"
-                onClick={(e) => handleOpenComments(post, e)}
-              />
-              <Send
-                size={24}
-                className="cursor-pointer text-white hover:text-[#8e8e8e] transition-colors duration-200"
-              />
-            </div>
-            <Bookmark
-              size={24}
-              className="cursor-pointer text-white hover:text-[#8e8e8e] transition-colors duration-200"
+            <InteractionButton
+              post={post}
+              style={{
+                padding: "0",
+                borderTop: "none",
+              }}
+              onClick={(
+                e: React.MouseEvent<HTMLButtonElement | HTMLDivElement>
+              ) => handleOpenComments(post, e)}
             />
           </div>
 
-          {/* Likes */}
           <div className="px-3 pb-1 font-semibold text-[#fafafa]">
             {post.likes.length.toLocaleString()} lượt thích
           </div>
 
-          {/* Caption */}
           <div className="px-3 pb-2 text-[#dbdbdb]">
             <span className="font-semibold mr-2 text-[#fafafa] cursor-pointer hover:underline">
               {post.author.username}
@@ -194,38 +240,34 @@ export default function HomeUi({ posts }: HomeUiProps) {
             <span>{post.caption}</span>
           </div>
 
-          {/* Comments placeholder */}
           <div
             className="px-3 pt-1 pb-2 text-sm text-[#8e8e8e] cursor-pointer hover:underline"
             onClick={(e) => handleOpenComments(post, e)}
           >
-            Xem tất cả {post.comments.length} bình luận
+            Xem tất cả {post.totalComments} bình luận
           </div>
 
-          {/* Comment input */}
-          <div className="border-t border-[#262626] px-3 py-2 flex items-center gap-3">
-            <Image
-              src={post.author.profilePicture}
-              alt="avatar"
-              width={28}
-              height={28}
-              className="rounded-full object-cover"
-            />
-            <input
-              type="text"
-              placeholder="Thêm bình luận..."
-              className="flex-grow bg-transparent outline-none text-[#fafafa] placeholder-[#8e8e8e]"
-            />
-            <button
-              className="text-[#0095f6] font-semibold disabled:opacity-50"
-              disabled
-            >
-              Đăng
-            </button>
-          </div>
+          <CommentInput post={post} />
         </div>
       ))}
-      {isModalOpen && selectedPost && (
+
+      {/* Overlay và Comment component cho mobile */}
+      {showComments && selectedPost && isMobileView && (
+        <>
+          <div
+            className={`${styles.mobileOverlay} ${styles[overlayAnimationClass]}`}
+            onClick={handleOverlayClick}
+          />
+          <Comment
+            post={selectedPost}
+            onClose={handleCloseComments}
+            animationClass={commentsAnimationClass}
+          />
+        </>
+      )}
+
+      {/* Modal cho desktop */}
+      {isModalOpen && selectedPost && !isMobileView && (
         <PostModal
           post={selectedPost as Post}
           onClose={handleCloseModal}

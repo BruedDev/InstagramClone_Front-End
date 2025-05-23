@@ -1,0 +1,150 @@
+.modal {
+  z-index: 995;
+  background-color: rgba(0, 0, 0, 0.65);
+}
+
+.modalContent {
+  background-color: #262626;
+  border-radius: 12px;
+  border: 1px solid #363636;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+}
+
+.modalHeader {
+  background-color: #262626;
+  border-bottom: 1px solid #363636;
+  min-height: 48px;
+}
+
+.modalTitle {
+  color: #f5f5f5;
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.closeButton {
+  color: #f5f5f5;
+
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+}
+
+.searchContainer {
+  background-color: #262626;
+  border-bottom: 1px solid #363636;
+}
+
+.searchInput {
+  background-color: #363636;
+  border: 1px solid #363636;
+  color: #f5f5f5;
+
+  &::placeholder {
+    color: #8e8e8e;
+  }
+
+  &:focus {
+    outline: none;
+    border-color: #0095f6;
+    background-color: #262626;
+  }
+}
+
+.searchIcon {
+  color: #8e8e8e;
+}
+
+.usersList {
+  background-color: #262626;
+
+  /* Custom scrollbar để giống Instagram */
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: #4d4d4d;
+    border-radius: 3px;
+
+    &:hover {
+      background-color: #666666;
+    }
+  }
+}
+
+.userItem {
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+  }
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.avatar {
+  border: 1px solid #363636;
+}
+
+.username {
+  color: #f5f5f5;
+  font-weight: 600;
+}
+
+.fullName {
+  color: #8e8e8e;
+}
+
+.removeButton {
+  background-color: #363636;
+  color: #f5f5f5;
+  font-weight: 600;
+  min-width: 60px;
+
+  &:hover {
+    background-color: #4d4d4d;
+  }
+
+  &:active {
+    background-color: #1a1a1a;
+  }
+}
+
+.loadingText {
+  color: #8e8e8e;
+  font-weight: 500;
+}
+
+.noResultsText {
+  color: #8e8e8e;
+  font-size: 14px;
+}
+
+.errorText {
+  color: #8e8e8e;
+  font-weight: 500;
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+  .modalContent {
+    // margin: 16px;
+    max-height: calc(100vh - 32px);
+  }
+
+  .userItem {
+    padding: 12px 16px;
+  }
+
+  .removeButton {
+    font-size: 13px;
+    padding: 6px 12px;
+    min-width: 50px;
+  }
+}

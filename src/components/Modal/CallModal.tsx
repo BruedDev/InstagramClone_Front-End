@@ -51,7 +51,7 @@ export default function CallModal({ handleEndCall }: CallModalProps) {
 
     let socket = socketService.getSocket();
     if (!socket || !socket.connected) {
-      socket = socketService.initSocket();
+      socket = socketService.initSocket()!;
     }
 
     const performCallSetup = () => {

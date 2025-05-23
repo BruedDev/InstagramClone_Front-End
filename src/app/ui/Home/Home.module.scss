@@ -1,0 +1,39 @@
+.homeContainerResponsiveBg {
+  background-color: #000;
+  @media (max-width: 768px) {
+    background-color: #0d1015;
+  }
+}
+
+.postItemResponsiveBg {
+  background-color: #000;
+  @media (max-width: 768px) {
+    background-color: #0d1015;
+  }
+}
+
+.mediaContainerResponsiveBg {
+  background-color: #000;
+  @media (max-width: 768px) {
+    background-color: #0d1015;
+  }
+}
+.mobileOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 996;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+
+  &.fadeIn {
+    opacity: 1;
+  }
+
+  &.fadeOut {
+    opacity: 0;
+  }
+}

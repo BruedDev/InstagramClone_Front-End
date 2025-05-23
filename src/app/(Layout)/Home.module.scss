@@ -6,3 +6,33 @@
     margin-right: 0;
   }
 }
+.header {
+  position: sticky;
+  top: 0;
+  left: 0;
+  background-color: #0d1015;
+  z-index: 995;
+  height: 50px;
+  padding: 0 15px;
+  display: none;
+
+  @media (max-width: 768px) {
+    display: block;
+  }
+}
+
+.headerContent {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 50px;
+}
+.action {
+  display: flex;
+  gap: 20px;
+
+  svg {
+    width: 24px;
+    height: 24px;
+  }
+}

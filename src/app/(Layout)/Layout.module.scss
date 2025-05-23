@@ -11,6 +11,8 @@
   /* Mặc định cho các thiết bị (bao gồm Android) */
   @media (max-width: 768px) {
     // padding-bottom: 20%;
+    height: calc(100dvh - 80px);
+    background-color: #0d1015;
 
     &::-webkit-scrollbar {
       display: none;

@@ -12,6 +12,41 @@ export interface DeleteUserResponse {
   message: string;
 }
 
+// Kiểu dữ liệu cho phản hồi từ API theo dõi/hủy theo dõi (toggle)
+export interface ToggleFollowResponse {
+  success: boolean;
+  message: string;
+  action: "followed" | "unfollowed"; // Trường mới cho biết hành động đã thực hiện
+}
+
+// Các kiểu dữ liệu GetFollowingResponse và GetFollowersResponse (giữ nguyên nếu đã có)
+// Ví dụ, dựa trên các lần tương tác trước:
+interface FollowUserInfo {
+  // Bạn cần định nghĩa cấu trúc này dựa trên dữ liệu API trả về
+  _id: string;
+  username: string;
+  fullName: string;
+  profilePicture: string;
+  checkMark: boolean;
+  isPrivate: boolean;
+}
+
+export interface GetFollowingResponse {
+  success: boolean;
+  message: string;
+  username?: string;
+  fullName?: string;
+  following: FollowUserInfo[];
+}
+
+export interface GetFollowersResponse {
+  success: boolean;
+  message: string;
+  username?: string;
+  fullName?: string;
+  followers: FollowUserInfo[];
+}
+
 const BASE_URL = `${process.env.NEXT_PUBLIC_API_URL}/api/user`;
 
 export const getUser = async (
@@ -215,5 +250,135 @@ export const suggestUsers = async (): Promise<SuggestUsersResponse> => {
   } catch (error) {
     console.error("Lỗi khi lấy danh sách gợi ý người dùng:", error);
     throw error;
+  }
+};
+
+// phần theo dõi
+
+export const followUserApi = async (
+  targetUserId: string
+): Promise<ToggleFollowResponse> => {
+  try {
+    const token = localStorage.getItem("authToken");
+
+    const headers: HeadersInit = {
+      "Content-Type": "application/json",
+    };
+
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(`${BASE_URL}/follow/${targetUserId}`, {
+      method: "PUT",
+      headers,
+      credentials: "include",
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        data.message || "Yêu cầu theo dõi/hủy theo dõi thất bại."
+      );
+    }
+
+    // ✅ Giả định server trả về { success, message, action, followUser }
+    return data as ToggleFollowResponse;
+  } catch (error) {
+    console.error(
+      `Lỗi khi thực hiện hành động theo dõi/hủy theo dõi cho user ${targetUserId}:`,
+      error
+    );
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error(
+      "Lỗi không xác định phía client khi thực hiện theo dõi/hủy theo dõi."
+    );
+  }
+};
+
+export const getFollowingApi = async (
+  userId: string
+): Promise<GetFollowingResponse> => {
+  try {
+    const token = localStorage.getItem("authToken");
+    const headers: HeadersInit = {
+      "Content-Type": "application/json",
+    };
+
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(`${BASE_URL}/following/${userId}`, {
+      method: "GET",
+      headers,
+      credentials: "include",
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => {
+        return {
+          message: "Phản hồi từ server không phải JSON hoặc có lỗi mạng.",
+        };
+      });
+      throw new Error(
+        errorData.message || "Không thể lấy danh sách đang theo dõi"
+      );
+    }
+
+    return (await response.json()) as GetFollowingResponse;
+  } catch (error) {
+    console.error("Lỗi khi lấy danh sách đang theo dõi:", error);
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error(
+      "Lỗi không xác định phía client khi lấy danh sách đang theo dõi."
+    );
+  }
+};
+
+export const getFollowersApi = async (
+  userId: string
+): Promise<GetFollowersResponse> => {
+  try {
+    const token = localStorage.getItem("authToken");
+    const headers: HeadersInit = {
+      "Content-Type": "application/json",
+    };
+
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(`${BASE_URL}/followers/${userId}`, {
+      method: "GET",
+      headers,
+      credentials: "include",
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => {
+        return {
+          message: "Phản hồi từ server không phải JSON hoặc có lỗi mạng.",
+        };
+      });
+      throw new Error(
+        errorData.message || "Không thể lấy danh sách người theo dõi"
+      );
+    }
+
+    return (await response.json()) as GetFollowersResponse;
+  } catch (error) {
+    console.error("Lỗi khi lấy danh sách người theo dõi:", error);
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error(
+      "Lỗi không xác định phía client khi lấy danh sách người theo dõi."
+    );
   }
 };

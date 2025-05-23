@@ -1,11 +1,14 @@
 // src/store/index.ts
 import { configureStore } from "@reduxjs/toolkit";
 import messengerReducer from "./messengerSlice";
+import followUnfollowReducer from "./followUnfollow";
+import commentReducer from "./comment";
 
 export const store = configureStore({
   reducer: {
     messenger: messengerReducer,
-    // Có thể thêm các reducers khác ở đây
+    followUnfollow: followUnfollowReducer,
+    comments: commentReducer,
   },
 });
 

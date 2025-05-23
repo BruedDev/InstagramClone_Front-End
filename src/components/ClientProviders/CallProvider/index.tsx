@@ -42,30 +42,34 @@ export default function CallProvider({ userId }: CallProviderProps) {
     socketService.registerUser(userId);
 
     // Lắng nghe các sự kiện cuộc gọi
-    socket.on(
-      "incomingCall",
-      (data: { callerId: string; callType: "audio" | "video" }) => {
-        console.log("Incoming call received:", data);
+    if (socket) {
+      socket.on(
+        "incomingCall",
+        (data: { callerId: string; callType: "audio" | "video" }) => {
+          console.log("Incoming call received:", data);
 
-        // Hiển thị thông báo cuộc gọi đến
-        setIncomingCallData(data);
-        setShowIncomingCall(true);
+          // Hiển thị thông báo cuộc gọi đến
+          setIncomingCallData(data);
+          setShowIncomingCall(true);
 
-        // Lưu thông tin cuộc gọi vào Redux store
-        dispatch(setIncoming(data));
+          // Lưu thông tin cuộc gọi vào Redux store
+          dispatch(setIncoming(data));
 
-        // Phát nhạc chuông khi có cuộc gọi đến
-        if (ringtoneRef.current) {
-          ringtoneRef.current.currentTime = 0;
-          ringtoneRef.current.play().catch((error) => {
-            console.error("Không thể phát nhạc chuông:", error);
-          });
+          // Phát nhạc chuông khi có cuộc gọi đến
+          if (ringtoneRef.current) {
+            ringtoneRef.current.currentTime = 0;
+            ringtoneRef.current.play().catch((error) => {
+              console.error("Không thể phát nhạc chuông:", error);
+            });
+          }
         }
-      }
-    );
+      );
+    }
 
     return () => {
-      socket.off("incomingCall");
+      if (socket) {
+        socket.off("incomingCall");
+      }
     };
   }, [userId, dispatch, availableUsers]);
 

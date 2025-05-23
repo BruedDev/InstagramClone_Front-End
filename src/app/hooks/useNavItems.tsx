@@ -2,16 +2,17 @@
 
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
-import {
-  House,
-  Search,
-  Compass,
-  Clapperboard,
-  MessageCircle,
-  Heart,
-  CirclePlus,
-  Menu,
-} from "lucide-react";
+
+import { GoHome, GoHomeFill, GoHeartFill, GoHeart } from "react-icons/go";
+import { IoSearchOutline } from "react-icons/io5";
+import { BsCompassFill } from "react-icons/bs";
+import { SlCompass } from "react-icons/sl";
+import { MdSlowMotionVideo, MdOutlineSlowMotionVideo } from "react-icons/md";
+import { PiMessengerLogo } from "react-icons/pi";
+import { RiMessengerFill } from "react-icons/ri";
+import { IoAddCircleOutline, IoAddCircleSharp } from "react-icons/io5";
+import { FiMenu } from "react-icons/fi";
+
 import { useUser } from "./useUser";
 
 interface ActionStates {
@@ -40,32 +41,32 @@ export const useNavItems = (actionStates: ActionStates = {}) => {
   const navItems = [
     {
       label: "Trang chủ",
-      icon: <House color="#ffffff" strokeWidth={1.5} />,
-      ActiveIcon: <House color="#ffffff" strokeWidth={3} />,
+      icon: <GoHome size={28} />,
+      ActiveIcon: <GoHomeFill size={28} />,
       href: "/",
       type: "link",
       className: "item1",
     },
     {
       label: "Khám phá",
-      icon: <Compass color="#ffffff" strokeWidth={1.5} />,
-      ActiveIcon: <Compass color="#ffffff" strokeWidth={3} />,
+      icon: <SlCompass size={24} />,
+      ActiveIcon: <BsCompassFill size={24} />,
       href: "/explore",
       type: "link",
       className: "item2",
     },
     {
       label: "Reels",
-      icon: <Clapperboard color="#ffffff" strokeWidth={1.5} />,
-      ActiveIcon: <Clapperboard color="#ffffff" strokeWidth={3} />,
+      icon: <MdOutlineSlowMotionVideo size={28} />,
+      ActiveIcon: <MdSlowMotionVideo size={28} />,
       href: "/reels",
       type: "link",
       className: "item3",
     },
     {
       label: "Tin nhắn",
-      icon: <MessageCircle color="#ffffff" strokeWidth={1.5} />,
-      ActiveIcon: <MessageCircle color="#ffffff" strokeWidth={3} />,
+      icon: <PiMessengerLogo size={28} />,
+      ActiveIcon: <RiMessengerFill size={28} />,
       href: "/messages",
       authOnly: true,
       type: "link",
@@ -73,15 +74,15 @@ export const useNavItems = (actionStates: ActionStates = {}) => {
     },
     {
       label: "Tìm kiếm",
-      icon: <Search color="#ffffff" strokeWidth={1.5} />,
-      ActiveIcon: <Search color="#ffffff" strokeWidth={3} />,
+      icon: <IoSearchOutline size={28} />,
+      ActiveIcon: <IoSearchOutline size={28} />,
       type: "action",
       className: "item5",
     },
     {
       label: "Thông báo",
-      icon: <Heart color="#ffffff" strokeWidth={1.5} />,
-      ActiveIcon: <Heart color="#ffffff" strokeWidth={3} />,
+      icon: <GoHeart size={26} />,
+      ActiveIcon: <GoHeartFill size={26} />,
       authOnly: true,
       type: "action",
       alert: true,
@@ -89,8 +90,8 @@ export const useNavItems = (actionStates: ActionStates = {}) => {
     },
     {
       label: "Tạo bài viết",
-      icon: <CirclePlus color="#ffffff" strokeWidth={1.5} />,
-      ActiveIcon: <CirclePlus color="#ffffff" strokeWidth={3} />,
+      icon: <IoAddCircleOutline size={28} />,
+      ActiveIcon: <IoAddCircleSharp size={28} />,
       authOnly: true,
       type: "action",
       className: "item7",
@@ -104,8 +105,8 @@ export const useNavItems = (actionStates: ActionStates = {}) => {
     },
     {
       label: "Xem Thêm",
-      icon: <Menu color="#ffffff" strokeWidth={1.5} />,
-      ActiveIcon: <Menu color="#ffffff" strokeWidth={3} />,
+      icon: <FiMenu size={24} />,
+      ActiveIcon: <FiMenu size={24} />,
       type: "action",
       className: "item8",
     },

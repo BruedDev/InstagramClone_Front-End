@@ -31,7 +31,6 @@ export default function ClientProviders({
     const currentUserId = getUserId();
     if (currentUserId) {
       setUserId(currentUserId);
-      console.log("UserId set in ClientProviders:", currentUserId);
     }
   }, []);
 

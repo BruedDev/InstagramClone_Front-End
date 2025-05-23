@@ -203,3 +203,17 @@
     background-position: 0% 50%;
   }
 }
+// Thêm vào Infor.module.scss
+
+.clickable {
+  &:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+    border-radius: 4px;
+    transition: background-color 0.2s ease;
+  }
+}
+
+.statValue {
+  font-weight: bold;
+  font-size: 1.1em;
+}
