@@ -13,7 +13,7 @@ export const MentionText: React.FC<MentionTextProps> = ({
   style,
 }) => {
   // Regex để tìm mentions (@username)
-  const mentionRegex = /@(\w+)/g;
+  const mentionRegex = /@([\p{L}\p{N}_]+)/gu;
 
   // Split text thành các phần, giữ lại mentions
   const parts = text.split(mentionRegex);
