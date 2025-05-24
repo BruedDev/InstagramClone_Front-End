@@ -7,6 +7,7 @@ import { getUser } from "@/server/user";
 
 export interface CallModalProps {
   handleEndCall: () => void;
+  callRejected?: boolean;
 }
 
 export default function CallModal({ handleEndCall }: CallModalProps) {
@@ -802,7 +803,7 @@ export default function CallModal({ handleEndCall }: CallModalProps) {
   const handleEndCallLocal = () => {
     if (currentUserId && remoteUserId) {
       socketService.getSocket().emit("endCall", {
-        callerId: currentUserId, // Hoặc người khởi tạo cuộc gọi thực sự
+        callerId: currentUserId,
         calleeId: remoteUserId,
         endedBy: currentUserId,
       });

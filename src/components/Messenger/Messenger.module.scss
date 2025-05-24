@@ -45,9 +45,9 @@
     transform: translateX(-100%);
     opacity: 0;
     pointer-events: none;
-    display: flex; // 🔄 dùng flex để bố trí theo chiều dọc
-    flex-direction: column; // 🔽 sắp xếp theo trục dọc
-    overflow: hidden; // Ngăn scroll toàn container nếu không cần
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
     margin: auto 0;
 
     .chatHeader {
@@ -69,9 +69,9 @@
     }
 
     .messages {
-      flex: 1; // 🔥 chiếm toàn bộ không gian còn lại
-      overflow-y: auto; // scroll khi nội dung dài
-      min-height: 0; // cần để flex: 1 hoạt động chính xác
+      flex: 1;
+      overflow-y: auto;
+      min-height: 0;
     }
   }
 }
@@ -123,10 +123,12 @@
     font-size: 11px;
   }
 }
+
 .text {
   overflow-wrap: anywhere;
   white-space: normal;
 }
+
 .text2 {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -136,15 +138,18 @@
   overflow-wrap: anywhere;
   word-break: break-word;
 }
+
 .profilePicture {
   min-width: 40px;
   min-height: 40px;
 }
+
 .username {
   @media (max-width: 480px) {
     font-size: 13px !important;
   }
 }
+
 .info {
   @media (max-width: 480px) {
     display: none;

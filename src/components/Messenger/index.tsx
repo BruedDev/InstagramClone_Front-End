@@ -41,15 +41,16 @@ export default function MessengerComponent({
   const searchParams = useSearchParams();
   const [userId, setUserId] = useState("");
 
-  useEffect(() => {
-    if (userId) {
-      socketService.initSocket();
-      socketService.registerUser(userId);
-    }
-    return () => {
-      socketService.disconnect();
-    };
-  }, [userId]);
+  // ❌ REMOVED: Duplicate socket initialization
+  // useEffect(() => {
+  //   if (userId) {
+  //     socketService.initSocket();
+  //     socketService.registerUser(userId);
+  //   }
+  //   return () => {
+  //     socketService.disconnect();
+  //   };
+  // }, [userId]);
 
   useEffect(() => {
     const handleReceiveMessage = (msg: {
@@ -81,6 +82,7 @@ export default function MessengerComponent({
       }
     };
 
+    // ✅ Only setup message listener, don't reinitialize socket
     socketService.onReceiveMessage(handleReceiveMessage);
     return () => {
       socketService.offReceiveMessage(handleReceiveMessage);

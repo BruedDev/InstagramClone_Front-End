@@ -110,6 +110,7 @@ const messengerSlice = createSlice({
      state.hasMore = true;
      state.showMainChat = !!action.payload;
    },
+
    setMessage: (state, action: PayloadAction<string>) => {
      state.message = action.payload;
    },

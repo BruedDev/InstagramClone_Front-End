@@ -4,11 +4,12 @@
 import { Provider } from "react-redux";
 import { store } from "@/store";
 import GlobalProvider from "@/contexts/GlobalContext";
+import { CallProvider as CallContextProvider } from "@/contexts/CallContext"; // Import context provider
 import ProtectedRoute from "@/components/ClientProviders/ProtectedRoute";
 import LoadingBar from "@/components/Loading/LoadingBar";
 import IOSDetector from "@/components/ClientProviders/IOSDetector";
 import { useEffect, useState } from "react";
-import CallProvider from "./CallProvider";
+import CallInterface from "./CallProvider/index"; // Rename import để tránh xung đột
 
 export default function ClientProviders({
   children,
@@ -38,10 +39,21 @@ export default function ClientProviders({
     <ProtectedRoute>
       <Provider store={store}>
         <GlobalProvider>
-          <LoadingBar />
-          <IOSDetector />
-          {userId && <CallProvider userId={userId} />}
-          {children}
+          {/* Wrap CallContextProvider bên ngoài */}
+          {userId ? (
+            <CallContextProvider userId={userId}>
+              <LoadingBar />
+              <IOSDetector />
+              <CallInterface userId={userId} />
+              {children}
+            </CallContextProvider>
+          ) : (
+            <>
+              <LoadingBar />
+              <IOSDetector />
+              {children}
+            </>
+          )}
         </GlobalProvider>
       </Provider>
     </ProtectedRoute>

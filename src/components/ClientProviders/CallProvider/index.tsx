@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { socketService } from "@/server/socket";
+import { useCallContext } from "@/contexts/CallContext"; // Import useCallContext
 import {
   setIncoming,
   fetchAvailableUsers,
@@ -9,47 +10,44 @@ import {
 import Image from "next/image";
 import { Phone, Video, PhoneOff, UserIcon, X } from "lucide-react";
 
-interface CallProviderProps {
+interface CallInterfaceProps {
   userId: string;
 }
 
-export default function CallProvider({ userId }: CallProviderProps) {
+export default function CallInterface({ userId }: CallInterfaceProps) {
   const dispatch = useAppDispatch();
   const ringtoneRef = useRef<HTMLAudioElement>(null);
   const { availableUsers } = useAppSelector((state) => state.messenger);
-  const [showIncomingCall, setShowIncomingCall] = useState(false);
-  const [incomingCallData, setIncomingCallData] = useState<{
-    callerId: string;
-    callType: "audio" | "video";
-  } | null>(null);
 
-  // Lấy thông tin người gọi
-  const callerInfo = incomingCallData
-    ? availableUsers.find((u) => u._id === incomingCallData.callerId)
+  // Sử dụng CallContext thay vì local state
+  const {
+    incoming,
+    setIncoming: setIncomingContext,
+    setInCall: setInCallContext,
+    setActiveCallUserId,
+  } = useCallContext();
+
+  const [showIncomingCall, setShowIncomingCall] = useState(false);
+
+  // Lấy thông tin người gọi từ context
+  const callerInfo = incoming
+    ? availableUsers.find((u) => u._id === incoming.callerId)
     : null;
-  // Provide a fallback for callerUsername if incomingCallData is null initially
   const callerUsername =
-    callerInfo?.username ??
-    (incomingCallData ? incomingCallData.callerId : "Đang tải...");
+    callerInfo?.username ?? (incoming ? incoming.callerId : "Đang tải...");
   const callerProfilePicture = callerInfo?.profilePicture;
 
   useEffect(() => {
     // Fetch available users khi component được mount
-    // Consider if this should be fetched here or at a higher level if needed sooner/elsewhere
     if (userId) {
-      // Ensure userId is present before fetching
       dispatch(fetchAvailableUsers());
     }
   }, [dispatch, userId]);
 
   useEffect(() => {
-    if (!userId) return; // Don't proceed if userId is not available
+    if (!userId) return;
 
-    // socketService.initSocket() returns Socket | null.
-    // The socket instance from initSocket is used for listeners in this effect.
     const socketInstance = socketService.initSocket();
-
-    // socketService.registerUser already handles if its internal getSocket() returns null.
     socketService.registerUser(userId);
 
     const handleIncomingCall = (data: {
@@ -58,7 +56,8 @@ export default function CallProvider({ userId }: CallProviderProps) {
     }) => {
       console.log("Incoming call received:", data);
 
-      setIncomingCallData(data);
+      // Cập nhật context thay vì local state
+      setIncomingContext(data);
       setShowIncomingCall(true);
       dispatch(setIncoming(data));
 
@@ -70,22 +69,66 @@ export default function CallProvider({ userId }: CallProviderProps) {
       }
     };
 
+    // Xử lý khi cuộc gọi bị từ chối từ phía đối phương
+    const handleCallRejected = (data: { calleeId: string; reason: string }) => {
+      console.log("Call rejected:", data);
+
+      // Hiển thị alert cho người gọi
+      alert(`Cuộc gọi bị từ chối: ${data.reason}`);
+
+      // Reset trạng thái
+      setIncomingContext(null);
+      setShowIncomingCall(false);
+      setInCallContext(false);
+      setActiveCallUserId(null);
+      dispatch(setIncoming(null));
+      dispatch(setInCall(false));
+
+      // Reload trang để đảm bảo trạng thái sạch
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
+    };
+
+    // Xử lý khi cuộc gọi được chấp nhận từ phía đối phương
+    const handleCallAccepted = (data: { calleeId: string }) => {
+      console.log("Call accepted:", data);
+
+      // Cập nhật trạng thái cuộc gọi
+      setInCallContext(true);
+      setActiveCallUserId(data.calleeId);
+      dispatch(setInCall(true));
+
+      // Reload trang chính để đảm bảo đồng bộ trạng thái
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+    };
+
     if (socketInstance) {
       socketInstance.on("incomingCall", handleIncomingCall);
+      socketInstance.on("callRejected", handleCallRejected);
+      socketInstance.on("callAccepted", handleCallAccepted);
     } else {
       console.warn(
-        "CallProvider: Socket not initialized, incoming call listener not attached."
+        "CallProvider: Socket not initialized, listeners not attached."
       );
     }
 
     return () => {
       if (socketInstance) {
         socketInstance.off("incomingCall", handleIncomingCall);
+        socketInstance.off("callRejected", handleCallRejected);
+        socketInstance.off("callAccepted", handleCallAccepted);
       }
     };
-    // Removed `availableUsers` from dependency array as it's not directly related to socket setup/teardown.
-    // Re-running this effect on `availableUsers` change is likely not desired.
-  }, [userId, dispatch]);
+  }, [
+    userId,
+    dispatch,
+    setIncomingContext,
+    setInCallContext,
+    setActiveCallUserId,
+  ]);
 
   const openCallPopup = (callType: "audio" | "video", remoteUserId: string) => {
     const screenWidth = window.screen.availWidth;
@@ -111,23 +154,28 @@ export default function CallProvider({ userId }: CallProviderProps) {
       ringtoneRef.current.currentTime = 0;
     }
 
-    if (incomingCallData) {
-      const currentSocket = socketService.getSocket(); // Returns Socket | null
+    if (incoming) {
+      const currentSocket = socketService.getSocket();
       if (currentSocket) {
         currentSocket.emit("acceptCall", {
-          callerId: incomingCallData.callerId,
+          callerId: incoming.callerId,
           calleeId: userId,
         });
 
         const callWindow = openCallPopup(
-          incomingCallData.callType,
-          incomingCallData.callerId
+          incoming.callType as "audio" | "video",
+          incoming.callerId
         );
 
         if (callWindow) {
           callWindow.onbeforeunload = () => {
+            setInCallContext(false);
             dispatch(setInCall(false));
           };
+
+          // Cập nhật context
+          setInCallContext(true);
+          setActiveCallUserId(incoming.callerId);
           dispatch(setInCall(true));
         } else {
           alert(
@@ -136,11 +184,12 @@ export default function CallProvider({ userId }: CallProviderProps) {
         }
       } else {
         console.error("Cannot accept call: Socket not available.");
-        alert("Lỗi kết nối, không thể chấp nhận cuộc gọi."); // User-friendly feedback
+        alert("Lỗi kết nối, không thể chấp nhận cuộc gọi.");
       }
 
+      // Reset trạng thái
       setShowIncomingCall(false);
-      setIncomingCallData(null);
+      setIncomingContext(null);
       dispatch(setIncoming(null));
     }
   };
@@ -151,21 +200,23 @@ export default function CallProvider({ userId }: CallProviderProps) {
       ringtoneRef.current.currentTime = 0;
     }
 
-    if (incomingCallData) {
-      const currentSocket = socketService.getSocket(); // Returns Socket | null
+    if (incoming) {
+      const currentSocket = socketService.getSocket();
       if (currentSocket) {
+        // Gửi sự kiện từ chối cuộc gọi với lý do cụ thể
         currentSocket.emit("rejectCall", {
-          callerId: incomingCallData.callerId,
+          callerId: incoming.callerId,
           calleeId: userId,
           reason: "Người dùng đã từ chối cuộc gọi",
         });
       } else {
         console.error("Cannot reject call: Socket not available.");
-        // Optionally, provide user feedback if the action fails due to no socket
       }
 
+      // Reset trạng thái context
       setShowIncomingCall(false);
-      setIncomingCallData(null);
+      setIncomingContext(null);
+      setActiveCallUserId(null);
       dispatch(setIncoming(null));
     }
   };
@@ -174,12 +225,12 @@ export default function CallProvider({ userId }: CallProviderProps) {
     <>
       <audio ref={ringtoneRef} src="/RingTone.mp3" loop />
 
-      {showIncomingCall && incomingCallData && (
+      {showIncomingCall && incoming && (
         <div
           className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center transition-opacity duration-300"
           style={{
             height: "100dvh",
-            zIndex: 999,
+            zIndex: 99999,
             backgroundColor: "rgba(0, 0, 0, 0.8)",
           }}
         >
@@ -227,13 +278,13 @@ export default function CallProvider({ userId }: CallProviderProps) {
                   {callerUsername}
                 </h3>
                 <div className="flex items-center px-3 py-1.5 bg-[#1a1a1a] rounded-full text-gray-200 text-sm border border-[#333333]">
-                  {incomingCallData.callType === "audio" ? (
+                  {incoming.callType === "audio" ? (
                     <Phone size={14} className="mr-1.5 text-purple-400" />
                   ) : (
                     <Video size={14} className="mr-1.5 text-purple-400" />
                   )}
                   <span>
-                    {incomingCallData.callType === "audio"
+                    {incoming.callType === "audio"
                       ? "Cuộc gọi thoại"
                       : "Cuộc gọi video"}
                   </span>
@@ -259,7 +310,7 @@ export default function CallProvider({ userId }: CallProviderProps) {
                   className="flex flex-col items-center gap-1 group"
                 >
                   <div className="w-16 h-16 flex items-center justify-center rounded-full bg-[#2a2a2a] hover:bg-gradient-to-r hover:from-[#2a1f4a] hover:to-[#372e6b] shadow-lg shadow-purple-900/20 transition-all transform hover:scale-105 active:scale-95 border border-purple-500/30">
-                    {incomingCallData.callType === "audio" ? (
+                    {incoming.callType === "audio" ? (
                       <Phone
                         size={24}
                         className="text-purple-400 group-hover:text-white animate-bounce"
