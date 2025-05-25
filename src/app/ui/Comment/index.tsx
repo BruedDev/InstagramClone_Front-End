@@ -256,13 +256,156 @@ export default function Comment({
     }
   }, [handleScroll]);
 
+  // Skeleton Loading Component cho Comments
+  const CommentSkeleton = () => (
+    <div
+      style={{
+        padding: "12px 0",
+        borderBottom: "1px solid rgba(255,255,255,0.1)",
+      }}
+    >
+      <div style={{ display: "flex", gap: "12px", alignItems: "flex-start" }}>
+        {/* Avatar skeleton */}
+        <div
+          style={{
+            width: "32px",
+            height: "32px",
+            backgroundColor: "#374151",
+            borderRadius: "50%",
+            flexShrink: 0,
+          }}
+          className="animate-pulse"
+        ></div>
+
+        {/* Content skeleton */}
+        <div
+          style={{
+            flex: 1,
+            display: "flex",
+            flexDirection: "column",
+            gap: "8px",
+          }}
+        >
+          {/* Username skeleton */}
+          <div
+            style={{
+              width: "80px",
+              height: "14px",
+              backgroundColor: "#374151",
+              borderRadius: "4px",
+            }}
+            className="animate-pulse"
+          ></div>
+
+          {/* Comment text skeleton */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+            <div
+              style={{
+                width: "100%",
+                height: "16px",
+                backgroundColor: "#374151",
+                borderRadius: "4px",
+              }}
+              className="animate-pulse"
+            ></div>
+            <div
+              style={{
+                width: "75%",
+                height: "16px",
+                backgroundColor: "#374151",
+                borderRadius: "4px",
+              }}
+              className="animate-pulse"
+            ></div>
+          </div>
+
+          {/* Action buttons skeleton */}
+          <div style={{ display: "flex", gap: "16px", marginTop: "4px" }}>
+            <div
+              style={{
+                width: "40px",
+                height: "12px",
+                backgroundColor: "#374151",
+                borderRadius: "4px",
+              }}
+              className="animate-pulse"
+            ></div>
+            <div
+              style={{
+                width: "60px",
+                height: "12px",
+                backgroundColor: "#374151",
+                borderRadius: "4px",
+              }}
+              className="animate-pulse"
+            ></div>
+          </div>
+        </div>
+      </div>
+
+      {/* Reply skeleton (random appearance) */}
+      {Math.random() > 0.6 && (
+        <div style={{ marginLeft: "44px", marginTop: "12px" }}>
+          <div
+            style={{ display: "flex", gap: "8px", alignItems: "flex-start" }}
+          >
+            <div
+              style={{
+                width: "24px",
+                height: "24px",
+                backgroundColor: "#374151",
+                borderRadius: "50%",
+                flexShrink: 0,
+              }}
+              className="animate-pulse"
+            ></div>
+            <div style={{ flex: 1 }}>
+              <div
+                style={{
+                  width: "60px",
+                  height: "12px",
+                  backgroundColor: "#374151",
+                  borderRadius: "4px",
+                  marginBottom: "6px",
+                }}
+                className="animate-pulse"
+              ></div>
+              <div
+                style={{
+                  width: "90%",
+                  height: "14px",
+                  backgroundColor: "#374151",
+                  borderRadius: "4px",
+                }}
+                className="animate-pulse"
+              ></div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
+  // Skeleton cho danh sách comments
+  const CommentsListSkeleton = () => (
+    <div
+      style={{
+        maxHeight: "400px",
+        overflowY: "auto",
+        paddingRight: "8px",
+      }}
+    >
+      {[...Array(6)].map((_, index) => (
+        <CommentSkeleton key={index} />
+      ))}
+    </div>
+  );
+
   // Phần content chính
   const commentsContent = (
     <>
       {loading ? (
-        <div className={styles.loadingComments}>
-          <p>Đang tải bình luận...</p>
-        </div>
+        <CommentsListSkeleton />
       ) : error ? (
         <div className={styles.errorComments}>
           <p>Lỗi khi tải bình luận: {error}</p>
@@ -285,10 +428,11 @@ export default function Comment({
             />
           ))}
 
-          {/* Load more indicator */}
+          {/* Load more skeleton */}
           {loadingMore && (
-            <div className={styles.loadingMore}>
-              <p>Đang tải thêm bình luận...</p>
+            <div style={{ padding: "16px 0" }}>
+              <CommentSkeleton />
+              <CommentSkeleton />
             </div>
           )}
 

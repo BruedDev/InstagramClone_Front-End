@@ -16,9 +16,10 @@ import { deletePostById } from "@/server/posts";
 
 interface HomeUiProps {
   posts: Post[];
+  loading: boolean;
 }
 
-export default function HomeUi({ posts }: HomeUiProps) {
+export default function HomeUi({ posts, loading }: HomeUiProps) {
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentVideoTime, setCurrentVideoTime] = useState<number>(0);
@@ -28,6 +29,8 @@ export default function HomeUi({ posts }: HomeUiProps) {
   const [showComments, setShowComments] = useState(false);
   const [commentsAnimationClass, setCommentsAnimationClass] = useState("");
   const [overlayAnimationClass, setOverlayAnimationClass] = useState("");
+
+  console.log(loading);
 
   // States cho PostSetting
   const [showPostSettings, setShowPostSettings] = useState(false);
@@ -177,6 +180,88 @@ export default function HomeUi({ posts }: HomeUiProps) {
       }
     }
   };
+
+  // Skeleton Loading Component
+  const SkeletonPost = () => (
+    <div
+      className={`${styles.postItemResponsiveBg} border border-[#262626] rounded-md`}
+    >
+      {/* Header skeleton */}
+      <div className="flex items-center gap-3 p-3 justify-between">
+        <div className="w-10 h-10 bg-gray-700 rounded-full animate-pulse"></div>
+        <div className="flex flex-1 flex-col gap-2">
+          <div className="flex items-center gap-2">
+            <div className="w-24 h-4 bg-gray-700 rounded animate-pulse"></div>
+            <div className="w-16 h-3 bg-gray-700 rounded animate-pulse"></div>
+          </div>
+        </div>
+        <div className="w-6 h-6 bg-gray-700 rounded-full animate-pulse"></div>
+      </div>
+
+      {/* Media skeleton */}
+      <div
+        className={`${styles.mediaContainerResponsiveBg} relative w-full aspect-square`}
+      >
+        <div
+          className="w-full h-full bg-gray-700 animate-pulse"
+          style={{ borderRadius: "8px", margin: "2px" }}
+        ></div>
+      </div>
+
+      {/* Interaction buttons skeleton */}
+      <div
+        className={`flex items-center justify-between px-3 py-3 ${styles.InteractionButtonContainer}`}
+      >
+        <div className="flex items-center gap-4">
+          <div className="w-6 h-6 bg-gray-700 rounded animate-pulse"></div>
+          <div className="w-6 h-6 bg-gray-700 rounded animate-pulse"></div>
+          <div className="w-6 h-6 bg-gray-700 rounded animate-pulse"></div>
+        </div>
+        <div className="w-6 h-6 bg-gray-700 rounded animate-pulse"></div>
+      </div>
+
+      {/* Likes skeleton */}
+      <div className={`px-3 pb-2 ${styles.commentInput}`}>
+        <div className="w-20 h-4 bg-gray-700 rounded animate-pulse"></div>
+      </div>
+
+      {/* Caption skeleton */}
+      <div className="px-3 pb-2">
+        <div className="flex items-start gap-2">
+          <div className="w-16 h-4 bg-gray-700 rounded animate-pulse"></div>
+          <div className="flex-1">
+            <div className="w-full h-4 bg-gray-700 rounded animate-pulse mb-1"></div>
+            <div className="w-3/4 h-4 bg-gray-700 rounded animate-pulse"></div>
+          </div>
+        </div>
+      </div>
+
+      {/* Comments link skeleton */}
+      <div className={`px-3 pt-1 pb-2 ${styles.commentInput}`}>
+        <div className="w-32 h-3 bg-gray-700 rounded animate-pulse"></div>
+      </div>
+
+      {/* Comment input skeleton */}
+      <div className={`px-3 pb-3 ${styles.commentInput}`}>
+        <div className="w-full h-10 bg-gray-700 rounded animate-pulse"></div>
+      </div>
+    </div>
+  );
+
+  // Hiển thị skeleton khi đang loading
+  if (loading) {
+    return (
+      <div
+        className={`${styles.homeContainerResponsiveBg} max-w-xl mx-auto space-y-8 font-sans`}
+        style={{ color: "#fff" }}
+      >
+        {/* Tạo 3-5 skeleton posts */}
+        {[...Array(5)].map((_, index) => (
+          <SkeletonPost key={index} />
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div

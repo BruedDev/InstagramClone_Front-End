@@ -32,10 +32,9 @@ export default function InteractionButton({
           {heart && <span className={styles.count}>{format(heart)}</span>}
         </button>
         <button className={styles.actionButton} onClick={onClick}>
-          {/* <MessageCircle size={24} /> */}
           <Image
             src="/icons/combo/comment.svg"
-            alt=""
+            alt="comment"
             width={22}
             height={22}
             style={{ color: "white" }}

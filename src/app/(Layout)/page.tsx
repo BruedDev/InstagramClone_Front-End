@@ -71,7 +71,6 @@ export default function Home() {
     fetchPosts();
   }, []);
 
-  if (loading) return <div>Đang tải bài viết...</div>;
   if (error) return <div>Lỗi: {error}</div>;
 
   return (
@@ -106,7 +105,7 @@ export default function Home() {
         </div>
       </div>
       <StoryUserHome />
-      <HomeUi posts={posts} />
+      <HomeUi posts={posts} loading={loading} />
       <Suggestions />
     </div>
   );
