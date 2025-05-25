@@ -264,13 +264,6 @@ export default function MainChat({
               >
                 <ArrowLeft className="h-6 w-6" />
               </button>
-              <style jsx>{`
-                @media (max-width: 622px) {
-                  .${styles.backBtn} {
-                    display: block !important;
-                  }
-                }
-              `}</style>
               <div className="w-10 h-10 rounded-full mr-3 relative">
                 {selectedUser.profilePicture ? (
                   <Image
