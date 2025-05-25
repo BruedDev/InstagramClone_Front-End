@@ -18,18 +18,29 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "avatars.githubusercontent.com" },
       { protocol: "https", hostname: "www.gravatar.com" },
       { protocol: "https", hostname: "res.cloudinary.com" },
-      { protocol: "https", hostname: "api.dicebear.com" },
-      { protocol: "https", hostname: "i.pravatar.cc" },
-      { protocol: "https", hostname: "randomuser.me" }, // ✅ Thêm dòng này
+      {
+        protocol: "https",
+        hostname: "api.dicebear.com",
+        pathname: '/7.x/**'
+      },
+      {
+        protocol: "https",
+        hostname: "ui-avatars.com",
+        pathname: '/api/**'
+      },
+      {
+        protocol: "https",
+        hostname: "randomuser.me",
+        pathname: '/api/portraits/**'
+      }
     ],
+    dangerouslyAllowSVG: true,
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
   sassOptions: {
     includePaths: [path.join(__dirname, "src/styles")],
     prependData: `@use "variables" as *; @use "mixins" as *; @use "functions" as *;`,
     outputStyle: "compressed",
-  },
-  env: {
-    NEXT_PUBLIC_FACEBOOK_APP_ID: process.env.NEXT_PUBLIC_FACEBOOK_APP_ID,
   },
 };
 
