@@ -24,10 +24,20 @@ export interface Comment {
   };
 }
 
+export interface CommentMetrics {
+  totalComments: number;
+  totalLikes: number;
+  buffedComments?: number;
+  buffedReplies?: number;
+  hasMore: boolean;
+}
+
 export interface CommentState {
   commentsByItem: Record<string, Comment[]>;
   loading: Record<string, boolean>;
+  loadingMore: Record<string, boolean>;
   error: Record<string, string | null>;
+  metrics: Record<string, CommentMetrics>;
   typingUsers: Record<string, Array<{
     id: string;
     username: string;
@@ -42,16 +52,42 @@ export interface CommentState {
 const initialState: CommentState = {
   commentsByItem: {},
   loading: {},
+  loadingMore: {},
   error: {},
+  metrics: {},
   typingUsers: {},
   activeItem: null,
 };
 
 export const fetchComments = createAsyncThunk(
   'comments/fetchComments',
-  async ({ itemId, itemType }: { itemId: string; itemType: CommentableItemType }) => {
-    const comments = await getCommentsForItem(itemId, itemType);
-    return { itemId, comments };
+  async ({
+    itemId,
+    itemType,
+    limit = 15
+  }: {
+    itemId: string;
+    itemType: CommentableItemType;
+    limit?: number;
+  }) => {
+    const response = await getCommentsForItem(itemId, itemType, limit);
+    return { itemId, response };
+  }
+);
+
+export const loadMoreComments = createAsyncThunk(
+  'comments/loadMoreComments',
+  async ({
+    itemId,
+    itemType,
+    limit = 15
+  }: {
+    itemId: string;
+    itemType: CommentableItemType;
+    limit?: number;
+  }) => {
+    const response = await getCommentsForItem(itemId, itemType, limit);
+    return { itemId, response };
   }
 );
 
@@ -293,34 +329,69 @@ const commentSlice = createSlice({
       const itemId = action.payload;
       delete state.commentsByItem[itemId];
       delete state.loading[itemId];
+      delete state.loadingMore[itemId];
       delete state.error[itemId];
+      delete state.metrics[itemId];
       delete state.typingUsers[itemId];
     },
     clearAllComments: (state) => {
       state.commentsByItem = {};
       state.loading = {};
+      state.loadingMore = {};
       state.error = {};
+      state.metrics = {};
       state.typingUsers = {};
       state.activeItem = null;
     },
   },
   extraReducers: (builder) => {
     builder
+      // Fetch comments (initial load)
       .addCase(fetchComments.pending, (state, action) => {
         const itemId = action.meta.arg.itemId;
         state.loading[itemId] = true;
         state.error[itemId] = null;
       })
       .addCase(fetchComments.fulfilled, (state, action) => {
-        const { itemId, comments } = action.payload;
+        const { itemId, response } = action.payload;
         state.loading[itemId] = false;
-        state.commentsByItem[itemId] = comments;
+        state.commentsByItem[itemId] = response.comments;
+        state.metrics[itemId] = response.metrics;
       })
       .addCase(fetchComments.rejected, (state, action) => {
         const itemId = action.meta.arg.itemId;
         state.loading[itemId] = false;
         state.error[itemId] = action.error.message || 'Failed to fetch comments';
+      })
+
+      // Load more comments
+      .addCase(loadMoreComments.pending, (state, action) => {
+        const itemId = action.meta.arg.itemId;
+        state.loadingMore[itemId] = true;
+        state.error[itemId] = null;
+      })
+      .addCase(loadMoreComments.fulfilled, (state, action) => {
+        const { itemId, response } = action.payload;
+        state.loadingMore[itemId] = false;
+
+        // Append new comments to existing ones
+        if (state.commentsByItem[itemId]) {
+          state.commentsByItem[itemId] = [
+            ...state.commentsByItem[itemId],
+            ...response.comments
+          ];
+        } else {
+          state.commentsByItem[itemId] = response.comments;
+        }
+
+        state.metrics[itemId] = response.metrics;
+      })
+      .addCase(loadMoreComments.rejected, (state, action) => {
+        const itemId = action.meta.arg.itemId;
+        state.loadingMore[itemId] = false;
+        state.error[itemId] = action.error.message || 'Failed to load more comments';
       });
+
     builder
       .addCase(addComment.pending, (state, action) => {
         const itemId = action.meta.arg.itemId;

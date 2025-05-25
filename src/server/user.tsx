@@ -4,7 +4,6 @@ import {
   UploadAvatarResponse,
   DeleteAvatarResponse,
   UpdateBioResponse,
-  SuggestUsersResponse,
 } from "@/types/user.type";
 
 export interface DeleteUserResponse {
@@ -218,37 +217,6 @@ export const updateBio = async (bio: string): Promise<UpdateBioResponse> => {
     return data as UpdateBioResponse;
   } catch (error) {
     console.error("Lỗi khi cập nhật bio:", error);
-    throw error;
-  }
-};
-
-export const suggestUsers = async (): Promise<SuggestUsersResponse> => {
-  try {
-    const token = localStorage.getItem("authToken");
-
-    const headers: HeadersInit = {
-      "Content-Type": "application/json",
-    };
-
-    if (token) {
-      headers["Authorization"] = `Bearer ${token}`;
-    }
-
-    const response = await fetch(`${BASE_URL}/suggestUsers`, {
-      method: "GET",
-      headers,
-      credentials: "include",
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || "Không thể lấy danh sách gợi ý");
-    }
-
-    const data = await response.json();
-    return data as SuggestUsersResponse;
-  } catch (error) {
-    console.error("Lỗi khi lấy danh sách gợi ý người dùng:", error);
     throw error;
   }
 };

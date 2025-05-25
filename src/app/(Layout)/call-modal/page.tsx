@@ -52,7 +52,7 @@ const InnerCallModal = () => {
         setCallRejected(true);
 
         // Hiển thị thông báo
-        alert(`Cuộc gọi bị từ chối`);
+        // alert(`Cuộc gọi bị từ chối`);
 
         // Đóng popup và reload trang chính
         setTimeout(() => {

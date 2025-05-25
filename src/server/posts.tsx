@@ -147,20 +147,28 @@ export type CommentableItemType = "post" | "reel" | "video" | "image";
  */
 export const getCommentsForItem = async (
   itemId: string,
-  itemType: CommentableItemType
+  itemType: CommentableItemType,
+  limit: number = 10
 ) => {
-  const headers = createAuthHeaders();
-  const res = await fetch(`${BASE_URL}/comments/${itemType}/${itemId}`, {
-    method: "GET",
-    headers,
+  const queryParams = new URLSearchParams({
+    limit: limit.toString(),
   });
 
+  const headers = createAuthHeaders();
+  const res = await fetch(
+    `${BASE_URL}/comments/${itemType}/${itemId}?${queryParams}`,
+    {
+      method: "GET",
+      headers,
+    }
+  );
+
   if (!res.ok) {
-    const errorData = await res.json(); // Read error response
+    const errorData = await res.json();
     console.error("Error fetching comments:", errorData);
-    throw errorData; // Rethrow the error object from the server
+    throw errorData;
   }
 
   const data = await res.json();
-  return data.comments;
+  return data;
 };

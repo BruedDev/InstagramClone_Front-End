@@ -1,3 +1,5 @@
+import StoryShow from "@/components/StoryShow";
+
 export default function ReelsPage() {
-  return <div>reels</div>;
+  return <StoryShow />;
 }

@@ -9,6 +9,7 @@ import { Post } from "@/types/home.type";
 import Comment from "@/app/ui/Comment";
 import CommentInput from "@/app/ui/CommentInput";
 import InteractionButton from "@/app/ui/InteractionButton";
+import { BiDotsHorizontalRounded } from "react-icons/bi";
 
 type PostModalProps = {
   post: Post;
@@ -210,7 +211,7 @@ export default function PostModal({
             <span className={styles.username}>{post.author?.username}</span>
           </div>
           <button className={styles.moreButton} onClick={toggleSettings}>
-            <span>•••</span>
+            <BiDotsHorizontalRounded size={24} />
           </button>
         </div>
 
@@ -250,6 +251,7 @@ export default function PostModal({
           <PostSetting
             onClose={() => setShowSettings(false)}
             onAction={handleSettingAction}
+            profileId={post.author?.username}
           />
         )}
       </>
@@ -269,6 +271,7 @@ export default function PostModal({
         <PostSetting
           onClose={() => setShowSettings(false)}
           onAction={handleSettingAction}
+          profileId={post.author?.username}
         />
       )}
     </div>

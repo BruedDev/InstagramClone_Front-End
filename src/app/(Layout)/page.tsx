@@ -5,11 +5,11 @@ import HomeUi from "../ui/Home";
 import styles from "./Home.module.scss";
 import Suggestions from "@/components/Suggestions";
 import { getHomePosts } from "@/server/home";
-import AddStory from "@/components/AddStory";
 import Image from "next/image";
 import Link from "next/link";
 import { useNavItems } from "@/app/hooks/useNavItems";
 import { ScrollContainerContext } from "@/contexts/ScrollContainerContext"; // Đường dẫn tới context
+import StoryUserHome from "@/components/StoryUserHome";
 
 export default function Home() {
   const [posts, setPosts] = useState([]);
@@ -94,18 +94,18 @@ export default function Home() {
               </button>
             )}
             {messageItem && messageItem.href && (
-              <Link href={messageItem.href} passHref legacyBehavior>
-                <a title={messageItem.label} onClick={messageItem.onClick}>
-                  {messageItem.active
-                    ? messageItem.ActiveIcon
-                    : messageItem.icon}
-                </a>
+              <Link
+                href={messageItem.href}
+                title={messageItem.label}
+                onClick={messageItem.onClick}
+              >
+                {messageItem.active ? messageItem.ActiveIcon : messageItem.icon}
               </Link>
             )}
           </div>
         </div>
       </div>
-      <AddStory />
+      <StoryUserHome />
       <HomeUi posts={posts} />
       <Suggestions />
     </div>

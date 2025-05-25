@@ -10,6 +10,20 @@
   @media (max-width: 768px) {
     background-color: #0d1015;
   }
+  @media (max-width: 480px) {
+    padding-bottom: 20px;
+    border: none;
+
+    img {
+      padding: 0 !important;
+    }
+  }
+}
+
+.InteractionButtonContainer {
+  @media (max-width: 480px) {
+    padding: 15px 10px;
+  }
 }
 
 .mediaContainerResponsiveBg {
@@ -18,6 +32,7 @@
     background-color: #0d1015;
   }
 }
+
 .mobileOverlay {
   position: fixed;
   top: 0;
@@ -35,5 +50,11 @@
 
   &.fadeOut {
     opacity: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .commentInput {
+    display: none;
   }
 }

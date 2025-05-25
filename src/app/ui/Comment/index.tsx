@@ -1,7 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState, AppDispatch } from "@/store";
-import { fetchComments, setActiveItem, clearActiveItem } from "@/store/comment";
+import {
+  fetchComments,
+  loadMoreComments,
+  setActiveItem,
+  clearActiveItem,
+} from "@/store/comment";
 import { socketService } from "@/server/socket";
 import styles from "@/components/Modal/PostModal.module.scss";
 import { Post } from "@/types/home.type";
@@ -25,16 +30,36 @@ export default function Comment({
 
   // STATE ĐỂ QUẢN LÝ REPLY CHO MOBILE VIEW
   const [replyTo, setReplyTo] = useState<ReplyData | null>(null);
+  const commentsListRef = useRef<HTMLDivElement>(null);
 
-  const comments = useSelector(
+  const rawComments = useSelector(
     (state: RootState) => state.comments.commentsByItem[post._id] || []
   );
   const loading = useSelector(
     (state: RootState) => state.comments.loading[post._id] || false
   );
+  const loadingMore = useSelector(
+    (state: RootState) => state.comments.loadingMore[post._id] || false
+  );
   const error = useSelector(
     (state: RootState) => state.comments.error[post._id]
   );
+  const metrics = useSelector(
+    (state: RootState) => state.comments.metrics[post._id]
+  );
+
+  // Deduplicate comments để tránh duplicate keys
+  const comments = useMemo(() => {
+    const seen = new Set();
+    return rawComments.filter((comment) => {
+      if (seen.has(comment._id)) {
+        console.warn(`Duplicate comment found with id: ${comment._id}`);
+        return false;
+      }
+      seen.add(comment._id);
+      return true;
+    });
+  }, [rawComments]);
 
   const handleReply = (replyData: ReplyData) => {
     if (onReplySelect) {
@@ -56,10 +81,38 @@ export default function Comment({
     e.stopPropagation();
   };
 
+  // Infinite scroll handler
+  const handleScroll = useCallback(() => {
+    if (!commentsListRef.current || !metrics?.hasMore || loadingMore) return;
+
+    const { scrollTop, scrollHeight, clientHeight } = commentsListRef.current;
+    const scrollPercentage = (scrollTop + clientHeight) / scrollHeight;
+
+    // Load more when scrolled 80% down
+    if (scrollPercentage > 0.8) {
+      const itemType = post.type === "video" ? "video" : "image";
+      dispatch(
+        loadMoreComments({
+          itemId: post._id,
+          itemType,
+          limit: 15,
+        })
+      );
+    }
+  }, [dispatch, post._id, post.type, metrics?.hasMore, loadingMore]);
+
   useEffect(() => {
     const itemType = post.type === "video" ? "video" : "image";
     dispatch(setActiveItem({ id: post._id, type: itemType }));
-    dispatch(fetchComments({ itemId: post._id, itemType }));
+
+    // Initial fetch with limit
+    dispatch(
+      fetchComments({
+        itemId: post._id,
+        itemType,
+        limit: 15,
+      })
+    );
 
     const handleCommentCreated = (data: {
       itemId: string;
@@ -194,6 +247,15 @@ export default function Comment({
     };
   }, [dispatch, post._id, post.type]);
 
+  // Add scroll listener
+  useEffect(() => {
+    const listElement = commentsListRef.current;
+    if (listElement) {
+      listElement.addEventListener("scroll", handleScroll);
+      return () => listElement.removeEventListener("scroll", handleScroll);
+    }
+  }, [handleScroll]);
+
   // Phần content chính
   const commentsContent = (
     <>
@@ -206,14 +268,46 @@ export default function Comment({
           <p>Lỗi khi tải bình luận: {error}</p>
         </div>
       ) : comments && comments.length > 0 ? (
-        <div className={styles.commentsList}>
-          {comments.map((comment) => (
+        <div
+          className={styles.commentsList}
+          ref={commentsListRef}
+          style={{
+            maxHeight: "400px",
+            overflowY: "auto",
+            paddingRight: "8px",
+          }}
+        >
+          {comments.map((comment, index) => (
             <CommentWithReplies
-              key={comment._id}
+              key={`${comment._id}-${index}`} // Fallback key với index
               comment={comment}
               onReply={handleReply}
             />
           ))}
+
+          {/* Load more indicator */}
+          {loadingMore && (
+            <div className={styles.loadingMore}>
+              <p>Đang tải thêm bình luận...</p>
+            </div>
+          )}
+
+          {/* Show total comments info */}
+          {metrics && (
+            <div className={styles.commentsInfo}>
+              <p
+                style={{
+                  fontSize: "12px",
+                  color: "#888",
+                  textAlign: "center",
+                  margin: "10px 0",
+                  padding: "5px",
+                }}
+              >
+                {metrics.hasMore && !loadingMore && " • Cuộn xuống để xem thêm"}
+              </p>
+            </div>
+          )}
         </div>
       ) : (
         <div className={styles.noComments}>

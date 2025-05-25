@@ -1,12 +1,18 @@
 import { Post } from "@/types/home.type";
 import Image from "next/image";
 import PostModal from "@/components/Modal/PostModal";
+import PostSetting from "@/components/Modal/PostSetting"; // Import PostSetting
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import styles from "./Home.module.scss";
 import InteractionButton from "../InteractionButton";
 import CommentInput from "../CommentInput";
 import Comment from "../Comment";
+import { useTime } from "@/app/hooks/useTime";
+import { useCount } from "@/app/hooks/useCount";
+import { BsDot } from "react-icons/bs";
+import { BiDotsHorizontalRounded } from "react-icons/bi";
+import { deletePostById } from "@/server/posts";
 
 interface HomeUiProps {
   posts: Post[];
@@ -22,6 +28,14 @@ export default function HomeUi({ posts }: HomeUiProps) {
   const [showComments, setShowComments] = useState(false);
   const [commentsAnimationClass, setCommentsAnimationClass] = useState("");
   const [overlayAnimationClass, setOverlayAnimationClass] = useState("");
+
+  // States cho PostSetting
+  const [showPostSettings, setShowPostSettings] = useState(false);
+  const [selectedPostForSettings, setSelectedPostForSettings] =
+    useState<Post | null>(null);
+
+  const { fromNow } = useTime();
+  const { format } = useCount();
 
   // console.log("posts", posts);
 
@@ -140,6 +154,30 @@ export default function HomeUi({ posts }: HomeUiProps) {
     handleCloseComments();
   };
 
+  // Handlers cho PostSetting
+  const handleOpenPostSettings = (post: Post, e: React.MouseEvent) => {
+    e.stopPropagation(); // Ngăn chặn event bubbling
+    setSelectedPostForSettings(post);
+    setShowPostSettings(true);
+  };
+
+  const handleClosePostSettings = () => {
+    setShowPostSettings(false);
+    setSelectedPostForSettings(null);
+  };
+
+  const handlePostSettingAction = async (action: string) => {
+    if (action === "delete" && selectedPostForSettings) {
+      try {
+        await deletePostById(selectedPostForSettings._id);
+        // Refresh trang để cập nhật danh sách posts
+        window.location.reload();
+      } catch (error) {
+        console.error("Xóa bài viết thất bại:", error);
+      }
+    }
+  };
+
   return (
     <div
       className={`${styles.homeContainerResponsiveBg} max-w-xl mx-auto space-y-8 font-sans`}
@@ -156,7 +194,7 @@ export default function HomeUi({ posts }: HomeUiProps) {
           className={`${styles.postItemResponsiveBg} border border-[#262626] rounded-md`}
           onClick={() => handlePostClick(post)}
         >
-          <div className="flex items-center gap-3 p-3">
+          <div className="flex items-center gap-3 p-3 justify-between">
             <Image
               src={post.author.profilePicture}
               alt={post.author.username}
@@ -164,27 +202,39 @@ export default function HomeUi({ posts }: HomeUiProps) {
               height={40}
               className="rounded-full object-cover"
             />
-            <div className="flex items-center gap-2 font-semibold text-[#fafafa]">
+            <div className="flex flex-1 flex-col gap-2 font-semibold text-[#fafafa]">
               <Link
                 href={`/${post.author.username}`}
-                className={`flex items-center gap-2`}
+                className="flex items-center gap-1 text-white"
               >
-                <span
-                  className="cursor-pointer hover:underline"
-                  style={{ color: "#fff" }}
-                >
+                <span className="cursor-pointer hover:underline">
                   {post.author.username}
                 </span>
+
                 {post.author.checkMark && (
-                  <Image
-                    src="/icons/checkMark/checkMark.png"
-                    alt="Verified"
-                    width={14}
-                    height={14}
-                  />
+                  <>
+                    <Image
+                      src="/icons/checkMark/checkMark.png"
+                      alt="Verified"
+                      width={14}
+                      height={14}
+                    />
+                  </>
                 )}
+
+                <span className="text-sm text-[#8e8e8e] flex items-center">
+                  <BsDot />
+                  {fromNow(post.createdAt)}
+                </span>
               </Link>
             </div>
+            {/* PostSetting trigger button */}
+            <button
+              onClick={(e) => handleOpenPostSettings(post, e)}
+              className="p-1 hover:bg-[#262626] rounded-full transition-colors"
+            >
+              <BiDotsHorizontalRounded size={24} />
+            </button>
           </div>
 
           <div
@@ -216,7 +266,9 @@ export default function HomeUi({ posts }: HomeUiProps) {
             ) : null}
           </div>
 
-          <div className="flex items-center justify-between px-3 py-2">
+          <div
+            className={`flex items-center justify-between px-3 py-3 ${styles.InteractionButtonContainer}`}
+          >
             <InteractionButton
               post={post}
               style={{
@@ -226,28 +278,35 @@ export default function HomeUi({ posts }: HomeUiProps) {
               onClick={(
                 e: React.MouseEvent<HTMLButtonElement | HTMLDivElement>
               ) => handleOpenComments(post, e)}
+              heart={post.totalLikes}
+              comment={post.totalComments}
             />
           </div>
 
-          <div className="px-3 pb-1 font-semibold text-[#fafafa]">
-            {post.likes.length.toLocaleString()} lượt thích
+          <div
+            className={`px-3 pb-2 font-semibold text-[#fafafa]  ${styles.commentInput}`}
+          >
+            {format(post.totalLikes)} lượt thích
           </div>
 
           <div className="px-3 pb-2 text-[#dbdbdb]">
-            <span className="font-semibold mr-2 text-[#fafafa] cursor-pointer hover:underline">
+            <span
+              className={`font-semibold mr-2 text-[#fafafa] cursor-pointer hover:underline`}
+            >
               {post.author.username}
             </span>
             <span>{post.caption}</span>
           </div>
-
           <div
-            className="px-3 pt-1 pb-2 text-sm text-[#8e8e8e] cursor-pointer hover:underline"
+            className={`px-3 pt-1 pb-2 text-sm text-[#8e8e8e] cursor-pointer hover:underline ${styles.commentInput}`}
             onClick={(e) => handleOpenComments(post, e)}
           >
-            Xem tất cả {post.totalComments} bình luận
+            Xem tất cả {format(post.totalComments)} bình luận
           </div>
 
-          <CommentInput post={post} />
+          <div className={styles.commentInput}>
+            <CommentInput post={post} />
+          </div>
         </div>
       ))}
 
@@ -272,6 +331,15 @@ export default function HomeUi({ posts }: HomeUiProps) {
           post={selectedPost as Post}
           onClose={handleCloseModal}
           initialVideoTime={currentVideoTime}
+        />
+      )}
+
+      {/* PostSetting Modal */}
+      {showPostSettings && selectedPostForSettings && (
+        <PostSetting
+          onClose={handleClosePostSettings}
+          onAction={handlePostSettingAction}
+          profileId={selectedPostForSettings.author.username}
         />
       )}
     </div>

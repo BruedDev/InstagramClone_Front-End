@@ -1,6 +1,7 @@
 .container {
   position: relative;
   margin-right: 420px;
+  overflow-x: hidden;
 
   @media (max-width: 1160px) {
     margin-right: 0;

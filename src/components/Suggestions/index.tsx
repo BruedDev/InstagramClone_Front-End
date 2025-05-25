@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { suggestUsers } from "@/server/user";
+import { suggestUsers } from "@/server/home";
 import { UserIcon } from "lucide-react";
 import styles from "./Suggestions.module.scss";
 import Image from "next/image";
