@@ -37,7 +37,6 @@ export default function RootLayout({
           >
             <SiderBar />
             <ScrollableArea>
-              {/* Nội dung được truyền cho ScrollableArea */}
               <main style={{ flex: 1 }}>{children}</main>
               <Footer type="home" />
             </ScrollableArea>

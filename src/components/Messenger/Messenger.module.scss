@@ -26,6 +26,10 @@
     height: 100dvh;
     z-index: 997;
     margin: auto 0;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
   }
 }
 
@@ -72,6 +76,10 @@
       flex: 1;
       overflow-y: auto;
       min-height: 0;
+
+      &::-webkit-scrollbar {
+        display: none;
+      }
     }
   }
 }
