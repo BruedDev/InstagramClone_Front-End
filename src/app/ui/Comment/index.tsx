@@ -435,23 +435,6 @@ export default function Comment({
               <CommentSkeleton />
             </div>
           )}
-
-          {/* Show total comments info */}
-          {metrics && (
-            <div className={styles.commentsInfo}>
-              <p
-                style={{
-                  fontSize: "12px",
-                  color: "#888",
-                  textAlign: "center",
-                  margin: "10px 0",
-                  padding: "5px",
-                }}
-              >
-                {metrics.hasMore && !loadingMore && " • Cuộn xuống để xem thêm"}
-              </p>
-            </div>
-          )}
         </div>
       ) : (
         <div className={styles.noComments}>

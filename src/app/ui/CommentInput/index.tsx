@@ -5,6 +5,7 @@ import {
   useCallback,
   useEffect,
 } from "react";
+import { VscSend } from "react-icons/vsc";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/store";
 import { addComment } from "@/store/comment";
@@ -216,7 +217,7 @@ export default function CommentInput({
           onChange={inputChangeHandler}
           className={styles.commentInput}
           disabled={isCurrentlySubmitting}
-          autoFocus={!!replyTo} // Auto focus when replying
+          autoFocus={!!replyTo}
           style={inputStyle}
         />
         <button
@@ -224,7 +225,20 @@ export default function CommentInput({
           className={`${styles.postButton} ${canSubmit ? styles.active : ""}`}
           disabled={!canSubmit || isCurrentlySubmitting}
         >
-          {isCurrentlySubmitting ? "Đang đăng..." : "Đăng"}
+          {isCurrentlySubmitting ? (
+            <div
+              style={{
+                width: "20px",
+                height: "20px",
+                border: "2px solid rgba(255,255,255,0.3)",
+                borderTop: "2px solid currentColor",
+                borderRadius: "50%",
+                animation: "spin 1s linear infinite",
+              }}
+            ></div>
+          ) : (
+            <VscSend size={20} />
+          )}
         </button>
         {error && <div className={styles.errorMessage}>{error}</div>}
       </form>

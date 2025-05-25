@@ -7,6 +7,7 @@ import Link from "next/link";
 import styles from "./Home.module.scss";
 import InteractionButton from "../InteractionButton";
 import CommentInput from "../CommentInput";
+import ShortenCaption from "@/components/ShortenCaption";
 import Comment from "../Comment";
 import { useTime } from "@/app/hooks/useTime";
 import { useCount } from "@/app/hooks/useCount";
@@ -29,8 +30,6 @@ export default function HomeUi({ posts, loading }: HomeUiProps) {
   const [showComments, setShowComments] = useState(false);
   const [commentsAnimationClass, setCommentsAnimationClass] = useState("");
   const [overlayAnimationClass, setOverlayAnimationClass] = useState("");
-
-  console.log(loading);
 
   // States cho PostSetting
   const [showPostSettings, setShowPostSettings] = useState(false);
@@ -380,14 +379,18 @@ export default function HomeUi({ posts, loading }: HomeUiProps) {
             >
               {post.author.username}
             </span>
-            <span>{post.caption}</span>
+            <ShortenCaption
+              text={post.caption}
+              maxLines={2}
+              className="w-full"
+            />
           </div>
-          <div
+          <button
             className={`px-3 pt-1 pb-2 text-sm text-[#8e8e8e] cursor-pointer hover:underline ${styles.commentInput}`}
             onClick={(e) => handleOpenComments(post, e)}
           >
             Xem tất cả {format(post.totalComments)} bình luận
-          </div>
+          </button>
 
           <div className={styles.commentInput}>
             <CommentInput post={post} />
