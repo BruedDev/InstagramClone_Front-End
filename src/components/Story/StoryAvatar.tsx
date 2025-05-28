@@ -53,7 +53,7 @@ const StoryAvatar: React.FC<StoryAvatarProps> = ({
     small: {
       ring: "w-12 h-12",
       avatar: "w-[42px] h-[42px]",
-      ringOffset: "5px",
+      ringOffset: "4px",
     },
     medium: {
       ring: "w-16 h-16",
