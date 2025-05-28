@@ -300,7 +300,7 @@ const StoryModal: React.FC<StoryModalProps> = ({
   }
 
   return (
-    <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black bg-opacity-90 w-screen h-screen">
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black bg-opacity-90 w-screen h-[100dvh]">
       <div className="flex items-center justify-center w-full h-full relative">
         <div className="hidden min-[481px]:flex absolute left-4 top-1/2 transform -translate-y-1/2 z-30">
           <button
