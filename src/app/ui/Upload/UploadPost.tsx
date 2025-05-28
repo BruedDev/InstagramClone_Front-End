@@ -44,7 +44,9 @@ export default function UploadPostUi({
         isVisible && !isClosing
           ? "bg-black bg-opacity-80"
           : "bg-black bg-opacity-0"
-      } ${styles.modalOverlay} ${isClosing ? styles.closing : ""}`}
+      } ${styles.modalOverlay} ${isClosing ? styles.closing : ""} ${
+        styles.modalOverlay
+      }`}
     >
       <div
         className={`bg-zinc-900 rounded-xl w-full max-w-2xl overflow-hidden shadow-xl md:max-h-[90vh] max-h-[100vh] h-auto max-sm:rounded-none flex flex-col transition-all duration-400 ease-in-out ${

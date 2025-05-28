@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Settings, ArrowLeft, LogOut, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import MobileHeader from "./MobileHeader";
@@ -11,16 +11,34 @@ import SecurityContent from "./SecurityContent";
 import NotificationsContent from "./NotificationsContent";
 import { tabs } from "./tab";
 import useLogout from "@/app/hooks/useLogout";
+import styles from "./Setting.module.scss";
 
 export default function Setting() {
   const [activeTab, setActiveTab] = useState("account");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
   const router = useRouter();
   const { handleLogout, isLoggingOut, logoutError } = useLogout();
 
+  // Chỉ chạy một lần khi component mount để check mobile
+  useEffect(() => {
+    const isMobile = window.innerWidth < 768;
+    if (isMobile) {
+      setActiveTab(""); // Không active tab nào trên mobile
+      setMobileMenuOpen(true); // Mở sidebar sẵn
+    }
+    setIsInitialized(true);
+  }, []);
+
   const handleBack = () => {
-    router.back();
+    // Nếu đang ở mobile và chưa mở sidebar thì mở sidebar, clear tab
+    if (window.innerWidth < 768 && !mobileMenuOpen) {
+      setMobileMenuOpen(true);
+      setActiveTab("");
+    } else {
+      router.back();
+    }
   };
 
   const onLogout = async () => {
@@ -60,7 +78,9 @@ export default function Setting() {
     if (!showLogoutModal) return null;
 
     return (
-      <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 px-4">
+      <div
+        className={`fixed inset-0 bg-black/70 flex items-center justify-center z-50 px-4 ${styles.container}`}
+      >
         <div className="bg-gray-800 rounded-xl max-w-md w-full shadow-2xl transform transition-all animate-fade-in">
           <div className="flex items-center justify-between p-5 border-b border-gray-700">
             <div className="flex items-center space-x-3">
@@ -106,6 +126,11 @@ export default function Setting() {
       </div>
     );
   };
+
+  // Không render gì cho đến khi đã initialize xong
+  if (!isInitialized) {
+    return null;
+  }
 
   return (
     <div className="flex flex-col md:flex-row text-white min-h-screen">

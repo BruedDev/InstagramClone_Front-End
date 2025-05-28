@@ -1,5 +1,5 @@
 import React from "react";
-import { Menu, ArrowLeft } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 
 interface TabItem {
   id: string;
@@ -17,7 +17,7 @@ interface MobileHeaderProps {
 export default function MobileHeader({
   activeTab,
   tabs,
-  setMobileMenuOpen,
+  // setMobileMenuOpen,
   handleBack,
 }: MobileHeaderProps) {
   return (
@@ -30,13 +30,13 @@ export default function MobileHeader({
       </div>
 
       {/* Right: Menu button + Tab label */}
-      <div className="flex items-center space-x-3">
+      <div className="flex items-center space-x-3 flex-1 justify-center">
         <h1 className="text-lg font-semibold text-white">
           {tabs.find((tab) => tab.id === activeTab)?.label}
         </h1>
-        <button onClick={() => setMobileMenuOpen(true)} className="text-white">
+        {/* <button onClick={() => setMobileMenuOpen(true)} className="text-white">
           <Menu size={24} />
-        </button>
+        </button> */}
       </div>
     </div>
   );

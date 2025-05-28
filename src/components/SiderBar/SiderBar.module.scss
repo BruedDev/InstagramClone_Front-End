@@ -8,6 +8,7 @@
   border-right: 1px solid #262626;
   position: relative;
   z-index: 900;
+  transition: width 0.2s ease-in;
 
   @media (max-width: 1264px) {
     width: 70px;
@@ -90,7 +91,7 @@
 
   @media (max-width: 768px) {
     width: auto;
-    padding: 8px 12px;
+    padding: 8px 12px !important;
   }
 }
 

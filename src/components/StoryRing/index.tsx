@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import styles from "./StoryRing.module.scss";
 
 interface StoryRingProps {
@@ -19,11 +19,20 @@ export default function StoryRing({
   className = "",
 }: StoryRingProps) {
   const [internalViewed, setInternalViewed] = useState(isViewed);
+  const [animationKey, setAnimationKey] = useState(0); // Thêm key để trigger animation
+
+  useEffect(() => {
+    setInternalViewed(isViewed);
+  }, [isViewed]);
 
   const handleClick = () => {
     if (hasStories && !internalViewed) {
       setInternalViewed(true);
     }
+
+    // Trigger animation lại từ đầu mỗi lần click
+    setAnimationKey((prev) => prev + 1);
+
     onClick?.();
   };
 
@@ -68,14 +77,15 @@ export default function StoryRing({
       className={`relative ${styles.container} ${className} cursor-pointer`}
       onClick={handleClick}
     >
-      {/* SVG Ring với animation */}
+      {/* SVG Ring với animation - thêm key để reset animation */}
       <svg
+        key={animationKey} // Key này sẽ force re-render và chạy lại animation
         className={`absolute inset-0 ${currentSize.svg} -rotate-90`}
         viewBox={`0 0 ${center * 2} ${center * 2}`}
       >
         <defs>
           <linearGradient
-            id={`storyGradient-${size}`}
+            id={`storyGradient-${size}-${animationKey}`} // Thêm animationKey vào id để tránh conflict
             x1="0%"
             y1="0%"
             x2="100%"
@@ -98,7 +108,7 @@ export default function StoryRing({
           stroke={
             internalViewed
               ? "rgba(255, 255, 255, 0.3)"
-              : `url(#storyGradient-${size})`
+              : `url(#storyGradient-${size}-${animationKey})`
           }
           strokeWidth={currentSize.strokeWidth}
           strokeDasharray={internalViewed ? "8 4" : "0"}

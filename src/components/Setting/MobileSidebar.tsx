@@ -1,5 +1,7 @@
 import React from "react";
 import { Settings, X } from "lucide-react";
+import { useRouter } from "next/navigation";
+import styles from "./Setting.module.scss";
 
 export type TabType = {
   id: string;
@@ -22,18 +24,24 @@ export default function MobileSidebar({
   setActiveTab,
   tabs,
 }: MobileSidebarProps) {
+  const router = useRouter();
+
+  const handleClose = () => {
+    router.back();
+  };
+
   return (
     <div
       className={`fixed inset-0 z-50 transition-transform duration-300 bg-black md:hidden ${
         mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
-      }`}
+      } ${styles.container}`}
     >
       <div className="flex items-center justify-between p-4 border-b border-[#333]">
         <div className="flex items-center space-x-2">
           <Settings size={24} />
           <h1 className="text-xl font-semibold">Cài đặt</h1>
         </div>
-        <button onClick={() => setMobileMenuOpen(false)} className="text-white">
+        <button onClick={handleClose} className="text-white">
           <X size={24} />
         </button>
       </div>

@@ -86,7 +86,7 @@ export default function AccountContent() {
                   disabled={isSaving}
                   className="px-4 py-1.5 text-sm bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white rounded-md font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isSaving ? "Đang lưu..." : "💾 Lưu"}
+                  {isSaving ? "Đang lưu..." : "Lưu"}
                 </button>
               </div>
             </div>

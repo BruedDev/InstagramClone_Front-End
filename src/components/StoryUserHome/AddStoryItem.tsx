@@ -24,9 +24,9 @@ export default function AddStoryItem() {
           />
         </div>
 
-        {/* Add Button */}
+        {/* Add Story Button */}
         <div className="absolute -bottom-0 -right-0 w-5 h-5 bg-white rounded-full flex items-center justify-center border-2 border-black">
-          <FaPlus size={14} className="text-black" />
+          <FaPlus size={12} className="text-black leading-none p-0" />
         </div>
       </div>
 

@@ -22,6 +22,7 @@ export interface Comment {
       count: number;
     };
   };
+  likes?: number;
 }
 
 export interface CommentMetrics {

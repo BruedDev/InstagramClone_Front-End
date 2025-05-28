@@ -24,6 +24,8 @@ export const CommentItem = ({
 }) => {
   const { fromNow } = useTime();
 
+  console.log("CommentItem: ", comment);
+
   const marginLeft = isReply ? 20 : 0;
   const showBorder = isReply;
 
@@ -96,14 +98,35 @@ export const CommentItem = ({
             >
               {comment.author.fullname || comment.author.username}
             </span>
-            <Heart
-              size={isReply ? 16 : 18}
+            <div
               style={{
-                color: "#ffffff",
-                cursor: "pointer",
-                opacity: 0.7,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: "2px",
+                justifyContent: "flex-start",
               }}
-            />
+            >
+              <Heart
+                size={isReply ? 16 : 18}
+                style={{
+                  color: "#ffffff",
+                  cursor: "pointer",
+                  opacity: 0.7,
+                }}
+              />
+              <span
+                style={{
+                  fontSize: isReply ? "12px" : "13px",
+                  fontWeight: "600",
+                  color: "#ffffff",
+                  lineHeight: "1",
+                  textAlign: "center",
+                }}
+              >
+                {comment.likes || 0}
+              </span>
+            </div>
           </div>
 
           <MentionText

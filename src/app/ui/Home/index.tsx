@@ -11,9 +11,12 @@ import ShortenCaption from "@/components/ShortenCaption";
 import Comment from "../Comment";
 import { useTime } from "@/app/hooks/useTime";
 import { useCount } from "@/app/hooks/useCount";
-import { BsDot } from "react-icons/bs";
 import { BiDotsHorizontalRounded } from "react-icons/bi";
 import { deletePostById } from "@/server/posts";
+import { useStory } from "@/contexts/StoryContext";
+import StoryAvatar from "@/components/Story/StoryAvatar";
+
+type AuthorType = Post["author"];
 
 interface HomeUiProps {
   posts: Post[];
@@ -30,6 +33,11 @@ export default function HomeUi({ posts, loading }: HomeUiProps) {
   const [showComments, setShowComments] = useState(false);
   const [commentsAnimationClass, setCommentsAnimationClass] = useState("");
   const [overlayAnimationClass, setOverlayAnimationClass] = useState("");
+  const { openStory } = useStory();
+
+  const handleAvatarClick = async (author: AuthorType) => {
+    await openStory(author, 0);
+  };
 
   // States cho PostSetting
   const [showPostSettings, setShowPostSettings] = useState(false);
@@ -279,39 +287,44 @@ export default function HomeUi({ posts, loading }: HomeUiProps) {
           onClick={() => handlePostClick(post)}
         >
           <div className="flex items-center gap-3 p-3 justify-between">
-            <Image
-              src={post.author.profilePicture}
-              alt={post.author.username}
-              width={40}
-              height={40}
-              className="rounded-full object-cover"
-            />
-            <div className="flex flex-1 flex-col gap-2 font-semibold text-[#fafafa]">
-              <Link
-                href={`/${post.author.username}`}
-                className="flex items-center gap-1 text-white"
-              >
-                <span className="cursor-pointer hover:underline">
-                  {post.author.username}
-                </span>
-
-                {post.author.checkMark && (
-                  <>
-                    <Image
-                      src="/icons/checkMark/checkMark.png"
-                      alt="Verified"
-                      width={14}
-                      height={14}
-                    />
-                  </>
-                )}
-
-                <span className="text-sm text-[#8e8e8e] flex items-center">
-                  <BsDot />
-                  {fromNow(post.createdAt)}
-                </span>
-              </Link>
+            {/* Avatar */}
+            <div
+              onClick={() => handleAvatarClick(post.author)}
+              className="cursor-pointer"
+            >
+              {/* SOLUTION: Wrap StoryAvatar */}
+              <StoryAvatar
+                author={post.author}
+                hasStories={true}
+                size="small"
+              />
             </div>
+
+            {/* Username & time */}
+            <div className="flex flex-1 flex-col text-[#fafafa]">
+              <div className="flex items-center gap-2 font-semibold text-white">
+                <Link
+                  href={`/${post.author.username}`}
+                  className="hover:underline"
+                >
+                  {post.author.username}
+                </Link>
+                {post.author.checkMark && (
+                  <Image
+                    src="/icons/checkMark/checkMark.png"
+                    alt="Verified"
+                    width={13}
+                    height={13}
+                  />
+                )}
+              </div>
+
+              {/* Time - đặt dưới username */}
+              <span className="text-sm text-[#8e8e8e] flex items-center">
+                {fromNow(post.createdAt)}
+              </span>
+            </div>
+
             {/* PostSetting trigger button */}
             <button
               onClick={(e) => handleOpenPostSettings(post, e)}

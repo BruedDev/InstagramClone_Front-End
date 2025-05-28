@@ -17,7 +17,7 @@ export interface Post {
   updatedAt: string;
   __v: number;
   comments: Comment[];
-  likes: string[];
+  // likes: string[];
   isLiked: boolean;
   isBookmarked: boolean;
   totalLikes: number;

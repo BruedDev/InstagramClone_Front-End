@@ -12,7 +12,7 @@ import UploadPost from "../Modal/uploadPost";
 export default function SiderBar() {
   const pathname = usePathname();
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
-  const [isUploadPostOpen, setIsUploadPostOpen] = useState(false); // State cho UploadPost
+  const [isUploadPostOpen, setIsUploadPostOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [windowWidth, setWindowWidth] = useState(0);
 
@@ -35,9 +35,13 @@ export default function SiderBar() {
   // Handle sidebar collapse based on pathname and window width
   useEffect(() => {
     if (typeof window !== "undefined") {
+      // Sidebar sẽ collapse khi:
+      // 1. Window width <= 1264px (responsive design)
+      // 2. HOẶC khi ở trang setting/messages với window width >= 1264px
       const shouldBeCollapsed =
-        (pathname === "/setting" || pathname === "/messages") &&
-        windowWidth >= 1264;
+        windowWidth <= 1264 ||
+        ((pathname === "/setting" || pathname === "/messages") &&
+          windowWidth > 1264);
 
       setCollapsed(shouldBeCollapsed);
 
@@ -82,11 +86,7 @@ export default function SiderBar() {
       <div className={styles.logo}>
         <Link href="/">
           <Image
-            src={
-              collapsed
-                ? "/Images/Instagram_logo_2016.svg.png"
-                : "/Images/logoLogin.png"
-            }
+            src={collapsed ? "/Images/instagram.png" : "/Images/logoLogin.png"}
             alt="Logo"
             width={collapsed ? 30 : 120}
             height={collapsed ? 30 : 40}
@@ -104,7 +104,7 @@ export default function SiderBar() {
 
             return item.type === "link" ? (
               <Link
-                href={getAbsolutePath(item.href)} // Sử dụng helper function
+                href={getAbsolutePath(item.href)}
                 key={index}
                 onClick={item.onClick}
                 className={`${styles.navItem} ${
