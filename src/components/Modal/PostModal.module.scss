@@ -50,7 +50,7 @@
 
 .postContainer {
   display: flex;
-  height: 90vh;
+  height: 88vh;
   max-height: 90vh;
 
   @media (max-width: 768px) {
@@ -59,9 +59,10 @@
     background-color: #0d1015;
   }
   @media (max-width: 480px) {
-    height: 100vh;
+    height: 100dvh;
     max-height: 100vh;
-    padding: 40px 0;
+    padding: 0;
+    margin: 0;
   }
 }
 

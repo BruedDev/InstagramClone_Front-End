@@ -1,11 +1,11 @@
 // @/store/messengerSlice.ts
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
-import { getAvailableUsers, getMessages, getUserStatus } from "@/server/messenger";
+import { getAvailableUsers, getMessagesWithPagination, getUserStatus } from "@/server/messenger";
 import { Message, User } from "@/types/user.type";
 import { MessengerState } from "@/types/messenger.types";
 import { createRef } from "react";
 
-const PAGE_SIZE = 6;
+const PAGE_SIZE = 20; // Đổi về 20 cho đồng bộ API mới
 
 // Define the type for the API response
 interface AvailableUser {
@@ -24,7 +24,7 @@ export const fetchAvailableUsers = createAsyncThunk(
   async () => {
     const response = await getAvailableUsers();
     const users: User[] = Array.isArray(response)
-      ? response.map((user: AvailableUser) => ({
+      ? response.map((user: AvailableUser & { hasStory?: boolean }) => ({
           id: user._id,
           _id: user._id,
           username: user.username,
@@ -44,28 +44,29 @@ export const fetchAvailableUsers = createAsyncThunk(
           lastOnline: user.lastOnline || null,
           isFollowing: false,
           followersCount: 0,
-          followingCount: 0
+          followingCount: 0,
+          hasStory: user.hasStory || false, // Add hasStory from backend
         }))
       : [];
     return users;
   }
 );
 
-
+// Fetch messages dùng API mới (infinite scroll)
 export const fetchMessages = createAsyncThunk(
- "messenger/fetchMessages",
- async ({
-   userId,
-   offset = 0,
-   replace = false,
- }: {
-   userId: string;
-   offset?: number;
-   replace?: boolean;
- }) => {
-   const messages = await getMessages(userId, PAGE_SIZE, offset);
-   return { messages, offset, replace };
- }
+  "messenger/fetchMessages",
+  async ({
+    userId,
+    before,
+    replace = false,
+  }: {
+    userId: string;
+    before?: string;
+    replace?: boolean;
+  }) => {
+    const res = await getMessagesWithPagination(userId, before, PAGE_SIZE);
+    return { ...res, before, replace };
+  }
 );
 
 export const checkOnline = createAsyncThunk(
@@ -84,7 +85,7 @@ const initialState: MessengerState = {
  loading: false,
  loadingMore: false,
  hasMore: true,
- offset: 0,
+ before: undefined, // Thay offset bằng before (timestamp)
  showMainChat: false,
  ringtoneRef: createRef<HTMLAudioElement>(),
  // Call states
@@ -97,6 +98,8 @@ const initialState: MessengerState = {
  // Add missing MessengerState properties
  timestamp: 0,
  status: "missed",
+ // Thêm biến này để lưu userId đã fetch gần nhất
+ lastFetchedUserId: undefined,
 };
 
 const messengerSlice = createSlice({
@@ -105,8 +108,8 @@ const messengerSlice = createSlice({
  reducers: {
    setSelectedUser: (state, action: PayloadAction<User | null>) => {
      state.selectedUser = action.payload;
-     state.messages = [];
-     state.offset = 0;
+     // KHÔNG xóa messages ở đây nữa để tránh nhấp nháy
+     state.before = undefined;
      state.hasMore = true;
      state.showMainChat = !!action.payload;
    },
@@ -149,7 +152,7 @@ const messengerSlice = createSlice({
    },
    resetMessagesState: (state) => {
      state.messages = [];
-     state.offset = 0;
+     state.before = undefined;
      state.hasMore = true;
    },
    resetUserStatus: (state) => {
@@ -165,7 +168,7 @@ const messengerSlice = createSlice({
      .addCase(fetchAvailableUsers.rejected, (state) => {
        state.availableUsers = [];
      })
-     // Xử lý fetchMessages
+     // Xử lý fetchMessages với API mới
      .addCase(fetchMessages.pending, (state, action) => {
        const { replace } = action.meta.arg as { replace?: boolean };
        if (replace) {
@@ -175,22 +178,23 @@ const messengerSlice = createSlice({
        }
      })
      .addCase(fetchMessages.fulfilled, (state, action) => {
-       const { messages, offset, replace } = action.payload;
-
+       const { messages, hasMore, oldestTimestamp, replace } = action.payload;
        if (replace) {
          state.messages = messages;
        } else {
          state.messages = [...messages, ...state.messages];
        }
-
-       state.offset = offset + messages.length;
-       state.hasMore = messages.length === PAGE_SIZE;
+       state.before = oldestTimestamp === null ? undefined : oldestTimestamp;
+       state.hasMore = hasMore;
        state.loading = false;
        state.loadingMore = false;
+       // Lấy userId từ selectedUser để cập nhật lastFetchedUserId
+       if (state.selectedUser) {
+         state.lastFetchedUserId = state.selectedUser._id;
+       }
      })
      .addCase(fetchMessages.rejected, (state, action) => {
        const { replace } = action.meta.arg as { replace?: boolean };
-
        if (replace) {
          state.messages = [];
          state.loading = false;

@@ -71,68 +71,77 @@ export default function PostSetting({
         <>
           {/* Overlay nền đen mờ nhẹ opacity 0.5 */}
           <div
-            className="fixed inset-0 z-[996] flex justify-center items-center"
+            className="fixed inset-0 z-[996] flex justify-center items-center p-4"
             style={{ backgroundColor: "rgba(0, 0, 0, 0.5)" }}
             onClick={onClose}
           >
             {/* Menu chính với nền xám tối #222222 */}
             <div
-              className="max-w-full h-auto max-h-full bg-[#222222] rounded-xl overflow-hidden shadow-lg text-white
-                 sm:h-auto
-                 xs:w-full xs:h-full"
-              style={{ width }}
+              className="w-full max-w-md bg-[#222222] rounded-xl overflow-hidden shadow-lg text-white
+                 sm:w-auto sm:max-w-full
+                 max-[480px]:w-full max-[480px]:mx-4 max-[480px]:max-w-none"
+              style={{
+                width: window.innerWidth > 480 ? width : "auto",
+                maxHeight: "90vh",
+              }}
               onClick={(e) => e.stopPropagation()}
             >
               {/* Title nếu có */}
               {title && (
-                <div className="py-4 px-5 text-center border-b border-[#444444] font-semibold text-white">
+                <div className="py-4 px-5 text-center border-b border-[#444444] font-semibold text-white text-sm">
                   {title}
                 </div>
               )}
 
               {/* Main menu items cho người khác */}
-              {(menuItems || OTHER_POST_MENU_ITEMS)
-                .filter((item) => item.action !== "cancel")
-                .map((item, index, filteredItems) => (
-                  <button
-                    key={item.id}
-                    className={`w-full py-4 px-5 text-center border-b border-[#444444] hover:bg-[#333333] transition-colors text-sm ${
-                      item.danger
-                        ? "text-[#ed4956] font-semibold"
-                        : "text-white"
-                    } ${
-                      index === filteredItems.length - 1 &&
-                      !(menuItems || OTHER_POST_MENU_ITEMS).find(
-                        (item) => item.action === "cancel"
-                      )
-                        ? "rounded-b-xl border-b-0"
-                        : ""
-                    }`}
-                    onClick={() => handleClick(item.action)}
-                  >
-                    {item.label}
-                  </button>
-                ))}
+              <div className="max-h-[70vh] overflow-y-auto">
+                {(menuItems || OTHER_POST_MENU_ITEMS)
+                  .filter((item) => item.action !== "cancel")
+                  .map((item, index, filteredItems) => (
+                    <button
+                      key={item.id}
+                      className={`w-full py-4 px-5 text-center border-b border-[#444444] hover:bg-[#333333] transition-colors text-sm leading-5 ${
+                        item.danger
+                          ? "text-[#ed4956] font-semibold"
+                          : "text-white"
+                      } ${
+                        index === filteredItems.length - 1 &&
+                        !(menuItems || OTHER_POST_MENU_ITEMS).find(
+                          (item) => item.action === "cancel"
+                        )
+                          ? "border-b-0"
+                          : ""
+                      }
+                      max-[480px]:py-3 max-[480px]:text-base max-[480px]:font-normal`}
+                      onClick={() => handleClick(item.action)}
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+              </div>
 
               {/* Cancel button nếu có */}
               {(menuItems || OTHER_POST_MENU_ITEMS).find(
                 (item) => item.action === "cancel"
               ) && (
-                <button
-                  key={
-                    (menuItems || OTHER_POST_MENU_ITEMS).find(
-                      (item) => item.action === "cancel"
-                    )!.id
-                  }
-                  className="w-full mt-6 py-4 px-5 text-center rounded-b-xl bg-[#333333] text-white font-semibold text-sm hover:bg-[#444444] transition-colors"
-                  onClick={() => handleClick("cancel")}
-                >
-                  {
-                    (menuItems || OTHER_POST_MENU_ITEMS).find(
-                      (item) => item.action === "cancel"
-                    )!.label
-                  }
-                </button>
+                <div className="border-t border-[#444444] mt-2">
+                  <button
+                    key={
+                      (menuItems || OTHER_POST_MENU_ITEMS).find(
+                        (item) => item.action === "cancel"
+                      )!.id
+                    }
+                    className="w-full py-4 px-5 text-center bg-[#222222] text-white font-semibold text-sm hover:bg-[#333333] transition-colors
+                               max-[480px]:py-3 max-[480px]:text-base max-[480px]:font-normal"
+                    onClick={() => handleClick("cancel")}
+                  >
+                    {
+                      (menuItems || OTHER_POST_MENU_ITEMS).find(
+                        (item) => item.action === "cancel"
+                      )!.label
+                    }
+                  </button>
+                </div>
               )}
             </div>
           </div>
@@ -143,66 +152,77 @@ export default function PostSetting({
       <>
         {/* Overlay nền đen mờ nhẹ opacity 0.5 */}
         <div
-          className="fixed inset-0 z-[996] flex justify-center items-center"
+          className="fixed inset-0 z-[996] flex justify-center items-center p-4"
           style={{ backgroundColor: "rgba(0, 0, 0, 0.5)" }}
           onClick={onClose}
         >
           {/* Menu chính với nền xám tối #222222 */}
           <div
-            className="max-w-full h-auto max-h-full bg-[#222222] rounded-xl overflow-hidden shadow-lg text-white
-               sm:h-auto
-               xs:w-full xs:h-full"
-            style={{ width }}
+            className="w-full max-w-md bg-[#222222] rounded-xl overflow-hidden shadow-lg text-white
+               sm:w-auto sm:max-w-full
+               max-[480px]:w-full max-[480px]:mx-4 max-[480px]:max-w-none"
+            style={{
+              width: window.innerWidth > 480 ? width : "auto",
+              maxHeight: "90vh",
+            }}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Title nếu có */}
             {title && (
-              <div className="py-4 px-5 text-center border-b border-[#444444] font-semibold text-white">
+              <div className="py-4 px-5 text-center border-b border-[#444444] font-semibold text-white text-sm">
                 {title}
               </div>
             )}
 
             {/* Main menu items cho chính mình */}
-            {(menuItems || DEFAULT_POST_MENU_ITEMS)
-              .filter((item) => item.action !== "cancel")
-              .map((item, index, filteredItems) => (
-                <button
-                  key={item.id}
-                  className={`w-full py-4 px-5 text-center border-b border-[#444444] hover:bg-[#333333] transition-colors text-sm ${
-                    item.danger ? "text-[#ed4956] font-semibold" : "text-white"
-                  } ${
-                    index === filteredItems.length - 1 &&
-                    !(menuItems || DEFAULT_POST_MENU_ITEMS).find(
-                      (item) => item.action === "cancel"
-                    )
-                      ? "rounded-b-xl border-b-0"
-                      : ""
-                  }`}
-                  onClick={() => handleClick(item.action)}
-                >
-                  {item.label}
-                </button>
-              ))}
+            <div className="max-h-[70vh] overflow-y-auto">
+              {(menuItems || DEFAULT_POST_MENU_ITEMS)
+                .filter((item) => item.action !== "cancel")
+                .map((item, index, filteredItems) => (
+                  <button
+                    key={item.id}
+                    className={`w-full py-4 px-5 text-center border-b border-[#444444] hover:bg-[#333333] transition-colors text-sm leading-5 ${
+                      item.danger
+                        ? "text-[#ed4956] font-semibold"
+                        : "text-white"
+                    } ${
+                      index === filteredItems.length - 1 &&
+                      !(menuItems || DEFAULT_POST_MENU_ITEMS).find(
+                        (item) => item.action === "cancel"
+                      )
+                        ? "border-b-0"
+                        : ""
+                    }
+                    max-[480px]:py-3 max-[480px]:text-base max-[480px]:font-normal`}
+                    onClick={() => handleClick(item.action)}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+            </div>
 
             {/* Cancel button nếu có */}
             {(menuItems || DEFAULT_POST_MENU_ITEMS).find(
               (item) => item.action === "cancel"
             ) && (
-              <button
-                key={
-                  (menuItems || DEFAULT_POST_MENU_ITEMS).find(
-                    (item) => item.action === "cancel"
-                  )!.id
-                }
-                className="w-full mt-6 py-4 px-5 text-center rounded-b-xl bg-[#333333] text-white font-semibold text-sm hover:bg-[#444444] transition-colors"
-                onClick={() => handleClick("cancel")}
-              >
-                {
-                  (menuItems || DEFAULT_POST_MENU_ITEMS).find(
-                    (item) => item.action === "cancel"
-                  )!.label
-                }
-              </button>
+              <div className="border-t border-[#444444] mt-2">
+                <button
+                  key={
+                    (menuItems || DEFAULT_POST_MENU_ITEMS).find(
+                      (item) => item.action === "cancel"
+                    )!.id
+                  }
+                  className="w-full py-4 px-5 text-center bg-[#222222] text-white font-semibold text-sm hover:bg-[#333333] transition-colors
+                             max-[480px]:py-3 max-[480px]:text-base max-[480px]:font-normal"
+                  onClick={() => handleClick("cancel")}
+                >
+                  {
+                    (menuItems || DEFAULT_POST_MENU_ITEMS).find(
+                      (item) => item.action === "cancel"
+                    )!.label
+                  }
+                </button>
+              </div>
             )}
           </div>
         </div>

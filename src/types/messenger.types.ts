@@ -10,7 +10,7 @@ export interface MessengerState {
   loading: boolean;
   loadingMore: boolean;
   hasMore: boolean;
-  offset: number;
+  before?: string; // Thay offset bằng before (timestamp)
   showMainChat: boolean;
   ringtoneRef: React.RefObject<HTMLAudioElement | null>;
   // Call states
@@ -31,6 +31,8 @@ export interface MessengerState {
   timestamp: number;
   duration?: number;
   status: "missed" | "answered" | "outgoing";
+  // Thêm dòng này để hỗ trợ lưu userId đã fetch gần nhất
+  lastFetchedUserId?: string;
 }
 
 

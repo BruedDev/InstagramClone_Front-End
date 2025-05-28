@@ -11,8 +11,11 @@ interface FooterProps {
 const Footer: React.FC<FooterProps> = ({ type = "home" }) => {
   const pathname = usePathname(); // Lấy pathname hiện tại
 
-  // Nếu URL chứa "call-modal", không hiển thị Footer
-  if (pathname && pathname.includes("call-modal")) {
+  // Nếu URL chứa "call-modal" hoặc "post", không hiển thị Footer
+  if (
+    pathname &&
+    (pathname.includes("call-modal") || pathname.includes("post"))
+  ) {
     return null;
   }
 

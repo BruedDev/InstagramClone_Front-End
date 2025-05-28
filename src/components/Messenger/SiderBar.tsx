@@ -14,13 +14,17 @@ import {
   markMessagesAsRead as markMessagesAsReadApi,
 } from "@/server/messenger";
 import { socketService, type MessageData } from "@/server/socket";
+import StoryAvatar from "@/components/Story/StoryAvatar";
+
+type UserWithStory = User & { hasStory?: boolean };
 
 type SiderBarProps = {
-  availableUsers: User[];
+  availableUsers: UserWithStory[];
   selectedUser: User | null;
   setSelectedUser: (user: User) => void;
   setShowMainChat: (show: boolean) => void;
   userId: string;
+  hasStory?: boolean;
 };
 
 interface ExtendedUser extends User {
@@ -36,6 +40,7 @@ interface ExtendedUser extends User {
   createdAt: string;
   updatedAt: string;
   isOnline?: boolean;
+  hasStory?: boolean;
 }
 
 export default function SiderBar({
@@ -185,7 +190,7 @@ export default function SiderBar({
           senderId: messageData.senderId,
           isOwnMessage: isOwnMessage,
           createdAt: messageData.createdAt,
-          isRead: isOwnMessage ? true : messageData.isRead, // Quan trọng: tin nhắn mới đến từ người khác sẽ có isRead = messageData.isRead (thường là false)
+          isRead: isOwnMessage ? true : messageData.isRead,
         },
       };
       updateRecentChatItem(recentChatItem);
@@ -480,15 +485,18 @@ export default function SiderBar({
               <>
                 {filteredChats.map((chat) => {
                   if (!chat.user) return null;
-
                   const isChatSelected =
                     selectedUser && selectedUser._id === chat.user._id;
                   const isOnline = chat.user.isOnline ?? false;
-                  // hasUnreadMessage dựa trên trạng thái isRead của lastMessage trong recentChats
                   const hasUnreadMessage =
                     chat.lastMessage &&
                     !chat.lastMessage.isOwnMessage &&
                     !chat.lastMessage.isRead;
+                  // Lấy hasStory từ availableUsers nếu chat.user chưa có
+                  const userFromList = availableUsers.find(
+                    (u) => u._id === chat.user._id
+                  );
+                  const hasStory = (userFromList?.hasStory ?? false) === true;
 
                   return (
                     <div
@@ -496,26 +504,43 @@ export default function SiderBar({
                       className={`flex items-center p-2 cursor-pointer rounded-lg hover:bg-[#1a1a1a] transition-colors mb-1 ${
                         isChatSelected ? "bg-[#1a1a1a]" : ""
                       }`}
-                      onClick={() => handleChatClick(chat)}
                     >
                       <div className="w-12 h-12 rounded-full mr-3 relative flex-shrink-0">
-                        {chat.user.profilePicture ? (
+                        {hasStory ? (
+                          <StoryAvatar
+                            author={chat.user}
+                            hasStories={true}
+                            variant="messenger"
+                            size="large"
+                            showUsername={false}
+                            initialIndex={0}
+                          />
+                        ) : chat.user.profilePicture ? (
                           <Image
                             src={chat.user.profilePicture}
                             alt={chat.user.username}
                             layout="fill"
                             objectFit="cover"
                             className="rounded-full"
+                            style={{ cursor: "pointer" }}
+                            onClick={() => handleChatClick(chat)}
                           />
                         ) : (
-                          <div className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold text-lg rounded-full">
+                          <div
+                            className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold text-lg rounded-full"
+                            style={{ cursor: "pointer" }}
+                            onClick={() => handleChatClick(chat)}
+                          >
                             {chat.user.username.charAt(0).toUpperCase()}
                           </div>
                         )}
                         <OnlineIndicator isOnline={isOnline} />
                       </div>
 
-                      <div className="flex-1 min-w-0">
+                      <div
+                        className="flex-1 min-w-0"
+                        onClick={() => handleChatClick(chat)}
+                      >
                         <div className="flex items-center gap-1.5 mb-0.5">
                           <p
                             className={`truncate font-medium ${
@@ -575,7 +600,7 @@ export default function SiderBar({
                   const isChatSelected =
                     selectedUser && selectedUser._id === user._id;
                   const isOnline = isUserOnline(user._id);
-
+                  const hasStory = user.hasStory === true;
                   return (
                     <div
                       key={user._id}
@@ -585,16 +610,38 @@ export default function SiderBar({
                       onClick={() => handleUserClick(user)}
                     >
                       <div className="w-12 h-12 rounded-full mr-3 relative flex-shrink-0">
-                        {user.profilePicture ? (
+                        {hasStory ? (
+                          <StoryAvatar
+                            author={user}
+                            hasStories={true}
+                            variant="messenger"
+                            size="small"
+                            showUsername={false}
+                            initialIndex={0}
+                            onClick={() => handleUserClick(user)}
+                          />
+                        ) : user.profilePicture ? (
                           <Image
                             src={user.profilePicture}
                             alt={user.username}
                             layout="fill"
                             objectFit="cover"
                             className="rounded-full"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleUserClick(user);
+                            }}
+                            style={{ cursor: "pointer" }}
                           />
                         ) : (
-                          <div className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold text-lg rounded-full">
+                          <div
+                            className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold text-lg rounded-full"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleUserClick(user);
+                            }}
+                            style={{ cursor: "pointer" }}
+                          >
                             {user.username.charAt(0).toUpperCase()}
                           </div>
                         )}

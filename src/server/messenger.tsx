@@ -76,14 +76,23 @@ export const getAvailableUsers = async (): Promise<AvailableUser[]> => {
   return response.json();
 };
 
-// Lấy lịch sử tin nhắn với một người dùng cụ thể
+// Lấy lịch sử tin nhắn với một người dùng cụ thể (API cũ, giữ lại nếu cần)
 export const getMessages = async (
   userId: string,
-  limit = 6,
-  offset = 0
-): Promise<Message[]> => {
+  page = 1,
+  limit = 20
+): Promise<{
+  messages: Message[];
+  pagination: {
+    currentPage: number;
+    totalMessages: number;
+    hasMore: boolean;
+    messagesPerPage: number;
+  };
+  unreadCount: number;
+}> => {
   const token = getAuthToken();
-  const url = `${BASE_URL}/messenger/messages/${userId}?limit=${limit}&offset=${offset}`;
+  const url = `${BASE_URL}/messenger/messages/${userId}?page=${page}&limit=${limit}`;
 
   const res = await fetch(url, {
     headers: {
@@ -96,6 +105,37 @@ export const getMessages = async (
     const errorText = await res.text();
     console.error("Response lỗi:", errorText);
     throw new Error("Lỗi khi lấy tin nhắn");
+  }
+  return res.json();
+};
+
+// Lấy tin nhắn với phân trang kiểu infinite scroll (dùng before, limit)
+export const getMessagesWithPagination = async (
+  userId: string,
+  before?: string, // ISO date string hoặc undefined
+  limit = 20
+): Promise<{
+  messages: Message[];
+  hasMore: boolean;
+  oldestTimestamp: string | null;
+}> => {
+  const token = getAuthToken();
+  let url = `${BASE_URL}/messenger/getMessagesWithPagination/${userId}?limit=${limit}`;
+  if (before) {
+    url += `&before=${encodeURIComponent(before)}`;
+  }
+
+  const res = await fetch(url, {
+    headers: {
+      Authorization: token ? `Bearer ${token}` : "",
+    },
+    credentials: "include",
+  });
+
+  if (!res.ok) {
+    const errorText = await res.text();
+    console.error("Response lỗi:", errorText);
+    throw new Error("Lỗi khi lấy tin nhắn (infinite scroll)");
   }
   return res.json();
 };

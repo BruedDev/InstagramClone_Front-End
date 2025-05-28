@@ -66,6 +66,9 @@ const StoryModal: React.FC<StoryModalProps> = ({
     Record<string, "object-contain" | "object-cover">
   >({});
 
+  const prevPathRef = useRef<string>("/");
+  const wasOpenRef = useRef<boolean>(false);
+
   const resetProgress = useCallback(() => {
     if (rafRef.current !== null) {
       cancelAnimationFrame(rafRef.current);
@@ -189,14 +192,21 @@ const StoryModal: React.FC<StoryModalProps> = ({
   }, [audioRef, videoRef, isPlaying, isMuted]);
 
   useEffect(() => {
-    if (open && stories[current]) {
+    if (open && !wasOpenRef.current) {
+      // Lưu lại pathname gốc khi mở modal lần đầu
+      prevPathRef.current = window.location.pathname;
+      wasOpenRef.current = true;
+      window.history.pushState({}, "", `/story/${stories[current]._id}`);
+    } else if (open && wasOpenRef.current) {
+      // Khi chuyển story, chỉ pushState, không ghi đè prevPathRef
       window.history.pushState({}, "", `/story/${stories[current]._id}`);
     }
   }, [open, current, stories]);
 
   useEffect(() => {
-    if (!open) {
-      window.history.replaceState({}, "", "/");
+    if (!open && wasOpenRef.current) {
+      window.history.replaceState({}, "", prevPathRef.current || "/");
+      wasOpenRef.current = false;
     }
   }, [open]);
 
@@ -333,7 +343,7 @@ const StoryModal: React.FC<StoryModalProps> = ({
         <div className="hidden min-[481px]:flex absolute top-4 right-4 z-30">
           <button
             onClick={() => {
-              window.history.replaceState({}, "", "/");
+              window.history.replaceState({}, "", prevPathRef.current || "/");
               onClose();
             }}
             className="p-3 rounded-full bg-black bg-opacity-50 hover:bg-opacity-70 transition-all opacity-80 hover:opacity-100"
@@ -423,7 +433,11 @@ const StoryModal: React.FC<StoryModalProps> = ({
               </button>
               <button
                 onClick={() => {
-                  window.history.replaceState({}, "", "/");
+                  window.history.replaceState(
+                    {},
+                    "",
+                    prevPathRef.current || "/"
+                  );
                   onClose();
                 }}
                 className="p-2 rounded-full hover:bg-white/20 transition-colors max-[480px]:flex min-[481px]:hidden"

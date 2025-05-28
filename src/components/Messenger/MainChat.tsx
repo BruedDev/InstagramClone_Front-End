@@ -13,9 +13,11 @@ import { useTime } from "@/app/hooks/useTime";
 import { useCheckOnline } from "@/app/hooks/useCheckOnline";
 import { useTimeOffline } from "@/app/hooks/useTimeOffline";
 import { OnlineIndicator } from "@/components/OnlineIndicator";
+import StoryAvatar from "@/components/Story/StoryAvatar";
 
+// Extend User type to allow hasStory for MainChat
 export type MainChatProps = {
-  selectedUser: User | null;
+  selectedUser: (User & { hasStory?: boolean }) | null;
   messages: Message[];
   message: string;
   setMessage: (msg: string) => void;
@@ -78,6 +80,7 @@ export default function MainChat({
       const { scrollHeight } = messagesContainerRef.current;
       setPreviousScrollHeight(scrollHeight);
       setShouldMaintainScrollPosition(true);
+      // Gọi onLoadMore chỉ khi hasMore và loadingMore = false
       onLoadMore();
     }
   }, [hasMore, loadingMore, onLoadMore]);
@@ -96,26 +99,41 @@ export default function MainChat({
     }
   }, [loadingMore, shouldMaintainScrollPosition, previousScrollHeight]);
 
-  // Auto scroll to bottom for new messages (only if user is near bottom)
+  // Auto scroll to bottom khi có tin nhắn mới, nhưng KHÔNG cuộn nếu user đang đọc ở trên (giống Facebook)
   useEffect(() => {
-    if (messagesEndRef.current && messagesContainerRef.current) {
-      const container = messagesContainerRef.current;
-      const { scrollHeight, scrollTop, clientHeight } = container;
-      const isNearBottom = scrollHeight - scrollTop - clientHeight < 50;
-
-      if (isNearBottom) {
-        messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
-      }
-    }
-  }, [messages]);
-
-  // Scroll to bottom when user changes (instant, no animation)
-  useEffect(() => {
-    if (selectedUser && messagesEndRef.current) {
-      // Instant scroll to bottom when switching users
+    if (!messagesEndRef.current || !messagesContainerRef.current) return;
+    if (loadingMore) return; // Không scroll khi đang load thêm tin nhắn
+    const container = messagesContainerRef.current;
+    const { scrollTop, scrollHeight, clientHeight } = container;
+    const isNearBottom = scrollHeight - scrollTop - clientHeight < 100; // 100px là ngưỡng cho phép
+    if (isNearBottom) {
       messagesEndRef.current.scrollIntoView({ behavior: "auto" });
     }
-  }, [selectedUser]);
+  }, [messages.length, loadingMore]);
+
+  // Scroll to bottom khi vào MainChat hoặc đổi user, chỉ khi đã load xong messages lần đầu cho user mới
+  const prevUserIdRef = useRef<string | null>(null);
+  const prevLoadingRef = useRef<boolean>(true);
+
+  useEffect(() => {
+    const prevUserId = prevUserIdRef.current;
+    const prevLoading = prevLoadingRef.current;
+    const currentUserId = selectedUser?._id || null;
+
+    // Scroll xuống cuối khi:
+    // - Vào chat mới (selectedUser._id đổi)
+    // - Hoặc vừa load xong messages lần đầu (loading từ true -> false)
+    if (
+      messagesEndRef.current &&
+      currentUserId &&
+      messages.length > 0 &&
+      (prevUserId !== currentUserId || (prevLoading && !loading))
+    ) {
+      messagesEndRef.current.scrollIntoView({ behavior: "auto" });
+    }
+    prevUserIdRef.current = currentUserId;
+    prevLoadingRef.current = loading;
+  }, [selectedUser?._id, loading, messages.length]);
 
   const getActivityStatus = (user: User) => {
     if (!user) return "";
@@ -160,20 +178,15 @@ export default function MainChat({
               >
                 <ArrowLeft className="h-6 w-6" />
               </button>
-              <div className="w-10 h-10 rounded-full mr-3 relative">
-                {selectedUser.profilePicture ? (
-                  <Image
-                    src={selectedUser.profilePicture}
-                    alt={selectedUser.username}
-                    fill
-                    className={`object-cover ${styles.profilePicture}`}
-                    style={{ borderRadius: "50%" }}
-                  />
-                ) : (
-                  <div className="w-full h-full bg-gray-600 flex items-center justify-center">
-                    {selectedUser.username.charAt(0).toUpperCase()}
-                  </div>
-                )}
+              <div className="w-10 h-10 rounded-full mr-4 relative">
+                <StoryAvatar
+                  author={selectedUser}
+                  hasStories={!!selectedUser.hasStory}
+                  variant="messenger"
+                  size="large"
+                  showUsername={false}
+                  initialIndex={0}
+                />
                 <OnlineIndicator isOnline={isUserOnline(selectedUser._id)} />
               </div>
               <div>
@@ -219,6 +232,7 @@ export default function MainChat({
           onScroll={handleScroll}
           style={{
             WebkitOverflowScrolling: "touch",
+            position: "relative",
           }}
         >
           {/* Simple loading indicator at top */}
@@ -228,14 +242,57 @@ export default function MainChat({
             </div>
           )}
 
+          {/* Overlay spinner when loading new conversation but keep old messages visible */}
+          {loading && messages.length > 0 && (
+            <div
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                width: "100%",
+                height: "100%",
+                background: "rgba(17,17,17,0.7)",
+                zIndex: 10,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <div className="w-8 h-8 border-4 border-gray-600 border-t-blue-400 rounded-full animate-spin"></div>
+            </div>
+          )}
+
           {loading && messages.length === 0 ? (
             <div className="flex justify-center items-center h-full">
               <div className="w-6 h-6 border-2 border-gray-600 border-t-blue-400 rounded-full animate-spin"></div>
             </div>
           ) : messages.length > 0 ? (
             messages.map((msg, index) => {
-              const isCurrentUser = msg.senderId === userId;
+              // Xử lý trường hợp senderId/receiverId là object hoặc string, không dùng any
+              function getId(id: unknown): string {
+                if (!id) return "";
+                if (typeof id === "string") return id;
+                if (
+                  typeof id === "object" &&
+                  id !== null &&
+                  "_id" in id &&
+                  typeof (id as { _id: unknown })._id === "string"
+                ) {
+                  return (id as { _id: string })._id;
+                }
+                return "";
+              }
+              const msgSenderId = getId(msg.senderId);
+              const msgReceiverId = getId(msg.receiverId);
+              const isCurrentUser = msgSenderId === userId;
+              const isOtherUser =
+                selectedUser &&
+                (msgSenderId === selectedUser._id ||
+                  msgReceiverId === selectedUser._id);
               const messageKey = generateMessageKey(msg, index);
+
+              // Chỉ render tin nhắn thuộc về cuộc hội thoại này
+              if (!isOtherUser && !isCurrentUser) return null;
 
               return (
                 <div

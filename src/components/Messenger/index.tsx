@@ -14,6 +14,7 @@ import {
   setMessage,
   addMessage,
   setShowMainChat,
+  resetMessagesState,
 } from "@/store/messengerSlice";
 
 import SiderBar from "./SiderBar";
@@ -40,17 +41,6 @@ export default function MessengerComponent({
 
   const searchParams = useSearchParams();
   const [userId, setUserId] = useState("");
-
-  // ❌ REMOVED: Duplicate socket initialization
-  // useEffect(() => {
-  //   if (userId) {
-  //     socketService.initSocket();
-  //     socketService.registerUser(userId);
-  //   }
-  //   return () => {
-  //     socketService.disconnect();
-  //   };
-  // }, [userId]);
 
   useEffect(() => {
     const handleReceiveMessage = (msg: {
@@ -114,7 +104,11 @@ export default function MessengerComponent({
   useEffect(() => {
     if (selectedUser && userId) {
       dispatch(
-        fetchMessages({ userId: selectedUser._id, offset: 0, replace: true })
+        fetchMessages({
+          userId: selectedUser._id,
+          before: undefined,
+          replace: true,
+        })
       );
     }
   }, [selectedUser, userId, dispatch]);
@@ -135,17 +129,27 @@ export default function MessengerComponent({
     }
   };
 
+  const before = useAppSelector((state) => state.messenger.before);
+
   const handleLoadMore = () => {
-    if (!loadingMore && hasMore && selectedUser) {
+    if (!loadingMore && hasMore && selectedUser && before) {
       dispatch(
         fetchMessages({
           userId: selectedUser._id,
-          // offset: useAppSelector((state) => state.messenger.offset),
+          before,
           replace: false,
         })
       );
     }
   };
+
+  // Reset selectedUser và messages state khi rời khỏi trang Messages
+  useEffect(() => {
+    return () => {
+      dispatch(setSelectedUser(null));
+      dispatch(resetMessagesState());
+    };
+  }, [dispatch]);
 
   return (
     <div
