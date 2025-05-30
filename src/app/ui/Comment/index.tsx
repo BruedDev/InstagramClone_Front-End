@@ -130,10 +130,10 @@ export default function Comment({
       itemType: string;
     }) => {
       if (data.itemId === post._id) {
-        console.log("FE nhận được event comments:updated", data); // LOG khi nhận event
         const m = data.metrics as unknown;
         const metrics: import("@/store/comment").CommentMetrics = {
           totalComments: (m as { totalComments?: number }).totalComments ?? 0,
+          totalReplies: (m as { totalReplies?: number }).totalReplies ?? 0,
           totalLikes: (m as { totalLikes?: number }).totalLikes ?? 0,
           buffedComments: (m as { buffedComments?: number }).buffedComments,
           buffedReplies: (m as { buffedReplies?: number }).buffedReplies,
