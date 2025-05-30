@@ -1,11 +1,16 @@
+// === COMMENT LOGIC: ONLY FETCH API ON INITIAL LOAD ===
+// After initial load, all comment updates are handled via socket events (comments:updated).
+// Do NOT call API to fetch comments after joining room.
+// When sending comment, only dispatch addComment (which emits socket event), do not call API directly.
+
 import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState, AppDispatch } from "@/store";
 import {
   fetchComments,
-  loadMoreComments,
   setActiveItem,
   clearActiveItem,
+  loadMoreComments,
 } from "@/store/comment";
 import { socketService } from "@/server/socket";
 import styles from "@/components/Modal/Post/PostModal.module.scss";
@@ -90,7 +95,8 @@ export default function Comment({
 
     // Load more when scrolled 80% down
     if (scrollPercentage > 0.8) {
-      const itemType = post.type === "video" ? "video" : "image";
+      // Lấy itemType động từ post.type
+      const itemType = post.type as "post" | "reel" | "image";
       dispatch(
         loadMoreComments({
           itemId: post._id,
@@ -102,10 +108,12 @@ export default function Comment({
   }, [dispatch, post._id, post.type, metrics?.hasMore, loadingMore]);
 
   useEffect(() => {
-    const itemType = post.type === "video" ? "video" : "image";
+    // Lấy itemType động từ post.type
+    const itemType = post.type as "post" | "reel" | "image";
     dispatch(setActiveItem({ id: post._id, type: itemType }));
+    console.log("FE join room post_", post._id); // LOG khi join room
 
-    // Initial fetch with limit
+    // Initial fetch with limit (API only ONCE)
     dispatch(
       fetchComments({
         itemId: post._id,
@@ -114,135 +122,37 @@ export default function Comment({
       })
     );
 
-    const handleCommentCreated = (data: {
+    // Lắng nghe event comments:updated từ socket
+    const handleCommentsUpdated = (data: {
+      comments: unknown[];
+      metrics: Record<string, unknown>;
       itemId: string;
-      itemType: "post" | "reel";
-      comment: {
-        [key: string]: unknown;
-        id: string;
-        authorId: string;
-        text: string;
-        createdAt: string;
-        updatedAt?: string;
-      };
+      itemType: string;
     }) => {
       if (data.itemId === post._id) {
-        const mappedComment = {
-          _id: data.comment.id,
-          author: {
-            _id: data.comment.authorId,
-            username: "Người dùng",
-            fullname: "",
-            profilePicture: "",
-          },
-          text: data.comment.text as string,
-          createdAt: data.comment.createdAt as string,
-          updatedAt: data.comment.updatedAt as string | undefined,
-          replies: [],
+        const m = data.metrics as unknown;
+        const metrics: import("@/store/comment").CommentMetrics = {
+          totalComments: (m as { totalComments?: number }).totalComments ?? 0,
+          totalReplies: (m as { totalReplies?: number }).totalReplies ?? 0,
+          totalLikes: (m as { totalLikes?: number }).totalLikes ?? 0,
+          buffedComments: (m as { buffedComments?: number }).buffedComments,
+          buffedReplies: (m as { buffedReplies?: number }).buffedReplies,
+          hasMore: (m as { hasMore?: boolean }).hasMore ?? false,
         };
         dispatch({
-          type: "comments/handleSocketCommentCreated",
+          type: "comments/handleSocketCommentsUpdated",
           payload: {
-            ...mappedComment,
-            itemId: data.itemId,
-            itemType: data.itemType,
+            ...data,
+            comments: data.comments as import("@/store/comment").Comment[],
+            metrics,
           },
         });
       }
     };
-
-    const handleCommentEdited = (data: {
-      commentId: string;
-      newText: string;
-      itemId: string;
-    }) => {
-      if (data.itemId === post._id) {
-        dispatch({
-          type: "comments/handleSocketCommentEdited",
-          payload: data,
-        });
-      }
-    };
-
-    const handleCommentDeleted = (data: {
-      itemId: string;
-      commentId: string;
-    }) => {
-      if (data.itemId === post._id) {
-        dispatch({
-          type: "comments/handleSocketCommentDeleted",
-          payload: data,
-        });
-      }
-    };
-
-    type TypingData = {
-      itemId: string;
-      user: {
-        id: string;
-        username: string;
-        profilePicture?: string;
-      };
-    };
-
-    const handleTyping = (data: TypingData) => {
-      if (data.itemId === post._id) {
-        dispatch({ type: "comments/handleSocketTyping", payload: data });
-      }
-    };
-
-    const handleStopTyping = (data: {
-      itemId: string;
-      userId: string;
-      username?: string;
-      profilePicture?: string;
-    }) => {
-      if (data.itemId === post._id) {
-        const typingData: TypingData = {
-          itemId: data.itemId,
-          user: {
-            id: data.userId,
-            username: data.username || "Unknown",
-            profilePicture: data.profilePicture,
-          },
-        };
-        dispatch({
-          type: "comments/handleSocketStopTyping",
-          payload: typingData,
-        });
-      }
-    };
-
-    const handleCommentReacted = (data: {
-      commentId: string;
-      reaction: string;
-      user: { id: string; username: string; profilePicture?: string };
-    }) => {
-      dispatch({
-        type: "comments/handleSocketCommentReacted",
-        payload: {
-          commentId: data.commentId,
-          userId: data.user.id,
-          reaction: data.reaction,
-          user: data.user,
-        },
-      });
-    };
-
-    socketService.onCommentCreated(handleCommentCreated);
-    socketService.onCommentEdited(handleCommentEdited);
-    socketService.onCommentDeleted(handleCommentDeleted);
-    socketService.onCommentTyping(handleTyping);
-    socketService.onCommentStopTyping(handleStopTyping);
-    socketService.onCommentReacted(handleCommentReacted);
+    socketService.onCommentsUpdated(handleCommentsUpdated);
 
     return () => {
-      socketService.offCommentCreated(handleCommentCreated);
-      socketService.offCommentEdited(handleCommentEdited);
-      socketService.offCommentDeleted(handleCommentDeleted);
-      socketService.offCommentTyping(handleTyping);
-      socketService.offCommentStopTyping(handleStopTyping);
-      socketService.offCommentReacted(handleCommentReacted);
+      socketService.offCommentsUpdated(handleCommentsUpdated);
       dispatch(clearActiveItem());
     };
   }, [dispatch, post._id, post.type]);

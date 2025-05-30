@@ -92,7 +92,9 @@ export const deletePostById = async (postId: string) => {
   return res.json();
 };
 
-//  phần add comment và danh sách comment
+// === COMMENT SECTION: ONLY USE API FOR INITIAL LOAD ===
+// After initial load, use socket for all comment actions (add, edit, delete, reply, like, etc.)
+// Do NOT call getCommentsForItem or addCommentToPost except for SSR or first load.
 
 /**
  * Adds a comment to a specific post.
@@ -148,10 +150,12 @@ export type CommentableItemType = "post" | "reel" | "video" | "image";
 export const getCommentsForItem = async (
   itemId: string,
   itemType: CommentableItemType,
-  limit: number = 10
+  limit: number = 15,
+  skip?: number
 ) => {
   const queryParams = new URLSearchParams({
     limit: limit.toString(),
+    ...(skip !== undefined ? { skip: skip.toString() } : {}),
   });
 
   const headers = createAuthHeaders();
