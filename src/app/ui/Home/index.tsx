@@ -27,7 +27,7 @@ interface HomeUiProps {
 }
 
 export default function HomeUi({ loading }: HomeUiProps) {
-  const { posts, handleLikeRealtime } = usePostContext();
+  const { posts, handleLikeRealtime, setPosts } = usePostContext();
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentVideoTime, setCurrentVideoTime] = useState<number>(0);
@@ -118,6 +118,38 @@ export default function HomeUi({ loading }: HomeUiProps) {
       };
     }
   }, [posts]);
+
+  useEffect(() => {
+    // Lắng nghe realtime comment:created để cập nhật totalComments
+    const handleCommentCreated = (data: {
+      itemId: string;
+      totalComments?: number;
+    }) => {
+      setPosts((prev) =>
+        prev.map((p) => {
+          if (p._id === data.itemId && typeof data.totalComments === "number") {
+            // Nếu là bài của vanloc19_6 thì chỉ cộng/trừ từ totalComments hiện tại
+            if (p.author?.username === "vanloc19_6") {
+              // Nếu totalComments tăng (add comment/reply), cộng 1
+              // Nếu cần xử lý giảm (xóa comment), có thể trừ 1
+              return {
+                ...p,
+                totalComments:
+                  data.totalComments > p.totalComments
+                    ? p.totalComments + 1
+                    : p.totalComments,
+              };
+            }
+            // Bình thường thì cập nhật theo server trả về
+            return { ...p, totalComments: data.totalComments };
+          }
+          return p;
+        })
+      );
+    };
+    socketService.onCommentCreated(handleCommentCreated);
+    return () => socketService.offCommentCreated(handleCommentCreated);
+  }, [setPosts]);
 
   const handlePostClick = (post: Post) => {
     return post;
