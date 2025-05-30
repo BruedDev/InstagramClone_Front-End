@@ -9,7 +9,7 @@ import { VscSend } from "react-icons/vsc";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/store";
 import { addComment } from "@/store/comment";
-import styles from "@/components/Modal/PostModal.module.scss";
+import styles from "@/components/Modal/Post/PostModal.module.scss";
 import { X } from "lucide-react";
 import { Post } from "@/types/home.type";
 import Image from "next/image";

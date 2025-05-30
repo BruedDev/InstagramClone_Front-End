@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import CallModal from "@/components/Modal/CallModal";
+import CallModal from "@/components/Modal/Call_Messenger/CallModal";
 import { useUser } from "@/app/hooks/useUser";
 import { CallProvider } from "@/contexts/CallContext";
 import { useCall } from "@/app/hooks/useCall";

@@ -4,7 +4,7 @@ import { Camera } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getUserPosts } from "@/server/posts";
 import { User } from "@/types/user.type";
-import PostModal from "@/components/Modal/PostModal";
+import PostModal from "@/components/Modal/Post/PostModal";
 
 type Post = {
   _id: string;

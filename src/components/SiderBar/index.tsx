@@ -7,7 +7,7 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import MoreMenu from "@/components/SeeMore";
 import { usePathname } from "next/navigation";
-import UploadPost from "../Modal/uploadPost";
+import UploadPost from "../Modal/Post/UpLoadPost";
 
 export default function SiderBar() {
   const pathname = usePathname();

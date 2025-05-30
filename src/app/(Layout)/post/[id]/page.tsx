@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
-import PostModal from "@/components/Modal/PostModal";
+import PostModal from "@/components/Modal/Post/PostModal";
 import { getPostById } from "@/server/posts";
 import { Post } from "@/types/home.type";
 

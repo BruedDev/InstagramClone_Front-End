@@ -8,7 +8,7 @@ import {
   clearActiveItem,
 } from "@/store/comment";
 import { socketService } from "@/server/socket";
-import styles from "@/components/Modal/PostModal.module.scss";
+import styles from "@/components/Modal/Post/PostModal.module.scss";
 import { Post } from "@/types/home.type";
 import { X } from "lucide-react";
 import CommentInput from "../CommentInput";

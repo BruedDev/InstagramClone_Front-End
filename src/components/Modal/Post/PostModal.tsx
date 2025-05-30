@@ -10,6 +10,8 @@ import Comment from "@/app/ui/Comment";
 import CommentInput from "@/app/ui/CommentInput";
 import InteractionButton from "@/app/ui/InteractionButton";
 import { BiDotsHorizontalRounded } from "react-icons/bi";
+import { useCount } from "@/app/hooks/useCount";
+import { usePostContext } from "@/contexts/PostContext";
 
 type PostModalProps = {
   post: Post;
@@ -37,6 +39,11 @@ export default function PostModal({
   const previousUrl = useRef<string>("");
   const [replyTo, setReplyTo] = useState<ReplyData | null>(null);
   const [objectFit, setObjectFit] = useState<"contain" | "cover">("contain");
+  const { format } = useCount();
+  const { handleLikeRealtime, posts } = usePostContext();
+
+  // Lấy post mới nhất từ context nếu có
+  const currentPost = posts.find((p) => p._id === post._id) || post;
 
   // Function để xác định object-fit dựa trên tỷ lệ khung hình
   const determineObjectFit = (
@@ -216,24 +223,37 @@ export default function PostModal({
         </div>
 
         {/* Comments section */}
-        <Comment post={post} onReplySelect={handleReplySelect} />
+        <Comment post={currentPost} onReplySelect={handleReplySelect} />
 
         {/* Interaction buttons */}
-        <InteractionButton post={post} />
+        <InteractionButton
+          post={currentPost}
+          isLiked={currentPost.isLike}
+          TotalHeart={currentPost.totalLikes}
+          TotalComment={currentPost.totalComments}
+          onLikeRealtime={handleLikeRealtime}
+        />
 
         {/* Likes info */}
         <div className={styles.likesInfo}>
-          <p>
-            Hãy là người đầu tiên <strong>thích bài viết này</strong>
-          </p>
-          {post.createdAt && (
-            <p className={styles.timestamp}>{fromNow(post.createdAt!)}</p>
+          {currentPost.totalLikes === 0 ? (
+            <p>
+              Hãy là người đầu tiên <strong>thích bài viết này</strong>
+            </p>
+          ) : (
+            <span className={styles.alo}>
+              {format(currentPost.totalLikes)} người thích
+            </span>
+          )}
+
+          {currentPost.createdAt && (
+            <p className={styles.timestamp}>{fromNow(currentPost.createdAt)}</p>
           )}
         </div>
 
         {/* Comment input */}
         <CommentInput
-          post={post}
+          post={currentPost}
           replyTo={replyTo}
           onReplyCancel={handleReplyCancel}
         />

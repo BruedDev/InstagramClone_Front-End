@@ -7,6 +7,7 @@ export interface Author {
 }
 
 export interface Post {
+  likes: number;
   _id: string;
   caption: string;
   fileUrl: string;
@@ -22,4 +23,5 @@ export interface Post {
   isBookmarked: boolean;
   totalLikes: number;
   totalComments: number;
+  isLike?: boolean;
 }

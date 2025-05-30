@@ -1,7 +1,7 @@
 import { Post } from "@/types/home.type";
 import Image from "next/image";
-import PostModal from "@/components/Modal/PostModal";
-import PostSetting from "@/components/Modal/PostSetting"; // Import PostSetting
+import PostModal from "@/components/Modal/Post/PostModal";
+import PostSetting from "@/components/Modal/Post/PostSetting"; // Import PostSetting
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import styles from "./Home.module.scss";
@@ -15,15 +15,19 @@ import { BiDotsHorizontalRounded } from "react-icons/bi";
 import { deletePostById } from "@/server/posts";
 import { useStory } from "@/contexts/StoryContext";
 import StoryAvatar from "@/components/Story/StoryAvatar";
+import { usePostContext } from "@/contexts/PostContext";
+import { socketService } from "@/server/socket";
 
 type AuthorType = Post["author"];
 
 interface HomeUiProps {
-  posts: Post[];
   loading: boolean;
+  posts: Post[];
+  onLikeRealtime: (postId: string, isLike: boolean) => void;
 }
 
-export default function HomeUi({ posts, loading }: HomeUiProps) {
+export default function HomeUi({ loading }: HomeUiProps) {
+  const { posts, handleLikeRealtime } = usePostContext();
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentVideoTime, setCurrentVideoTime] = useState<number>(0);
@@ -98,6 +102,21 @@ export default function HomeUi({ posts, loading }: HomeUiProps) {
     return () => {
       observer.disconnect();
     };
+  }, [posts]);
+
+  // Join socket room cho tất cả postId trên Home để nhận realtime like
+  useEffect(() => {
+    if (posts && posts.length > 0) {
+      posts.forEach((post) => {
+        socketService.joinPostRoom(post._id);
+      });
+      // Cleanup: rời room khi unmount hoặc posts thay đổi
+      return () => {
+        posts.forEach((post) => {
+          socketService.leavePostRoom(post._id);
+        });
+      };
+    }
   }, [posts]);
 
   const handlePostClick = (post: Post) => {
@@ -375,8 +394,10 @@ export default function HomeUi({ posts, loading }: HomeUiProps) {
               onClick={(
                 e: React.MouseEvent<HTMLButtonElement | HTMLDivElement>
               ) => handleOpenComments(post, e)}
-              heart={post.totalLikes}
-              comment={post.totalComments}
+              TotalHeart={post.totalLikes}
+              TotalComment={post.totalComments}
+              isLiked={post.isLike}
+              onLikeRealtime={handleLikeRealtime}
             />
           </div>
 

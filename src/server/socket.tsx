@@ -475,4 +475,56 @@ export const socketService = {
     const currentSocket = socketService.getSocket();
     currentSocket.off("comment:error", callback);
   },
+
+  // --- Post Like (Realtime) ---
+  emitPostLike: (data: { postId: string; userId: string }) => {
+    const currentSocket = socketService.getSocket();
+    currentSocket.emit("post:like", data);
+  },
+  onPostLiked: (
+    callback: (data: {
+      postId: string;
+      userId: string;
+      isLike: boolean;
+      totalLikes: number;
+    }) => void
+  ) => {
+    const currentSocket = socketService.getSocket();
+    currentSocket.on("post:liked", callback);
+  },
+  offPostLiked: (
+    callback: (data: {
+      postId: string;
+      userId: string;
+      isLike: boolean;
+      totalLikes: number;
+    }) => void
+  ) => {
+    const currentSocket = socketService.getSocket();
+    currentSocket.off("post:liked", callback);
+  },
+
+  // --- Comment List Realtime (comments:updated) ---
+  onCommentsUpdated: (
+    callback: (data: {
+      comments: unknown[];
+      metrics: Record<string, unknown>;
+      itemId: string;
+      itemType: string;
+    }) => void
+  ) => {
+    const currentSocket = socketService.getSocket();
+    currentSocket.on("comments:updated", callback);
+  },
+  offCommentsUpdated: (
+    callback: (data: {
+      comments: unknown[];
+      metrics: Record<string, unknown>;
+      itemId: string;
+      itemType: string;
+    }) => void
+  ) => {
+    const currentSocket = socketService.getSocket();
+    currentSocket.off("comments:updated", callback);
+  },
 };

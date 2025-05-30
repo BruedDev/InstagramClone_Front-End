@@ -7,13 +7,14 @@ import { X } from "lucide-react";
 interface LoadingComponentProps {
   status?: "uploading" | "success" | "error" | null;
   errorMessage?: string;
+  onClose?: () => void; // Thêm prop này
 }
 
 export default function LoadingComponent({
   status = "uploading",
   errorMessage = "Đăng bài thất bại",
+  onClose,
 }: LoadingComponentProps) {
-  // Thêm hàm xử lý để reload trang khi nhấn nút X
   const handleReload = () => {
     window.location.reload();
   };
@@ -24,7 +25,7 @@ export default function LoadingComponent({
     >
       <button
         className="absolute top-2 right-2 cursor-pointer"
-        onClick={handleReload} // Thêm sự kiện onClick để reload trang
+        onClick={status === "error" && onClose ? onClose : handleReload} // Ưu tiên gọi onClose khi lỗi, còn lại reload
       >
         <X size={30} />
       </button>
@@ -84,6 +85,15 @@ export default function LoadingComponent({
             {errorMessage}
           </span>
         </>
+      )}
+
+      {status === "error" && onClose && (
+        <button
+          className="mt-4 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+          onClick={onClose}
+        >
+          Đóng
+        </button>
       )}
 
       <style jsx global>{`

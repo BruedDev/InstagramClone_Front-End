@@ -326,6 +326,16 @@ const commentSlice = createSlice({
         updateReaction(comments);
       });
     },
+    handleSocketCommentsUpdated: (state, action: PayloadAction<{
+      comments: Comment[];
+      metrics: CommentMetrics;
+      itemId: string;
+      itemType: string;
+    }>) => {
+      const { itemId, comments, metrics } = action.payload;
+      state.commentsByItem[itemId] = sortComments(comments);
+      state.metrics[itemId] = metrics;
+    },
     clearCommentsForItem: (state, action: PayloadAction<string>) => {
       const itemId = action.payload;
       delete state.commentsByItem[itemId];
@@ -356,7 +366,7 @@ const commentSlice = createSlice({
       .addCase(fetchComments.fulfilled, (state, action) => {
         const { itemId, response } = action.payload;
         state.loading[itemId] = false;
-        state.commentsByItem[itemId] = response.comments;
+        state.commentsByItem[itemId] = sortComments(response.comments);
         state.metrics[itemId] = response.metrics;
       })
       .addCase(fetchComments.rejected, (state, action) => {
@@ -375,14 +385,14 @@ const commentSlice = createSlice({
         const { itemId, response } = action.payload;
         state.loadingMore[itemId] = false;
 
-        // Append new comments to existing ones
+        // Append new comments to existing ones, rồi sort lại
         if (state.commentsByItem[itemId]) {
-          state.commentsByItem[itemId] = [
+          state.commentsByItem[itemId] = sortComments([
             ...state.commentsByItem[itemId],
             ...response.comments
-          ];
+          ]);
         } else {
-          state.commentsByItem[itemId] = response.comments;
+          state.commentsByItem[itemId] = sortComments(response.comments);
         }
 
         state.metrics[itemId] = response.metrics;
@@ -447,8 +457,20 @@ export const {
   handleSocketTyping,
   handleSocketStopTyping,
   handleSocketCommentReacted,
+  handleSocketCommentsUpdated,
   clearCommentsForItem,
   clearAllComments,
 } = commentSlice.actions;
 
 export default commentSlice.reducer;
+
+// Hàm sort comment mới nhất lên trên (dùng lại ở nhiều nơi)
+const sortByDateDesc = (a: Comment, b: Comment) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+const sortComments = (comments: Comment[]): Comment[] => {
+  return comments
+    .map(comment => ({
+      ...comment,
+      replies: comment.replies && comment.replies.length > 0 ? sortComments(comment.replies) : []
+    }))
+    .sort(sortByDateDesc);
+};

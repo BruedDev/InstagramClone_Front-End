@@ -1,5 +1,5 @@
 import { Comment as CommentType } from "@/store/comment";
-import styles from "@/components/Modal/PostModal.module.scss";
+import styles from "@/components/Modal/Post/PostModal.module.scss";
 import Image from "next/image";
 import { useTime } from "@/app/hooks/useTime";
 import { Heart } from "lucide-react";
@@ -23,8 +23,6 @@ export const CommentItem = ({
   onReply: (replyData: ReplyData) => void;
 }) => {
   const { fromNow } = useTime();
-
-  console.log("CommentItem: ", comment);
 
   const marginLeft = isReply ? 20 : 0;
   const showBorder = isReply;

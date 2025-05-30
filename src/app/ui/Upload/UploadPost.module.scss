@@ -1,27 +1,306 @@
+// Modal Overlay
 .modalOverlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.8);
+  inset: 0;
   display: flex;
-  justify-content: center;
   align-items: center;
-  z-index: 999;
-  transition: background-color 0.4s ease-in-out;
+  justify-content: center;
+  z-index: 50;
+  background-color: rgba(0, 0, 0, 0);
+  transition: all 0.4s ease-in-out;
+  opacity: 0;
+  pointer-events: none;
 
-  @media (max-width: 480px) {
-    overflow-y: auto;
+  &.visible {
+    background-color: rgba(0, 0, 0, 0.7);
+    opacity: 1;
+    pointer-events: all;
+  }
 
-    .modal {
-      width: 100%;
+  &.closing {
+    background-color: rgba(0, 0, 0, 0);
+    opacity: 0;
+  }
+}
+
+// Main Modal - Dynamic sizing based on step
+.modal {
+  background-color: #1a1a1a;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  transition: all 0.4s ease-in-out;
+  opacity: 0;
+  transform: translateY(40px);
+
+  &.modalVisible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  // Small modal for select and crop steps
+  &.stepSelect,
+  &.stepCrop {
+    min-width: 520px;
+    // width: 100%;
+    height: auto;
+    min-height: 450px;
+    max-height: 90vh;
+  }
+
+  // Large modal for filter and caption steps
+  &.stepFilter,
+  &.stepCaption {
+    width: 900px;
+    height: auto;
+    min-height: 450px;
+    max-height: 90vh;
+    max-width: 95vw;
+    transition: all 0.4s ease-in-out;
+  }
+
+  @media (max-width: 1024px) {
+    &.stepFilter,
+    &.stepCaption {
+      width: 90vw;
+      max-width: 900px;
+    }
+  }
+
+  @media (max-width: 768px) {
+    &.stepSelect,
+    &.stepCrop,
+    &.stepFilter,
+    &.stepCaption {
+      width: 100vw;
       height: 100dvh;
-      position: relative;
-      z-index: 999;
+      min-width: auto;
+      max-height: 100vh;
+      border-radius: 0;
+      padding: 0;
+      margin: 0;
     }
   }
 }
-.modalOverlay.closing {
-  background-color: rgba(0, 0, 0, 0) !important;
+
+// Header
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0;
+  height: 46px;
+  border-bottom: 1px solid #000;
+  background-color: #000;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.backButton,
+.closeButton {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #a3a3a3;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  transition: color 0.2s;
+
+  &:hover {
+    color: white;
+  }
+}
+
+.backButton {
+  left: 16px;
+}
+
+.closeButton {
+  right: 16px;
+}
+
+.nextButton,
+.shareButton {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #0095f6;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px 12px;
+  font-size: 14px;
+  transition: color 0.2s;
+
+  &:hover {
+    color: #1877f2;
+  }
+}
+
+.headerSpacer {
+  width: 40px;
+}
+
+.headerTitle {
+  color: white;
+  font-size: 16px;
+  text-align: center;
+  flex: 1;
+  margin: 0;
+  padding: 0;
+  margin-right: 20px;
+}
+
+// Filter Effects
+.aden {
+  filter: sepia(0.2) contrast(1.2) brightness(1.15) saturate(1.4);
+}
+
+.clarendon {
+  filter: contrast(1.2) saturate(1.35);
+}
+
+.crema {
+  filter: sepia(0.5) contrast(1.25) brightness(1.15) saturate(0.9)
+    hue-rotate(-2deg);
+}
+
+.gingham {
+  filter: brightness(1.05) hue-rotate(-10deg);
+}
+
+.juno {
+  filter: sepia(0.35) contrast(1.15) brightness(1.15) saturate(1.8);
+}
+
+.lark {
+  filter: contrast(0.9) brightness(1.1) saturate(1.25);
+}
+
+.ludwig {
+  filter: sepia(0.25) contrast(1.05) brightness(1.05) saturate(2);
+}
+
+.moon {
+  filter: grayscale(1) contrast(1.1) brightness(1.1);
+}
+
+.gốc {
+  filter: none;
+}
+
+// Responsive Design
+@media (max-width: 1024px) {
+  .filterPanel,
+  .captionPanel {
+    min-width: 280px;
+    max-width: 350px;
+  }
+
+  .filterGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .filterPreview {
+    width: 60px;
+    height: 60px;
+  }
+}
+
+@media (max-width: 768px) {
+  .modal {
+    &.stepSelect,
+    &.stepCrop,
+    &.stepFilter,
+    &.stepCaption {
+      width: 100vw;
+      height: 100dvh;
+      max-height: 100vh;
+      border-radius: 0;
+    }
+  }
+
+  .filterContent,
+  .captionContent {
+    flex-direction: column;
+  }
+
+  .filterImageContainer,
+  .captionImageContainer {
+    flex: none;
+    height: 50vh;
+  }
+
+  .filterImageWrapper,
+  .captionImageWrapper {
+    height: 50vh;
+  }
+
+  .filterPanel,
+  .captionPanel {
+    flex: none;
+    border-left: none;
+    border-top: 1px solid #363636;
+    min-width: auto;
+    max-width: none;
+  }
+
+  .cropContent {
+    min-height: 100vh;
+  }
+
+  .cropImageContainer {
+    min-height: 100vh;
+  }
+
+  .cropImageWrapper,
+  .cropVideoWrapper {
+    height: 100vh;
+  }
+
+  .filterGrid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+
+  .filterPreview {
+    width: 50px;
+    height: 50px;
+  }
+
+  .filterName {
+    font-size: 10px;
+  }
+
+  .closeButtonMobile {
+    display: none;
+    @media (max-width: 768px) {
+      display: block !important;
+      position: absolute;
+      left: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 10;
+      background: none;
+      border: none;
+      color: #a3a3a3;
+      padding: 8px;
+      border-radius: 50%;
+      transition: color 0.2s;
+
+      &:hover {
+        color: white;
+      }
+    }
+  }
+
+  .overlayCloseButton {
+    display: none !important;
+  }
 }

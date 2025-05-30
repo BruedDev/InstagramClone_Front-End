@@ -10,9 +10,10 @@ import Link from "next/link";
 import { useNavItems } from "@/app/hooks/useNavItems";
 import { ScrollContainerContext } from "@/contexts/ScrollContainerContext"; // Đường dẫn tới context
 import StoryUserHome from "@/components/StoryUserHome";
+import { usePostContext } from "@/contexts/PostContext";
 
 export default function Home() {
-  const [posts, setPosts] = useState([]);
+  const { posts, setPosts, handleLikeRealtime } = usePostContext();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [prevScrollY, setPrevScrollY] = useState(0);
@@ -69,7 +70,7 @@ export default function Home() {
       }
     }
     fetchPosts();
-  }, []);
+  }, [setPosts]);
 
   if (error) return <div>Lỗi: {error}</div>;
 
@@ -105,7 +106,11 @@ export default function Home() {
         </div>
       </div>
       <StoryUserHome />
-      <HomeUi posts={posts} loading={loading} />
+      <HomeUi
+        posts={posts}
+        loading={loading}
+        onLikeRealtime={handleLikeRealtime}
+      />
       <Suggestions />
     </div>
   );

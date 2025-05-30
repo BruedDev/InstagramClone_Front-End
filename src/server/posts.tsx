@@ -172,3 +172,17 @@ export const getCommentsForItem = async (
   const data = await res.json();
   return data;
 };
+
+export const likePost = async (postId: string) => {
+  const res = await fetch(`${BASE_URL}/like/${postId}`, {
+    method: "POST",
+    headers: createAuthHeaders(),
+  });
+
+  if (!res.ok) {
+    const error = await res.json();
+    throw error;
+  }
+
+  return res.json();
+};

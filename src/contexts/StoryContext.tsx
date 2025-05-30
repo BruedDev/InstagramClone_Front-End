@@ -11,7 +11,7 @@ import React, {
 } from "react";
 import { useAppDispatch } from "@/store/hooks";
 import { getStoryById } from "@/store/story";
-import StoryModal from "@/components/Modal/StoryModal";
+import StoryModal from "@/components/Modal/Story/StoryModal";
 import { Story } from "@/types/story.type";
 
 interface AuthorType {
