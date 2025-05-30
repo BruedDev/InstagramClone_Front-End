@@ -1,6 +1,6 @@
 // store/comment.ts
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { addCommentToPost, getCommentsForItem, CommentableItemType } from '@/server/posts';
+import { getCommentsForItem, CommentableItemType } from '@/server/posts';
 import { socketService } from '@/server/socket';
 
 export interface Comment {
@@ -10,26 +10,34 @@ export interface Comment {
     username: string;
     profilePicture?: string;
     fullname?: string;
+    isVerified?: boolean;
   };
   text: string;
+  post?: string;
+  reels?: string;
+  parentId?: string;
   createdAt: string;
   updatedAt?: string;
-  parentId?: string;
+  likes?: string[];
   replies: Comment[];
+  likeCount?: number;
+  isReply?: boolean;
+  isOwnComment?: boolean;
   reactions?: {
     [key: string]: {
       users: string[];
       count: number;
     };
   };
-  likes?: number;
 }
 
 export interface CommentMetrics {
   totalComments: number;
+  totalReplies: number;
   totalLikes: number;
   buffedComments?: number;
   buffedReplies?: number;
+  total?: number;
   hasMore: boolean;
 }
 
@@ -60,6 +68,11 @@ const initialState: CommentState = {
   activeItem: null,
 };
 
+// === COMMENT LOGIC: ONLY USE API FOR INITIAL LOAD ===
+// After initial load, use socket for all comment actions (add, edit, delete, reply, like, etc.)
+// Do NOT call addCommentToPost except for SSR or first load.
+
+// Thunk chỉ dùng để fetch comment lần đầu hoặc reload
 export const fetchComments = createAsyncThunk(
   'comments/fetchComments',
   async ({
@@ -76,22 +89,7 @@ export const fetchComments = createAsyncThunk(
   }
 );
 
-export const loadMoreComments = createAsyncThunk(
-  'comments/loadMoreComments',
-  async ({
-    itemId,
-    itemType,
-    limit = 15
-  }: {
-    itemId: string;
-    itemType: CommentableItemType;
-    limit?: number;
-  }) => {
-    const response = await getCommentsForItem(itemId, itemType, limit);
-    return { itemId, response };
-  }
-);
-
+// Thêm comment: chỉ emit socket, không gọi API
 export const addComment = createAsyncThunk(
   'comments/addComment',
   async ({
@@ -104,12 +102,33 @@ export const addComment = createAsyncThunk(
     itemType: CommentableItemType;
     text: string;
     parentId?: string;
-  }) => {
-    if (itemType === 'post' || itemType === 'image') {
-      const response = await addCommentToPost(itemId, text, itemType, parentId);
-      return { itemId, comment: response.comment };
+  }, { getState }) => {
+    const state = getState() as { auth?: { user?: { _id?: string } } };
+    let userId = state.auth?.user?._id;
+    if (!userId) {
+      userId = typeof window !== 'undefined' ? (localStorage.getItem('id') ?? undefined) : undefined;
     }
-    throw new Error('Unsupported item type for adding comment');
+    if (!userId) throw new Error('User not authenticated');
+    // Map itemType về 'post' hoặc 'reel' cho socket
+    let socketItemType: 'post' | 'reel' = 'post';
+    if (itemType === 'reel') socketItemType = 'reel';
+    // Emit qua socket
+    const payload: {
+      authorId: string;
+      itemId: string;
+      itemType: 'post' | 'reel';
+      text: string;
+      parentId?: string;
+    } = {
+      authorId: userId,
+      itemId,
+      itemType: socketItemType,
+      text,
+    };
+    if (parentId) payload.parentId = parentId;
+    socketService.emitCommentCreate(payload);
+    // Không trả về gì, BE sẽ emit lại danh sách comment mới
+    return { itemId };
   }
 );
 
@@ -161,6 +180,27 @@ export const reactToComment = createAsyncThunk(
   }
 );
 
+// Thunk để load thêm comments khi scroll (không ảnh hưởng realtime)
+export const loadMoreComments = createAsyncThunk(
+  'comments/loadMoreComments',
+  async ({
+    itemId,
+    itemType,
+    limit = 15
+  }: {
+    itemId: string;
+    itemType: CommentableItemType;
+    limit?: number;
+  }, { getState }) => {
+    const state = getState() as { comments: CommentState };
+    const currentComments = state.comments.commentsByItem[itemId] || [];
+    const skip = currentComments.length;
+    // Giả định API hỗ trợ skip/offset (nếu không, cần backend hỗ trợ)
+    const response = await getCommentsForItem(itemId, itemType, limit, skip);
+    return { itemId, response };
+  }
+);
+
 const commentSlice = createSlice({
   name: 'comments',
   initialState,
@@ -174,11 +214,8 @@ const commentSlice = createSlice({
           socketService.leaveReelRoom(state.activeItem.id);
         }
       }
-      if (type === 'post' || type === 'image') {
-        socketService.joinPostRoom(id);
-      } else if (type === 'reel') {
-        socketService.joinReelRoom(id);
-      }
+      // Luôn join room post_<id> cho cả post và image (FE và BE phải đồng bộ room)
+      socketService.joinPostRoom(id);
       state.activeItem = { id, type };
     },
     clearActiveItem: (state) => {
@@ -190,8 +227,7 @@ const commentSlice = createSlice({
         }
       }
       state.activeItem = null;
-    },
-    handleSocketCommentCreated: (state, action: PayloadAction<{
+    },        handleSocketCommentCreated: (state, action: PayloadAction<{
       itemId: string;
       itemType: 'post' | 'reel';
       comment: Comment;
@@ -200,29 +236,56 @@ const commentSlice = createSlice({
       if (!state.commentsByItem[itemId]) {
         state.commentsByItem[itemId] = [];
       }
-      const addCommentIfNotExists = (comments: Comment[], commentToAdd: Comment): boolean => {
-        if (commentToAdd.parentId) {
-          for (const c of comments) {
-            if (c._id === commentToAdd.parentId) {
-              if (!c.replies) c.replies = [];
-              if (!c.replies.find(reply => reply._id === commentToAdd._id)) {
-                c.replies.push(commentToAdd);
+
+      if (newComment.parentId) {
+        // It's a reply - find parent and add to its replies
+        const findAndAddReply = (comments: Comment[]) => {
+          for (const comment of comments) {
+            if (comment._id === newComment.parentId) {
+              if (!comment.replies) comment.replies = [];
+              // Check if reply already exists to avoid duplicates
+              if (!comment.replies.find(r => r._id === newComment._id)) {
+                comment.replies.push({
+                  ...newComment,
+                  isReply: true,
+                  replies: [] // Initialize empty replies array for nested structure
+                });
+                // Sort replies by newest first
+                comment.replies.sort((a, b) =>
+                  new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+                );
               }
               return true;
             }
-            if (c.replies && c.replies.length > 0 && addCommentIfNotExists(c.replies, commentToAdd)) {
+            // Check in nested replies
+            if (comment.replies?.length > 0 && findAndAddReply(comment.replies)) {
               return true;
             }
           }
           return false;
-        } else {
-          if (!comments.find(c => c._id === commentToAdd._id)) {
-            comments.push(commentToAdd);
-          }
-          return true;
+        };
+
+        findAndAddReply(state.commentsByItem[itemId]);
+      } else {
+        // It's a new top-level comment
+        if (!state.commentsByItem[itemId].find(c => c._id === newComment._id)) {
+          state.commentsByItem[itemId].unshift({
+            ...newComment,
+            replies: [], // Initialize empty replies array
+            isReply: false
+          });
         }
-      };
-      addCommentIfNotExists(state.commentsByItem[itemId], newComment);
+      }
+
+      // Update metrics
+      if (state.metrics[itemId]) {
+        if (newComment.parentId) {
+          state.metrics[itemId].totalReplies = (state.metrics[itemId].totalReplies || 0) + 1;
+        } else {
+          state.metrics[itemId].totalComments = (state.metrics[itemId].totalComments || 0) + 1;
+        }
+        state.metrics[itemId].total = (state.metrics[itemId].totalComments || 0) + (state.metrics[itemId].totalReplies || 0);
+      }
     },
     handleSocketCommentEdited: (state, action: PayloadAction<{
       commentId: string;
@@ -333,8 +396,12 @@ const commentSlice = createSlice({
       itemType: string;
     }>) => {
       const { itemId, comments, metrics } = action.payload;
-      state.commentsByItem[itemId] = sortComments(comments);
-      state.metrics[itemId] = metrics;
+      // Gán trực tiếp cây comments từ backend (đã nested)
+      state.commentsByItem[itemId] = comments;
+      state.metrics[itemId] = {
+        ...metrics,
+        total: (metrics.totalComments || 0) + (metrics.totalReplies || 0)
+      };
     },
     clearCommentsForItem: (state, action: PayloadAction<string>) => {
       const itemId = action.payload;
@@ -374,7 +441,22 @@ const commentSlice = createSlice({
         state.loading[itemId] = false;
         state.error[itemId] = action.error.message || 'Failed to fetch comments';
       })
-
+      .addCase(addComment.pending, (state, action) => {
+        const itemId = action.meta.arg.itemId;
+        state.loading[`add_${itemId}`] = true;
+        state.error[`add_${itemId}`] = null;
+      })
+      .addCase(addComment.fulfilled, (state, action) => {
+        const itemId = action.meta.arg.itemId;
+        state.loading[`add_${itemId}`] = false;
+        state.error[`add_${itemId}`] = null;
+        // Không cần optimistic update, BE sẽ emit lại danh sách comment mới nhất qua socket
+      })
+      .addCase(addComment.rejected, (state, action) => {
+        const itemId = action.meta.arg.itemId;
+        state.loading[`add_${itemId}`] = false;
+        state.error[`add_${itemId}`] = action.error.message || 'Failed to add comment';
+      })
       // Load more comments
       .addCase(loadMoreComments.pending, (state, action) => {
         const itemId = action.meta.arg.itemId;
@@ -384,17 +466,10 @@ const commentSlice = createSlice({
       .addCase(loadMoreComments.fulfilled, (state, action) => {
         const { itemId, response } = action.payload;
         state.loadingMore[itemId] = false;
-
-        // Append new comments to existing ones, rồi sort lại
-        if (state.commentsByItem[itemId]) {
-          state.commentsByItem[itemId] = sortComments([
-            ...state.commentsByItem[itemId],
-            ...response.comments
-          ]);
-        } else {
-          state.commentsByItem[itemId] = sortComments(response.comments);
-        }
-
+        // Merge comments, tránh trùng lặp
+        const existing = state.commentsByItem[itemId] || [];
+        const newComments = response.comments.filter((c: Comment) => !existing.some(e => e._id === c._id));
+        state.commentsByItem[itemId] = [...existing, ...sortComments(newComments)];
         state.metrics[itemId] = response.metrics;
       })
       .addCase(loadMoreComments.rejected, (state, action) => {
@@ -402,55 +477,14 @@ const commentSlice = createSlice({
         state.loadingMore[itemId] = false;
         state.error[itemId] = action.error.message || 'Failed to load more comments';
       });
-
-    builder
-      .addCase(addComment.pending, (state, action) => {
-        const itemId = action.meta.arg.itemId;
-        state.loading[`add_${itemId}`] = true;
-        state.error[`add_${itemId}`] = null;
-      })
-      .addCase(addComment.fulfilled, (state, action) => {
-        const { itemId, comment: newComment } = action.payload;
-        state.loading[`add_${itemId}`] = false;
-        state.error[`add_${itemId}`] = null;
-        if (!state.commentsByItem[itemId]) {
-          state.commentsByItem[itemId] = [];
-        }
-        const addOptimisticComment = (comments: Comment[], commentToAdd: Comment): boolean => {
-          if (commentToAdd.parentId) {
-            for (const c of comments) {
-              if (c._id === commentToAdd.parentId) {
-                if (!c.replies) c.replies = [];
-                if (!c.replies.find(reply => reply._id === commentToAdd._id)) {
-                  c.replies.push(commentToAdd);
-                }
-                return true;
-              }
-              if (c.replies && c.replies.length > 0 && addOptimisticComment(c.replies, commentToAdd)) {
-                return true;
-              }
-            }
-            return false;
-          } else {
-            if (!comments.find(c => c._id === commentToAdd._id)) {
-              comments.push(commentToAdd);
-            }
-            return true;
-          }
-        };
-        addOptimisticComment(state.commentsByItem[itemId], newComment);
-      })
-      .addCase(addComment.rejected, (state, action) => {
-        const itemId = action.meta.arg.itemId;
-        state.loading[`add_${itemId}`] = false;
-        state.error[`add_${itemId}`] = action.error.message || 'Failed to add comment';
-      });
   },
 });
 
 export const {
   setActiveItem,
   clearActiveItem,
+  clearCommentsForItem,
+  clearAllComments,
   handleSocketCommentCreated,
   handleSocketCommentEdited,
   handleSocketCommentDeleted,
@@ -458,19 +492,16 @@ export const {
   handleSocketStopTyping,
   handleSocketCommentReacted,
   handleSocketCommentsUpdated,
-  clearCommentsForItem,
-  clearAllComments,
 } = commentSlice.actions;
 
 export default commentSlice.reducer;
 
-// Hàm sort comment mới nhất lên trên (dùng lại ở nhiều nơi)
-const sortByDateDesc = (a: Comment, b: Comment) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-const sortComments = (comments: Comment[]): Comment[] => {
+// sortComments
+function sortComments(comments: Comment[]): Comment[] {
   return comments
-    .map(comment => ({
-      ...comment,
-      replies: comment.replies && comment.replies.length > 0 ? sortComments(comment.replies) : []
-    }))
-    .sort(sortByDateDesc);
-};
+    .slice()
+    .sort((a, b) => {
+      // Sắp xếp theo thời gian tạo (mới nhất trước)
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
+}
