@@ -1,0 +1,141 @@
+.suggestionsContainer {
+  max-width: 420px;
+  height: 100%;
+  padding-top: 12px;
+  background-color: transparent;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 100%;
+  margin-right: 15px;
+  padding-right: 50px;
+  // background-color: red;
+
+  @media (max-width: 1160px) {
+    display: none;
+  }
+}
+
+.content {
+  padding: 0 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.userAvatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  overflow: hidden;
+  margin-right: 12px;
+  background-color: #262626;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.userInfo {
+  flex: 1;
+}
+
+.username {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #f9f9f9;
+}
+
+.fullName,
+.suggestionText {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: #a8a8a8;
+}
+
+.switchButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #0095f6;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 0;
+  margin-left: 8px;
+
+  &:hover {
+    color: #00376b;
+  }
+}
+
+// Suggestions section
+.suggestionsHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 20px;
+  margin-bottom: 8px;
+}
+
+.suggestionsTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: #a8a8a8;
+}
+
+.seeAllButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #f9f9f9;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 0;
+
+  &:hover {
+    color: #c7c7c7;
+  }
+}
+
+.suggestionsList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.suggestionItem {
+  display: flex;
+  align-items: center;
+}
+
+.suggestionItem .userAvatar {
+  width: 32px;
+  height: 32px;
+}
+
+.followButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #0095f6;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 0;
+  margin-left: auto;
+
+  &:hover {
+    color: #00376b;
+  }
+}

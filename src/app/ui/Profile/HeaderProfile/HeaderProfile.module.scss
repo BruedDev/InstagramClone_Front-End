@@ -1,0 +1,67 @@
+.headerProfile {
+  display: none;
+  margin-bottom: 10px;
+
+  @media (max-width: 480px) {
+    display: block;
+  }
+}
+.content {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 5px;
+  color: #fff;
+  height: 44px;
+}
+.usernameContainer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.lockIcon {
+  color: #f5f5f5;
+  stroke-width: 2px;
+}
+
+.username {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+  color: #f5f5f5;
+}
+
+.chevronIcon {
+  color: #f5f5f5;
+  stroke-width: 2px;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.iconButton {
+  background: transparent;
+  border: none;
+  color: #f5f5f5;
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.menuButton {
+  background: transparent;
+  border: none;
+  color: #f5f5f5;
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

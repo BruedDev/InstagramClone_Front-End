@@ -1,0 +1,44 @@
+@import "../UploadPost.module.scss";
+
+.selectContent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  padding: 48px 24px;
+  min-height: 450px;
+}
+.uploadIcon {
+  color: #737373;
+  margin-bottom: 24px;
+}
+.selectTitle {
+  color: white;
+  font-size: 16px;
+  margin-bottom: 8px;
+  text-align: center;
+}
+.selectSubtitle {
+  color: #a3a3a3;
+  font-size: 14px;
+  margin-bottom: 32px;
+  text-align: center;
+}
+.selectButton {
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: white;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.fileInput {
+  display: none;
+}

@@ -1,0 +1,361 @@
+@import "../UploadPost.module.scss";
+
+.filterContent {
+  flex: 1;
+  display: flex;
+  background-color: #000;
+  min-height: 520px;
+  max-height: 520px;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    height: 100vh;
+    max-height: 100vh;
+    min-height: 100vh;
+    overflow: hidden;
+    position: relative;
+  }
+}
+
+.filterImageContainer {
+  flex: 1.5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #000;
+  position: relative;
+
+  @media (max-width: 768px) {
+    flex: 1;
+    height: calc(100vh - 60px); // Trừ đi height của mobile tabs
+    max-height: calc(100vh - 60px);
+    min-height: 300px;
+    border-bottom: none;
+    border-left: none;
+  }
+}
+
+.filterImageWrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  @media (max-width: 768px) {
+    padding: 12px;
+  }
+}
+
+.filterImage {
+  object-fit: cover;
+  max-width: 100%;
+  max-height: 100%;
+
+  @media (max-width: 768px) {
+    border-radius: 8px;
+  }
+}
+
+.filterPanel {
+  flex: 1;
+  background-color: #1a1a1a;
+  border-left: 1px solid #363636;
+  display: flex;
+  flex-direction: column;
+  min-width: 320px;
+  max-width: 400px;
+
+  @media (max-width: 768px) {
+    display: none; // Ẩn hoàn toàn trên mobile
+  }
+}
+
+.filterTabs {
+  display: flex;
+  border-bottom: 1px solid #363636;
+  flex-shrink: 0;
+
+  @media (max-width: 768px) {
+    background-color: #1a1a1a;
+  }
+}
+
+.filterTab {
+  flex: 1;
+  padding: 16px;
+  background: none;
+  border: none;
+  color: #a3a3a3;
+  font-weight: 500;
+  font-size: 14px;
+  cursor: pointer;
+  text-align: center;
+  position: relative;
+  transition: color 0.2s;
+
+  @media (max-width: 768px) {
+    padding: 12px;
+    font-size: 14px;
+    font-weight: 600;
+  }
+}
+
+.filterTab.active {
+  color: white;
+}
+
+.filterTab.active::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background-color: white;
+}
+
+.filterTab:hover:not(.active) {
+  color: #d4d4d4;
+}
+
+.filterGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  overflow-y: auto;
+  flex: 1;
+  padding: 8px;
+  gap: 8px;
+
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    padding: 12px 16px;
+    max-height: calc(40vh - 57px); // 40vh - tab height
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+.filterItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  transition: background-color 0.2s;
+
+  @media (max-width: 768px) {
+    padding: 4px;
+    gap: 6px;
+  }
+}
+
+.filterItem.selected .filterPreview {
+  border: 2px solid #0095f6;
+}
+
+.filterPreview {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 8px;
+  overflow: hidden;
+  position: relative;
+  border: 2px solid transparent;
+  transition: border-color 0.2s;
+
+  @media (max-width: 768px) {
+    border-radius: 4px;
+    aspect-ratio: 1;
+  }
+}
+
+.filterPreviewImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.filterName {
+  color: white;
+  font-size: 11px;
+  font-weight: 400;
+  text-align: center;
+  line-height: 1.2;
+
+  @media (max-width: 768px) {
+    font-size: 10px;
+    font-weight: 500;
+    color: #f5f5f5;
+  }
+}
+
+.active {
+  color: white;
+}
+
+// Mobile tabs container - fixed at bottom
+.mobileTabsContainer {
+  display: none;
+
+  @media (max-width: 768px) {
+    display: block;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    background-color: #1a1a1a;
+    border-top: 1px solid #363636;
+  }
+}
+
+.mobileFilterTabs {
+  display: flex;
+
+  @media (max-width: 768px) {
+    background-color: #1a1a1a;
+  }
+}
+
+.mobileFilterTab {
+  flex: 1;
+  padding: 16px;
+  background: none;
+  border: none;
+  color: #a3a3a3;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  text-align: center;
+  position: relative;
+  transition: color 0.2s;
+}
+
+.mobileFilterTab.active {
+  color: white;
+}
+
+.mobileFilterTab.active::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background-color: white;
+}
+
+// Mobile slide up panel
+.mobileFilterPanel {
+  display: none;
+
+  @media (max-width: 768px) {
+    display: block;
+    position: fixed;
+    bottom: 60px; // Height của mobile tabs
+    left: 0;
+    right: 0;
+    background-color: #1a1a1a;
+    border-top: 1px solid #363636;
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+    transform: translateY(150%);
+    transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    z-index: 99;
+    max-height: 60vh;
+    overflow: hidden;
+  }
+}
+
+.mobileFilterPanel.show {
+  @media (max-width: 768px) {
+    transform: translateY(10);
+  }
+}
+
+.mobilePanelHandle {
+  @media (max-width: 768px) {
+    width: 32px;
+    height: 4px;
+    background-color: #4a4a4a;
+    border-radius: 2px;
+    margin: 8px auto 12px;
+  }
+}
+
+.mobileFilterGrid {
+  @media (max-width: 768px) {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    padding: 0 16px 20px;
+    max-height: calc(60vh - 40px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+.mobileFilterItem {
+  @media (max-width: 768px) {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    padding: 8px 4px;
+    border-radius: 8px;
+    transition: background-color 0.2s;
+  }
+}
+
+.mobileFilterItem.selected .mobileFilterPreview {
+  @media (max-width: 768px) {
+    border: 2px solid #0095f6;
+  }
+}
+
+.mobileFilterPreview {
+  @media (max-width: 768px) {
+    width: 60px;
+    height: 60px;
+    border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+    border: 2px solid transparent;
+    transition: border-color 0.2s;
+  }
+}
+
+.mobileFilterPreviewImage {
+  @media (max-width: 768px) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.mobileFilterName {
+  @media (max-width: 768px) {
+    color: #f5f5f5;
+    font-size: 10px;
+    font-weight: 500;
+    text-align: center;
+    line-height: 1.2;
+  }
+}
+
+// Ẩn scrollbar cho mobile panels
+@media (max-width: 768px) {
+  .mobileFilterGrid::-webkit-scrollbar {
+    width: 0px;
+    background: transparent;
+  }
+
+  .mobileFilterGrid::-webkit-scrollbar-thumb {
+    background: transparent;
+  }
+}

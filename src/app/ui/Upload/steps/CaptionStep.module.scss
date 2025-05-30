@@ -1,0 +1,284 @@
+@import "../UploadPost.module.scss";
+
+.captionContent {
+  flex: 1;
+  display: flex;
+  background-color: #181818;
+  max-height: 520px;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    height: 100dvh;
+    max-height: 100%;
+    overflow-y: auto;
+  }
+}
+
+.captionImageContainer {
+  flex: 1.5;
+  background-color: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+
+  @media (max-width: 768px) {
+    flex: 0 0 60vh; // Cố định chiều cao là 60% viewport height
+    min-height: 300px; // Đảm bảo chiều cao tối thiểu
+    max-height: 60vh; // Giới hạn chiều cao tối đa
+  }
+}
+
+.captionImageWrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: 0;
+
+  @media (max-width: 768px) {
+    height: 100%;
+    max-height: 60vh;
+  }
+}
+
+.cropImageWrapper,
+.cropVideoWrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: 0;
+
+  @media (max-width: 768px) {
+    height: 100%;
+    max-height: 60vh;
+  }
+}
+
+.captionImage {
+  object-fit: cover;
+  max-width: 100%;
+  max-height: 100%;
+
+  @media (max-width: 768px) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.captionPanel {
+  flex: 1;
+  padding: 16px 24px;
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid #363636;
+  background-color: #181818;
+  min-width: 320px;
+  max-width: 400px;
+  font-family: "Inter", sans-serif;
+  scrollbar-color: #808080 transparent;
+  overflow-y: auto;
+
+  @media (max-width: 768px) {
+    max-width: 100%;
+    flex: 1;
+    overflow-y: visible;
+    border-left: none;
+    border-top: 1px solid #363636;
+    min-height: 40vh; // Đảm bảo panel có đủ không gian
+    padding: 16px;
+  }
+}
+
+.captionUserInfo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.captionAvatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(
+    45deg,
+    #f09433,
+    #e6683c,
+    #dc2743,
+    #cc2366,
+    #bc1888
+  );
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+}
+
+.captionAvatarImage {
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.captionUsername {
+  color: white;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.captionTextarea {
+  flex: 1;
+  resize: none;
+  font-size: 14px;
+  color: white;
+  border: none;
+  outline: none;
+  font-family: inherit;
+  line-height: 1.4;
+  min-height: 150px;
+  max-height: 250px;
+  padding-bottom: 8px;
+  border-bottom: none;
+  background: transparent;
+
+  @media (max-width: 768px) {
+    min-height: 100px;
+    max-height: 150px;
+  }
+}
+
+.captionTextarea::placeholder {
+  color: #737373;
+}
+
+.textareaFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #363636;
+}
+
+.emojiIcon {
+  cursor: pointer;
+  &:hover {
+    color: #737373;
+  }
+}
+
+.captionCounter {
+  font-size: 12px;
+  color: #a3a3a3;
+}
+
+.captionOptions {
+  margin: 0;
+  padding-top: 16px;
+}
+
+.captionOption {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  color: white;
+  font-size: 14px;
+  cursor: pointer;
+  transition: color 0.2s;
+  border-bottom: none;
+
+  @media (max-width: 768px) {
+    padding: 10px 0;
+  }
+}
+
+.captionOption:hover {
+  color: #a3a3a3;
+}
+
+.captionOptionIcon {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.shareSection {
+  margin-top: 16px;
+}
+
+.shareSectionTitle {
+  color: white;
+  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: 12px;
+  display: block;
+}
+
+.shareOption {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  font-size: 14px;
+  color: white;
+
+  @media (max-width: 768px) {
+    padding: 10px 0;
+  }
+}
+
+.shareOptionInfo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.shareIcon {
+  border-radius: 50%;
+}
+
+.shareSubtext {
+  color: #a3a3a3;
+  font-size: 12px;
+  margin-left: 4px;
+}
+
+.shareToggle {
+  width: 40px;
+  height: 22px;
+  background-color: #363636;
+  border-radius: 11px;
+  position: relative;
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.shareToggle.enabled {
+  background-color: #0095f6;
+}
+
+.shareToggleThumb {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  background-color: white;
+  border-radius: 50%;
+  transition: transform 0.2s ease-in-out;
+}
+
+.shareToggle.enabled .shareToggleThumb {
+  transform: translateX(18px);
+}

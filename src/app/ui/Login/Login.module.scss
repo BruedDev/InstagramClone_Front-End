@@ -1,0 +1,24 @@
+.form {
+  border: 1px solid #303030;
+  @media (max-width: 480px) {
+    border: none;
+  }
+}
+.form2 {
+  border: 1px solid #303030;
+  @media (max-width: 480px) {
+    margin: 0;
+    padding: 0 30px 30px 30px;
+    border: none;
+  }
+}
+.container {
+  min-height: 90vh;
+  margin-bottom: 20px;
+  @media (max-width: 480px) {
+    min-height: 85vh;
+  }
+  input {
+    border: 1px solid #303030;
+  }
+}

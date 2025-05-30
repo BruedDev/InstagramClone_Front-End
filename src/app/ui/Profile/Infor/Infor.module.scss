@@ -1,0 +1,219 @@
+.information {
+  display: flex;
+  flex-direction: column;
+  margin: 0 auto;
+
+  @media (max-width: 480px) {
+    margin: 0;
+    width: 100%;
+    padding-top: 0;
+  }
+}
+
+.action {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+
+  @media (max-width: 735px) {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  @media (max-width: 480px) {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 10px;
+    padding-top: 0;
+    width: 100%;
+  }
+}
+
+.username {
+  font-size: 20px;
+  font-weight: 300;
+  margin-right: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  @media (max-width: 735px) {
+    margin-right: 0;
+    margin-bottom: 12px;
+  }
+
+  @media (max-width: 480px) {
+    display: none;
+  }
+}
+
+.checkMark {
+  object-fit: contain;
+
+  @media (max-width: 480px) {
+    width: 12px;
+    height: 12px;
+  }
+}
+
+.action_btn {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+
+  @media (max-width: 735px) {
+    justify-content: center;
+  }
+
+  @media (max-width: 480px) {
+    justify-content: flex-end;
+  }
+}
+
+.settingIcon {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+
+  @media (max-width: 480px) {
+    display: none;
+  }
+}
+
+.edit,
+.viewArchive {
+  background-color: #363636;
+  color: #f5f5f5;
+  border: none;
+  border-radius: 8px;
+  padding: 7px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-right: 8px;
+
+  @media (max-width: 480px) {
+    display: none;
+  }
+}
+
+.fullName {
+  font-size: 14px;
+
+  @media (max-width: 735px) {
+    text-align: center;
+  }
+
+  @media (max-width: 480px) {
+    display: none;
+  }
+}
+
+.stats {
+  display: flex;
+  margin-bottom: 20px;
+
+  @media (max-width: 735px) {
+    justify-content: center;
+  }
+
+  @media (max-width: 480px) {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0;
+    margin-top: 0;
+    width: 100%;
+    border-top: 1px solid rgba(84, 84, 84, 0.2);
+    border-bottom: 1px solid rgba(84, 84, 84, 0.2);
+  }
+}
+
+.statItem {
+  margin-right: 40px;
+  font-size: 16px;
+  display: flex;
+  gap: 10px;
+
+  @media (max-width: 480px) {
+    margin-right: 0;
+    font-size: 12px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 0;
+    gap: 2px;
+    flex: 1;
+  }
+}
+
+.statValue {
+  font-weight: 600;
+
+  @media (max-width: 480px) {
+    display: block;
+    font-size: 14px;
+    margin-bottom: 0;
+    font-weight: 600;
+  }
+}
+.bio {
+  padding-top: 15px;
+  font-size: 14px;
+  width: 100%;
+  flex-wrap: wrap;
+  word-break: break-word;
+
+  /* Hiệu ứng chữ loang màu động */
+  background: linear-gradient(
+    45deg,
+    #f09433,
+    #e6683c,
+    #dc2743,
+    #cc2366,
+    #bc1888,
+    #833ab4,
+    #5851db
+  );
+  background-size: 400% 400%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  font-weight: 600;
+  display: inline-block;
+  letter-spacing: 2px;
+  animation: gradient-shift 3s ease infinite;
+
+  @media (max-width: 480px) {
+    padding-left: 20px;
+  }
+}
+
+@keyframes gradient-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+// Thêm vào Infor.module.scss
+
+.clickable {
+  &:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+    border-radius: 4px;
+    transition: background-color 0.2s ease;
+  }
+}
+
+.statValue {
+  font-weight: bold;
+  font-size: 1.1em;
+}
