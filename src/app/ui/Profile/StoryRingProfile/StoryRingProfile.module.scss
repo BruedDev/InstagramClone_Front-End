@@ -1,0 +1,126 @@
+.storyCircle {
+  transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: ringAppear 0.6s ease-out;
+
+  &.viewed {
+    animation: dashAnimation 2s ease-in-out, movingDash 3s linear infinite;
+    stroke-dasharray: 8 4;
+    stroke: rgba(255, 255, 255, 0.4);
+  }
+
+  // Mobile responsive styling
+  @media (max-width: 480px) {
+    &.viewed {
+      animation: dashAnimationMobile 2s ease-in-out,
+        movingDashMobile 3s linear infinite;
+      stroke-dasharray: 4 2;
+    }
+  }
+}
+
+.container {
+  left: -10px;
+  @media (max-width: 480px) {
+    left: -10px;
+  }
+}
+@keyframes dashAnimation {
+  0% {
+    stroke-dasharray: 0 200;
+    opacity: 1;
+  }
+
+  30% {
+    stroke-dasharray: 100 100;
+    opacity: 0.8;
+  }
+
+  60% {
+    stroke-dasharray: 5 10;
+    stroke: rgba(255, 255, 255, 0.6);
+    opacity: 0.6;
+  }
+
+  100% {
+    stroke-dasharray: 8 4;
+    stroke: rgba(255, 255, 255, 0.4);
+    opacity: 0.4;
+  }
+}
+
+@keyframes dashAnimationMobile {
+  0% {
+    stroke-dasharray: 0 100;
+    opacity: 1;
+  }
+
+  30% {
+    stroke-dasharray: 50 50;
+    opacity: 0.8;
+  }
+
+  60% {
+    stroke-dasharray: 3 5;
+    stroke: rgba(255, 255, 255, 0.6);
+    opacity: 0.6;
+  }
+
+  100% {
+    stroke-dasharray: 4 2;
+    stroke: rgba(255, 255, 255, 0.4);
+    opacity: 0.4;
+  }
+}
+
+// Animation cho moving dashes
+@keyframes movingDash {
+  0% {
+    stroke-dashoffset: 0;
+  }
+  100% {
+    stroke-dashoffset: 24;
+  }
+}
+
+@keyframes movingDashMobile {
+  0% {
+    stroke-dashoffset: 0;
+  }
+  100% {
+    stroke-dashoffset: 12;
+  }
+}
+
+// Hiệu ứng pulse khi hover
+
+.storyCircle:not(.viewed) {
+  animation: fadeInRing 0.3s ease-out;
+}
+
+@keyframes ringAppear {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+// Glow effect
+@keyframes glowPulse {
+  0%,
+  100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1.05);
+  }
+}
+
+.glowCircle {
+  animation: glowPulse 2s ease-in-out infinite;
+}

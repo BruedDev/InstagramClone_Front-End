@@ -24,4 +24,5 @@ export interface Post {
   totalLikes: number;
   totalComments: number;
   isLike?: boolean;
+  hasStories?: boolean;
 }

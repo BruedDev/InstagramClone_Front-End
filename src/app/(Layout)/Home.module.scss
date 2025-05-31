@@ -2,9 +2,11 @@
   position: relative;
   margin-right: 420px;
   overflow-x: hidden;
+  margin-bottom: 30px;
 
   @media (max-width: 1160px) {
     margin-right: 0;
+    margin-bottom: 0;
   }
   @media (max-width: 768px) {
     &::-webkit-scrollbar {

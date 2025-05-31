@@ -1,23 +1,21 @@
 import { useState, useEffect } from "react";
-import styles from "./StoryRing.module.scss";
+import styles from "./StoryRingProfile.module.scss";
 
-interface StoryRingProps {
+interface StoryRingProfileProps {
   hasStories: boolean;
   isViewed?: boolean;
-  size?: "small" | "medium" | "large";
   children: React.ReactNode;
   onClick?: () => void;
   className?: string;
 }
 
-export default function StoryRing({
+export default function StoryRingProfile({
   hasStories,
   isViewed = false,
-  size = "medium",
   children,
   onClick,
   className = "",
-}: StoryRingProps) {
+}: StoryRingProfileProps) {
   const [internalViewed, setInternalViewed] = useState(isViewed);
   const [animationKey, setAnimationKey] = useState(0); // Thêm key để trigger animation
 
@@ -36,35 +34,23 @@ export default function StoryRing({
     onClick?.();
   };
 
-  const sizeClasses = {
-    small: {
-      container: "w-12 h-12",
-      svg: "w-[50px] h-[50px]",
-      radius: "23",
-      strokeWidth: "2",
-    },
-    medium: {
-      container: "w-16 h-16",
-      svg: "w-[67px] h-[67px]",
-      radius: "31.5",
-      strokeWidth: "2.5",
-    },
-    large: {
-      container: "w-20 h-20",
-      svg: "w-[170px] h-[170px]",
-      radius: "39.5",
-      strokeWidth: "3",
-    },
+  // Responsive size config - large desktop, medium mobile
+  const sizeConfig = {
+    container: "w-20 h-20 max-[480px]:w-20 max-[480px]:h-20",
+    svg: "w-[160px] h-[160px] max-[480px]:w-[70px] max-[480px]:h-[80px]",
+    radius: "39.5",
+    radiusMobile: "18.5",
+    strokeWidth: "1.5",
   };
 
-  const currentSize = sizeClasses[size];
-  const center =
-    parseFloat(currentSize.radius) + parseFloat(currentSize.strokeWidth);
+  // Calculate center for both desktop and mobile
+  const centerDesktop =
+    parseFloat(sizeConfig.radius) + parseFloat(sizeConfig.strokeWidth);
 
   if (!hasStories) {
     return (
       <div
-        className={`${currentSize.container} ${className}`}
+        className={`${sizeConfig.container} ${className}`}
         onClick={handleClick}
       >
         {children}
@@ -77,15 +63,15 @@ export default function StoryRing({
       className={`relative ${styles.container} ${className} cursor-pointer`}
       onClick={handleClick}
     >
-      {/* SVG Ring với animation - thêm key để reset animation */}
+      {/* SVG Ring với animation - responsive với viewBox đúng */}
       <svg
-        key={animationKey} // Key này sẽ force re-render và chạy lại animation
-        className={`absolute inset-0 ${currentSize.svg} -rotate-90`}
-        viewBox={`0 0 ${center * 2} ${center * 2}`}
+        key={animationKey}
+        className={`absolute inset-0 ${sizeConfig.svg} -rotate-90`}
+        viewBox={`0 0 ${centerDesktop * 2} ${centerDesktop * 2}`}
       >
         <defs>
           <linearGradient
-            id={`storyGradient-${size}-${animationKey}`} // Thêm animationKey vào id để tránh conflict
+            id={`storyGradient-large-${animationKey}`}
             x1="0%"
             y1="0%"
             x2="100%"
@@ -99,18 +85,18 @@ export default function StoryRing({
           </linearGradient>
         </defs>
 
-        {/* Main circle */}
+        {/* Main circle - responsive với cùng viewBox */}
         <circle
-          cx={center}
-          cy={center}
-          r={currentSize.radius}
+          cx={centerDesktop}
+          cy={centerDesktop}
+          r={sizeConfig.radius}
           fill="none"
           stroke={
             internalViewed
               ? "rgba(255, 255, 255, 0.3)"
-              : `url(#storyGradient-${size}-${animationKey})`
+              : `url(#storyGradient-large-${animationKey})`
           }
-          strokeWidth={currentSize.strokeWidth}
+          strokeWidth={sizeConfig.strokeWidth} // Luôn dùng strokeWidth lớn
           strokeDasharray={internalViewed ? "8 4" : "0"}
           className={`${styles.storyCircle} ${
             internalViewed ? styles.viewed : ""

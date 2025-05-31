@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useEffect, useCallback, useState, useRef } from "react";
 import styles from "./StoryModal.module.scss";
 
@@ -38,15 +40,26 @@ interface StoryModalProps {
   author: Author;
   initialIndex?: number;
   durations?: number[];
+  profileOpen?: boolean;
+  deltail?: boolean;
 }
 
-const StoryModal: React.FC<StoryModalProps> = ({
+const StoryModal: React.FC<
+  StoryModalProps & {
+    waitForConfirm?: boolean;
+    onConfirm?: () => Promise<boolean> | boolean;
+  }
+> = ({
   open,
   onClose,
   stories,
   author,
   initialIndex = 0,
   durations = [],
+  waitForConfirm = false,
+  onConfirm,
+  profileOpen,
+  deltail,
 }) => {
   const [isPlaying, setIsPlaying] = useState(true);
   const [isMuted, setIsMuted] = useState(false);
@@ -287,7 +300,50 @@ const StoryModal: React.FC<StoryModalProps> = ({
     setCurrent(newIndex);
   }, []);
 
-  if (!open) return null;
+  // Thêm state để kiểm soát xác nhận
+  const [confirmed, setConfirmed] = useState(!waitForConfirm);
+
+  useEffect(() => {
+    if (waitForConfirm && open && !confirmed) {
+      // Nếu cần xác nhận và chưa xác nhận, gọi onConfirm
+      (async () => {
+        let ok = true;
+        if (onConfirm) {
+          ok = await onConfirm();
+        }
+        setConfirmed(ok);
+      })();
+    } else if (!open) {
+      setConfirmed(!waitForConfirm);
+    }
+  }, [waitForConfirm, open, confirmed, onConfirm]);
+
+  // Reset âm thanh khi vào trang detail (deltail)
+  useEffect(() => {
+    if (deltail) {
+      setIsPlaying(false); // Pause lại khi vào detail
+      // Không cần tắt tiếng (giữ nguyên volume)
+      if (audioRef) {
+        audioRef.pause();
+        audioRef.currentTime = 0;
+      }
+      if (videoRef) {
+        videoRef.pause();
+        videoRef.currentTime = 0;
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [deltail]);
+
+  // Ưu tiên deltail, sau đó profileOpen, sau đó open
+  // Giữ nguyên cả hai prop: deltail và profileOpen
+  const shouldShow = deltail
+    ? true
+    : profileOpen !== undefined
+    ? profileOpen
+    : open;
+
+  if (!shouldShow || (waitForConfirm && !confirmed)) return null;
 
   if (!stories || stories.length === 0) {
     return (
@@ -343,8 +399,12 @@ const StoryModal: React.FC<StoryModalProps> = ({
         <div className="hidden min-[481px]:flex absolute top-4 right-4 z-30">
           <button
             onClick={() => {
-              window.history.replaceState({}, "", prevPathRef.current || "/");
-              onClose();
+              if (deltail) {
+                onClose();
+              } else {
+                window.history.replaceState({}, "", prevPathRef.current || "/");
+                onClose();
+              }
             }}
             className="p-3 rounded-full bg-black bg-opacity-50 hover:bg-opacity-70 transition-all opacity-80 hover:opacity-100"
           >
@@ -433,12 +493,16 @@ const StoryModal: React.FC<StoryModalProps> = ({
               </button>
               <button
                 onClick={() => {
-                  window.history.replaceState(
-                    {},
-                    "",
-                    prevPathRef.current || "/"
-                  );
-                  onClose();
+                  if (deltail) {
+                    onClose();
+                  } else {
+                    window.history.replaceState(
+                      {},
+                      "",
+                      prevPathRef.current || "/"
+                    );
+                    onClose();
+                  }
                 }}
                 className="p-2 rounded-full hover:bg-white/20 transition-colors max-[480px]:flex min-[481px]:hidden"
               >

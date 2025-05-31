@@ -8,7 +8,7 @@ import { GetUserResponse } from "@/types/user.type";
 interface UserContextType {
   user: GetUserResponse["user"] | null;
   loading: boolean;
-  refreshUser: () => Promise<void>;
+  refreshUser: (username?: string) => Promise<void>;
 }
 
 // ✅ Tạo context với giá trị mặc định là undefined
@@ -22,15 +22,15 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({
   const [loading, setLoading] = useState<boolean>(true);
 
   // Sử dụng logic từ ProfileUserId
-  const fetchUser = async () => {
+  const fetchUser = async (username?: string) => {
     try {
       setLoading(true);
-      // Lấy username từ localStorage như ProfileUserId đã lưu
-      const username = localStorage.getItem("username");
-      if (!username) {
+      // Nếu không truyền username thì lấy từ localStorage
+      const finalUsername = username || localStorage.getItem("username");
+      if (!finalUsername) {
         throw new Error("Không tìm thấy username trong localStorage");
       }
-      const response = await getUser(username);
+      const response = await getUser(finalUsername);
       setUser(response.user);
     } catch (error) {
       console.error("Lỗi khi lấy dữ liệu người dùng:", error);

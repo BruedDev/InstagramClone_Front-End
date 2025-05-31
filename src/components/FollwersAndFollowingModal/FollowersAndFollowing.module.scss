@@ -1,6 +1,7 @@
 .modal {
   z-index: 995;
   background-color: rgba(0, 0, 0, 0.65);
+  max-height: 100dvh;
 }
 
 .modalContent {
@@ -135,7 +136,7 @@
 @media (max-width: 480px) {
   .modalContent {
     // margin: 16px;
-    max-height: calc(100vh - 32px);
+    max-height: calc(100dvh - 32px);
   }
 
   .userItem {

@@ -187,7 +187,10 @@ export default function MainChat({
                   showUsername={false}
                   initialIndex={0}
                 />
-                <OnlineIndicator isOnline={isUserOnline(selectedUser._id)} />
+                <OnlineIndicator
+                  isOnline={isUserOnline(selectedUser._id)}
+                  className="absolute bottom-[-5] right-[-8px]"
+                />
               </div>
               <div>
                 <div className="flex items-center gap-2">
