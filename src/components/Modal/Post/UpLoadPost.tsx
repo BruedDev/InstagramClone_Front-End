@@ -228,7 +228,7 @@ export default function UploadPost({
     }
   };
 
-  // handleSubmit: gửi tất cả file, index1/index2
+  // handleSubmit: gửi 1 file duy nhất (file đầu tiên)
   const handleSubmit = async () => {
     if (!filesRef.current.length) {
       alert("Vui lòng chọn file");
@@ -240,39 +240,31 @@ export default function UploadPost({
       setShowUi(false);
       setTimeout(() => setShowLoading(true), 0);
       const formData = new FormData();
-      const index1: number[] = [];
-      const index2: number[] = [];
-      filesRef.current.forEach((file, i) => {
-        // Nếu có ảnh đã crop thì dùng ảnh đã crop, còn lại dùng file gốc
-        if (mediaTypes[i] === "image" && croppedMediaPreviews[i]) {
-          // Convert base64 sang file
-          const arr = croppedMediaPreviews[i]!.split(",");
-          const mimeMatch = arr[0].match(/:(.*?);/);
-          const mime = mimeMatch ? mimeMatch[1] : "image/png";
-          const bstr = atob(arr[1]);
-          let n = bstr.length;
-          const u8arr = new Uint8Array(n);
-          while (n--) {
-            u8arr[n] = bstr.charCodeAt(n);
-          }
-          const croppedFile = new File(
-            [u8arr],
-            file.name.replace(/\.[^.]+$/, "") + `_cropped_${i}.png`,
-            { type: mime }
-          );
-          formData.append("file", croppedFile);
-          index1.push(i);
-        } else if (mediaTypes[i] === "image") {
-          formData.append("file", file);
-          index1.push(i);
-        } else if (mediaTypes[i] === "video") {
-          formData.append("file", file);
-          index2.push(i);
+      // Chỉ gửi file đầu tiên
+      const file = filesRef.current[0];
+      if (mediaTypes[0] === "image" && croppedMediaPreviews[0]) {
+        // Convert base64 sang file
+        const arr = croppedMediaPreviews[0]!.split(",");
+        const mimeMatch = arr[0].match(/:(.*?);/);
+        const mime = mimeMatch ? mimeMatch[1] : "image/png";
+        const bstr = atob(arr[1]);
+        let n = bstr.length;
+        const u8arr = new Uint8Array(n);
+        while (n--) {
+          u8arr[n] = bstr.charCodeAt(n);
         }
-      });
+        const croppedFile = new File(
+          [u8arr],
+          file.name.replace(/\.[^.]+$/, "") + `_cropped.png`,
+          { type: mime }
+        );
+        formData.append("file", croppedFile);
+      } else {
+        formData.append("file", file);
+      }
       formData.append("caption", caption);
-      formData.append("index1", JSON.stringify(index1));
-      formData.append("index2", JSON.stringify(index2));
+      // Gửi type cho backend
+      formData.append("type", mediaTypes[0]);
       await createPost(formData);
       setUploadStatus("success");
     } catch (error) {
