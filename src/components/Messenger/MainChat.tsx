@@ -14,6 +14,7 @@ import { useCheckOnline } from "@/app/hooks/useCheckOnline";
 import { useTimeOffline } from "@/app/hooks/useTimeOffline";
 import { OnlineIndicator } from "@/components/OnlineIndicator";
 import StoryAvatar from "@/components/Story/StoryAvatar";
+import { useHandleUserClick } from "@/utils/useHandleUserClick";
 
 // Extend User type to allow hasStory for MainChat
 export type MainChatProps = {
@@ -57,7 +58,7 @@ export default function MainChat({
     useState(false);
   const [previousScrollHeight, setPreviousScrollHeight] = useState(0);
   const { formatTime } = useTime();
-
+  const handleUserClick = useHandleUserClick();
   const { isUserOnline } = useCheckOnline(availableUsers);
   const { timeOffline } = useTimeOffline(
     selectedUser?.lastActive !== null && selectedUser?.lastActive !== undefined
@@ -196,6 +197,10 @@ export default function MainChat({
                 <div className="flex items-center gap-2">
                   <p
                     className={`font-medium ${styles.text2} ${styles.username}`}
+                    onClick={() => handleUserClick(selectedUser.username)}
+                    style={{
+                      cursor: "pointer",
+                    }}
                   >
                     {selectedUser.username}
                   </p>

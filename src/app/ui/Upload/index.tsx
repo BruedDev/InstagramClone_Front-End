@@ -54,11 +54,23 @@ export type UploadPostProps = {
     y: number;
   } | null;
   onCropComplete?: (croppedUrl: string) => void;
+  // Add for controlled crop UI
+  imagePosition?: { x: number; y: number };
+  setImagePosition?: (pos: { x: number; y: number }) => void;
+  zoomLevel?: number;
+  setZoomLevel?: (z: number) => void;
 };
 
 export default function UploadPostUi(props: UploadPostProps) {
   // Responsive: detect mobile (<=768px)
   const [isMobile, setIsMobile] = useState(false);
+  // Add controlled crop state here
+  const [imagePosition, setImagePosition] = useState<{ x: number; y: number }>({
+    x: 0,
+    y: 0,
+  });
+  const [zoomLevel, setZoomLevel] = useState<number>(1);
+
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth <= 768);
     checkMobile();
@@ -66,9 +78,8 @@ export default function UploadPostUi(props: UploadPostProps) {
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
-  // Bỏ qua bước crop trên mobile, đi thẳng tới filter cả UI lẫn logic header
-  const stepToRender =
-    isMobile && props.step === "crop" ? "filter" : props.step;
+  // Không bỏ qua bước crop trên mobile nữa
+  const stepToRender = props.step;
 
   // Generate dynamic class names based on step
   const getModalClasses = () => {
@@ -97,13 +108,12 @@ export default function UploadPostUi(props: UploadPostProps) {
     return baseClasses.join(" ");
   };
 
-  // Nếu là mobile và step là 'crop', chuyển thẳng sang filter cả UI lẫn logic, và tự động gọi handleNext để chuyển bước
-  useEffect(() => {
-    if (isMobile && props.step === "crop") {
-      props.handleNext();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isMobile, props.step]);
+  // Custom back handler for crop step
+  const handleBackWithCropReset = () => {
+    setImagePosition({ x: 0, y: 0 });
+    setZoomLevel(1);
+    props.handleBack();
+  };
 
   return (
     <div
@@ -139,7 +149,14 @@ export default function UploadPostUi(props: UploadPostProps) {
             </button>
           )}
           {stepToRender !== "select" ? (
-            <button onClick={props.handleBack} className={styles.backButton}>
+            <button
+              onClick={
+                stepToRender === "crop"
+                  ? handleBackWithCropReset
+                  : props.handleBack
+              }
+              className={styles.backButton}
+            >
               <ArrowLeft size={22} />
             </button>
           ) : (
@@ -175,8 +192,7 @@ export default function UploadPostUi(props: UploadPostProps) {
             handleFileChange={props.handleFileChange}
           />
         )}
-        {/* Bỏ CropStep trên mobile, chỉ render trên PC */}
-        {stepToRender === "crop" && !isMobile && (
+        {stepToRender === "crop" && (
           <CropStep
             mediaType={props.mediaType}
             mediaPreview={props.mediaPreview}
@@ -184,7 +200,10 @@ export default function UploadPostUi(props: UploadPostProps) {
             isCropping={props.isCropping}
             setIsCropping={props.setIsCropping}
             onCropComplete={props.onCropComplete}
-            croppedAreaPixels={props.croppedAreaPixels}
+            imagePosition={imagePosition}
+            setImagePosition={setImagePosition}
+            zoomLevel={zoomLevel}
+            setZoomLevel={setZoomLevel}
           />
         )}
         {stepToRender === "filter" && (

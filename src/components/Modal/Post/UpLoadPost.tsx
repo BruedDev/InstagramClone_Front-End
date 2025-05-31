@@ -20,28 +20,28 @@ export default function UploadPost({
   const [step, setStep] = useState<"select" | "crop" | "filter" | "caption">(
     "select"
   );
-  const [mediaPreview, setMediaPreview] = useState<string | null>(null);
-  const [mediaType, setMediaType] = useState<"image" | "video" | null>(null);
+  const [mediaPreviews, setMediaPreviews] = useState<string[]>([]); // array of preview urls
+  const [mediaTypes, setMediaTypes] = useState<("image" | "video")[]>([]); // array of types
   const [caption, setCaption] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const fileRef = useRef<File | null>(null);
+  const filesRef = useRef<File[]>([]); // store all files
+  const [currentIndex, setCurrentIndex] = useState(0); // index of file being edited/cropped
 
-  // Crop state
-  const [crop, setCrop] = useState({ x: 0, y: 0 });
-  const [zoom, setZoom] = useState(1);
-  const [croppedAreaPixels, setCroppedAreaPixels] = useState<{
-    width: number;
-    height: number;
-    x: number;
-    y: number;
-  } | null>(null);
-  const aspect = 1; // Instagram uses 1:1 by default
-
-  // Thêm state cho ảnh đã crop
-  const [croppedMediaPreview, setCroppedMediaPreview] = useState<string | null>(
-    null
-  );
+  // Crop state for each file
+  const [crops, setCrops] = useState<{ x: number; y: number }[]>([]);
+  const [zooms, setZooms] = useState<number[]>([]);
+  const [croppedAreaPixelsArr, setCroppedAreaPixelsArr] = useState<
+    ({
+      width: number;
+      height: number;
+      x: number;
+      y: number;
+    } | null)[]
+  >([]);
+  const [croppedMediaPreviews, setCroppedMediaPreviews] = useState<
+    (string | null)[]
+  >([]);
 
   // Filter state
   const FILTERS = [
@@ -99,26 +99,39 @@ export default function UploadPost({
     }
   }, [uploadStatus, handleCloseLoading]);
 
+  // Replace handleFileChange to support multiple files
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const fileType = file.type.split("/")[0];
-    if (fileType !== "image" && fileType !== "video") {
-      alert("Chỉ hỗ trợ tệp hình ảnh hoặc video");
-      return;
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    const previews: string[] = [];
+    const types: ("image" | "video")[] = [];
+    filesRef.current = Array.from(files);
+    let loaded = 0;
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const fileType = file.type.split("/")[0];
+      if (fileType !== "image" && fileType !== "video") {
+        alert("Chỉ hỗ trợ tệp hình ảnh hoặc video");
+        continue;
+      }
+      types[i] = fileType as "image" | "video";
+      const reader = new FileReader();
+      reader.onload = () => {
+        previews[i] = reader.result as string;
+        loaded++;
+        if (loaded === files.length) {
+          setMediaPreviews(previews);
+          setMediaTypes(types);
+          setCurrentIndex(0);
+          setStep("crop");
+          setCrops(Array(files.length).fill({ x: 0, y: 0 }));
+          setZooms(Array(files.length).fill(1));
+          setCroppedAreaPixelsArr(Array(files.length).fill(null));
+          setCroppedMediaPreviews(Array(files.length).fill(null));
+        }
+      };
+      reader.readAsDataURL(file);
     }
-
-    // Lưu file để sử dụng khi submit
-    fileRef.current = file;
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      setMediaPreview(reader.result as string);
-      setMediaType(fileType as "image" | "video");
-      setStep("crop"); // Luôn chuyển sang bước crop cho cả image và video
-    };
-    reader.readAsDataURL(file);
   };
 
   const triggerFileInput = () => {
@@ -135,77 +148,131 @@ export default function UploadPost({
     }, 400);
   };
 
-  const handleBack = () => {
-    if (step === "caption") {
-      setStep(mediaType === "image" ? "filter" : "select");
-    } else if (step === "filter") {
-      setStep("crop");
-    } else if (step === "crop") {
-      setStep("select");
-      setMediaPreview(null);
-      setMediaType(null);
-      fileRef.current = null;
-    } else {
-      setStep("select");
-      setMediaPreview(null);
-      setMediaType(null);
-      fileRef.current = null;
-    }
+  // Crop/zoom/caption/filter handlers for current file
+  const handleCropChange = (crop: { x: number; y: number }) => {
+    setCrops((prev) => prev.map((c, i) => (i === currentIndex ? crop : c)));
+  };
+  const handleZoomChange = (zoom: number) => {
+    setZooms((prev) => prev.map((z, i) => (i === currentIndex ? zoom : z)));
+  };
+  const handleCroppedAreaPixels = (area: {
+    width: number;
+    height: number;
+    x: number;
+    y: number;
+  }) => {
+    setCroppedAreaPixelsArr((prev) =>
+      prev.map((a, i) => (i === currentIndex ? area : a))
+    );
+  };
+  const handleCroppedMediaPreview = (url: string) => {
+    setCroppedMediaPreviews((prev) =>
+      prev.map((u, i) => (i === currentIndex ? url : u))
+    );
   };
 
+  // handleNext/Back for multi-file
   const handleNext = async () => {
     if (step === "crop") {
-      // Only crop when moving from crop to filter
-      if (mediaType === "image" && mediaPreview && croppedAreaPixels) {
+      // Crop current image if needed
+      if (
+        mediaTypes[currentIndex] === "image" &&
+        mediaPreviews[currentIndex] &&
+        croppedAreaPixelsArr[currentIndex]
+      ) {
         const base64 = await cropImageFromPixels(
-          mediaPreview,
-          croppedAreaPixels
+          mediaPreviews[currentIndex],
+          croppedAreaPixelsArr[currentIndex]!
         );
-        setCroppedMediaPreview(base64);
+        handleCroppedMediaPreview(base64);
       }
-      setStep("filter");
+      // Nếu còn file tiếp theo thì chuyển sang file tiếp theo, nếu hết thì sang bước filter
+      if (currentIndex < mediaPreviews.length - 1) {
+        setCurrentIndex(currentIndex + 1);
+      } else {
+        setStep("filter");
+        setCurrentIndex(0);
+      }
     } else if (step === "filter") {
-      setStep("caption");
+      // TODO: handle filter for each file if needed
+      if (currentIndex < mediaPreviews.length - 1) {
+        setCurrentIndex(currentIndex + 1);
+      } else {
+        setStep("caption");
+        setCurrentIndex(0);
+      }
     }
   };
 
-  // Cập nhật phần handleSubmit
+  const handleBack = () => {
+    if (step === "caption") {
+      setStep("filter");
+      setCurrentIndex(mediaPreviews.length - 1);
+    } else if (step === "filter") {
+      setStep("crop");
+      setCurrentIndex(mediaPreviews.length - 1);
+    } else if (step === "crop") {
+      if (currentIndex > 0) {
+        setCurrentIndex(currentIndex - 1);
+      } else {
+        setStep("select");
+        setMediaPreviews([]);
+        setMediaTypes([]);
+        filesRef.current = [];
+      }
+    } else {
+      setStep("select");
+      setMediaPreviews([]);
+      setMediaTypes([]);
+      filesRef.current = [];
+    }
+  };
+
+  // handleSubmit: gửi tất cả file, index1/index2
   const handleSubmit = async () => {
-    if (!mediaType || !fileRef.current) {
+    if (!filesRef.current.length) {
       alert("Vui lòng chọn file");
       return;
     }
     try {
       setIsUploading(true);
       setUploadStatus("uploading");
-      setShowUi(false); // Ẩn UI trước
-      setTimeout(() => {
-        setShowLoading(true);
-      }, 0);
+      setShowUi(false);
+      setTimeout(() => setShowLoading(true), 0);
       const formData = new FormData();
-      // Nếu có ảnh đã crop thì convert sang file và upload
-      if (croppedMediaPreview && mediaType === "image") {
-        // Convert base64 sang file
-        const arr = croppedMediaPreview.split(",");
-        const mimeMatch = arr[0].match(/:(.*?);/);
-        const mime = mimeMatch ? mimeMatch[1] : "image/png";
-        const bstr = atob(arr[1]);
-        let n = bstr.length;
-        const u8arr = new Uint8Array(n);
-        while (n--) {
-          u8arr[n] = bstr.charCodeAt(n);
+      const index1: number[] = [];
+      const index2: number[] = [];
+      filesRef.current.forEach((file, i) => {
+        // Nếu có ảnh đã crop thì dùng ảnh đã crop, còn lại dùng file gốc
+        if (mediaTypes[i] === "image" && croppedMediaPreviews[i]) {
+          // Convert base64 sang file
+          const arr = croppedMediaPreviews[i]!.split(",");
+          const mimeMatch = arr[0].match(/:(.*?);/);
+          const mime = mimeMatch ? mimeMatch[1] : "image/png";
+          const bstr = atob(arr[1]);
+          let n = bstr.length;
+          const u8arr = new Uint8Array(n);
+          while (n--) {
+            u8arr[n] = bstr.charCodeAt(n);
+          }
+          const croppedFile = new File(
+            [u8arr],
+            file.name.replace(/\.[^.]+$/, "") + `_cropped_${i}.png`,
+            { type: mime }
+          );
+          formData.append("file", croppedFile);
+          index1.push(i);
+        } else if (mediaTypes[i] === "image") {
+          formData.append("file", file);
+          index1.push(i);
+        } else if (mediaTypes[i] === "video") {
+          formData.append("file", file);
+          index2.push(i);
         }
-        const croppedFile = new File(
-          [u8arr],
-          fileRef.current.name.replace(/\.[^.]+$/, "") + "_cropped.png",
-          { type: mime }
-        );
-        formData.append("file", croppedFile);
-      } else {
-        formData.append("file", fileRef.current);
-      }
+      });
       formData.append("caption", caption);
-      formData.append("type", mediaType);
+      formData.append("index1", JSON.stringify(index1));
+      formData.append("index2", JSON.stringify(index2));
       await createPost(formData);
       setUploadStatus("success");
     } catch (error) {
@@ -217,11 +284,12 @@ export default function UploadPost({
       );
       setShowUi(false);
       setShowLoading(true);
-      // Không tự đóng khi lỗi, để người dùng tự tắt
     } finally {
       setIsUploading(false);
     }
   };
+
+  const aspect = 1; // Instagram uses 1:1 by default
 
   return (
     <>
@@ -233,8 +301,9 @@ export default function UploadPost({
           handleBack={handleBack}
           handleClose={handleClose}
           handleNext={handleNext}
-          mediaType={mediaType}
-          mediaPreview={mediaPreview}
+          // Truyền file hiện tại cho từng bước
+          mediaType={mediaTypes[currentIndex]}
+          mediaPreview={mediaPreviews[currentIndex]}
           caption={caption}
           setCaption={setCaption}
           handleSubmit={handleSubmit}
@@ -246,21 +315,16 @@ export default function UploadPost({
           crop={
             step === "crop"
               ? {
-                  crop,
-                  zoom,
+                  crop: crops[currentIndex] || { x: 0, y: 0 },
+                  zoom: zooms[currentIndex] || 1,
                   aspect,
-                  setCrop: (c: { x: number; y: number }) => setCrop(c),
-                  setZoom: (z: number) => setZoom(z),
-                  setCroppedAreaPixels: (area: {
-                    width: number;
-                    height: number;
-                    x: number;
-                    y: number;
-                  }) => setCroppedAreaPixels(area),
+                  setCrop: handleCropChange,
+                  setZoom: handleZoomChange,
+                  setCroppedAreaPixels: handleCroppedAreaPixels,
                 }
               : undefined
           }
-          croppedAreaPixels={croppedAreaPixels}
+          croppedAreaPixels={croppedAreaPixelsArr[currentIndex]}
           filter={
             step === "filter" || step === "caption"
               ? {
@@ -270,8 +334,8 @@ export default function UploadPost({
                 }
               : undefined
           }
-          croppedMediaPreview={croppedMediaPreview}
-          setCroppedMediaPreview={setCroppedMediaPreview}
+          croppedMediaPreview={croppedMediaPreviews[currentIndex]}
+          setCroppedMediaPreview={handleCroppedMediaPreview}
         />
       )}
       {showLoading && (
