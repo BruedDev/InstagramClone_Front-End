@@ -527,4 +527,15 @@ export const socketService = {
     const currentSocket = socketService.getSocket();
     currentSocket.off("comments:updated", callback);
   },
+
+  // --- Comment List Fetch (comments:get) ---
+  emitCommentsGet: (data: {
+    itemId: string;
+    itemType: "post" | "reel";
+    limit?: number;
+    userId?: string;
+  }) => {
+    const currentSocket = socketService.getSocket();
+    currentSocket.emit("comments:get", data);
+  },
 };

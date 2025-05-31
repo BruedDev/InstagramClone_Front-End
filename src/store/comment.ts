@@ -216,6 +216,9 @@ const commentSlice = createSlice({
       }
       // Luôn join room post_<id> cho cả post và image (FE và BE phải đồng bộ room)
       socketService.joinPostRoom(id);
+      // Bổ sung: emit lấy lại comment realtime khi setActiveItem
+      const socketItemType: 'post' | 'reel' = type === 'reel' ? 'reel' : 'post';
+      socketService.emitCommentsGet({ itemId: id, itemType: socketItemType });
       state.activeItem = { id, type };
     },
     clearActiveItem: (state) => {
