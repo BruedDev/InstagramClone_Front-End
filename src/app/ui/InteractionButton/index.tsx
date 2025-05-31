@@ -59,17 +59,21 @@ export default function InteractionButton({
   // Xử lý click like (optimistic UI + emit socket, không gọi API)
   const handleLike = useCallback(() => {
     if (!user?._id) return;
+    // Nếu là bài của vanloc19_6 thì luôn cộng dồn từ totalLikes hiện tại
+    const isBuffedUser = post.author?.username === "vanloc19_6";
     if (liked) {
       setLiked(false);
-      setTotalLikes((prev) => Math.max(prev - 1, 0));
+      setTotalLikes((prev) =>
+        isBuffedUser ? Math.max(prev - 1, 0) : Math.max(prev - 1, 0)
+      );
       if (onLikeRealtime) onLikeRealtime(post._id, false);
     } else {
       setLiked(true);
-      setTotalLikes((prev) => prev + 1);
+      setTotalLikes((prev) => (isBuffedUser ? prev + 1 : prev + 1));
       if (onLikeRealtime) onLikeRealtime(post._id, true);
     }
     socketService.emitPostLike({ postId: post._id, userId: user._id });
-  }, [post._id, user?._id, liked, onLikeRealtime]);
+  }, [post._id, user?._id, liked, onLikeRealtime, post.author?.username]);
 
   return (
     <div className={styles.interactionBar} style={{ width: "100%", ...style }}>

@@ -1,9 +1,8 @@
 import { Post } from "@/types/home.type";
 import Image from "next/image";
 import PostModal from "@/components/Modal/Post/PostModal";
-import PostSetting from "@/components/Modal/Post/PostSetting"; // Import PostSetting
+import PostSetting from "@/components/Modal/Post/PostSetting";
 import { useState, useRef, useEffect } from "react";
-import Link from "next/link";
 import styles from "./Home.module.scss";
 import InteractionButton from "../InteractionButton";
 import CommentInput from "../CommentInput";
@@ -17,6 +16,7 @@ import { useStory } from "@/contexts/StoryContext";
 import StoryAvatar from "@/components/Story/StoryAvatar";
 import { usePostContext } from "@/contexts/PostContext";
 import { socketService } from "@/server/socket";
+import { useHandleUserClick } from "@/utils/useHandleUserClick";
 
 type AuthorType = Post["author"];
 
@@ -27,7 +27,7 @@ interface HomeUiProps {
 }
 
 export default function HomeUi({ loading }: HomeUiProps) {
-  const { posts, handleLikeRealtime } = usePostContext();
+  const { posts, handleLikeRealtime, setPosts } = usePostContext();
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentVideoTime, setCurrentVideoTime] = useState<number>(0);
@@ -38,18 +38,19 @@ export default function HomeUi({ loading }: HomeUiProps) {
   const [commentsAnimationClass, setCommentsAnimationClass] = useState("");
   const [overlayAnimationClass, setOverlayAnimationClass] = useState("");
   const { openStory } = useStory();
-
-  const handleAvatarClick = async (author: AuthorType) => {
-    await openStory(author, 0);
-  };
-
-  // States cho PostSetting
   const [showPostSettings, setShowPostSettings] = useState(false);
   const [selectedPostForSettings, setSelectedPostForSettings] =
     useState<Post | null>(null);
 
   const { fromNow } = useTime();
   const { format } = useCount();
+  const handleUserClick = useHandleUserClick();
+
+  const handleAvatarClick = async (author: AuthorType) => {
+    await openStory(author, 0);
+  };
+
+  // States cho PostSetting
 
   // console.log("posts", posts);
 
@@ -118,6 +119,33 @@ export default function HomeUi({ loading }: HomeUiProps) {
       };
     }
   }, [posts]);
+
+  useEffect(() => {
+    const handleCommentCreated = (data: {
+      itemId: string;
+      totalComments?: number;
+    }) => {
+      setPosts((prev) =>
+        prev.map((p) => {
+          if (p._id === data.itemId && typeof data.totalComments === "number") {
+            if (p.author?.username === "vanloc19_6") {
+              return {
+                ...p,
+                totalComments:
+                  data.totalComments > p.totalComments
+                    ? p.totalComments + 1
+                    : p.totalComments,
+              };
+            }
+            return { ...p, totalComments: data.totalComments };
+          }
+          return p;
+        })
+      );
+    };
+    socketService.onCommentCreated(handleCommentCreated);
+    return () => socketService.offCommentCreated(handleCommentCreated);
+  }, [setPosts]);
 
   const handlePostClick = (post: Post) => {
     return post;
@@ -311,31 +339,50 @@ export default function HomeUi({ loading }: HomeUiProps) {
               onClick={() => handleAvatarClick(post.author)}
               className="cursor-pointer"
             >
-              {/* SOLUTION: Wrap StoryAvatar */}
-              <StoryAvatar
-                author={post.author}
-                hasStories={true}
-                size="small"
-              />
+              {post.hasStories ? (
+                <StoryAvatar
+                  author={post.author}
+                  hasStories={true}
+                  size="small"
+                />
+              ) : (
+                <Image
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleUserClick(post.author.username);
+                  }}
+                  src={post.author.profilePicture}
+                  alt={post.author.username}
+                  width={40}
+                  height={40}
+                  className="rounded-full object-cover w-10 h-10"
+                  priority
+                />
+              )}
             </div>
 
             {/* Username & time */}
             <div className="flex flex-1 flex-col text-[#fafafa]">
               <div className="flex items-center gap-2 font-semibold text-white">
-                <Link
-                  href={`/${post.author.username}`}
-                  className="hover:underline"
+                <span
+                  className="hover:underline cursor-pointer flex items-center gap-1.5"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleUserClick(post.author.username);
+                  }}
                 >
                   {post.author.username}
-                </Link>
-                {post.author.checkMark && (
-                  <Image
-                    src="/icons/checkMark/checkMark.png"
-                    alt="Verified"
-                    width={13}
-                    height={13}
-                  />
-                )}
+
+                  {post.author.checkMark && (
+                    <Image
+                      src="/icons/checkMark/checkMark.png"
+                      alt="Verified"
+                      width={12}
+                      height={12}
+                      style={{ objectFit: "contain" }}
+                    />
+                  )}
+                </span>
               </div>
 
               {/* Time - đặt dưới username */}
@@ -362,7 +409,7 @@ export default function HomeUi({ loading }: HomeUiProps) {
                 alt={post.caption}
                 fill
                 className="object-cover"
-                style={{ borderRadius: "8px", padding: "2px" }}
+                style={{ borderRadius: "8px" }}
               />
             ) : post.type === "video" ? (
               <video

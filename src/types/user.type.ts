@@ -30,6 +30,7 @@ export interface User {
   lastOnline?: number | string | null;
   lastActiveTime?: string;
   lastOnlineTime?: string;
+  hasStories?: boolean;
 }
 
 export interface Message {

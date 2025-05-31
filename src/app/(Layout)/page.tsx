@@ -1,16 +1,16 @@
 "use client";
 
-import { useEffect, useState, useContext } from "react"; // Bỏ useRef vì không tạo ref ở đây
+import { useEffect, useState, useContext } from "react";
 import HomeUi from "../ui/Home";
 import styles from "./Home.module.scss";
-import Suggestions from "@/components/Suggestions";
 import { getHomePosts } from "@/server/home";
 import Image from "next/image";
 import Link from "next/link";
 import { useNavItems } from "@/app/hooks/useNavItems";
-import { ScrollContainerContext } from "@/contexts/ScrollContainerContext"; // Đường dẫn tới context
+import { ScrollContainerContext } from "@/contexts/ScrollContainerContext";
 import StoryUserHome from "@/components/StoryUserHome";
 import { usePostContext } from "@/contexts/PostContext";
+import Suggestions from "@/components/Suggestions";
 
 export default function Home() {
   const { posts, setPosts, handleLikeRealtime } = usePostContext();
@@ -28,7 +28,7 @@ export default function Home() {
     },
   };
 
-  const scrollableContainerRef = useContext(ScrollContainerContext); // Lấy ref từ context
+  const scrollableContainerRef = useContext(ScrollContainerContext);
 
   useEffect(() => {
     const scrollContainer = scrollableContainerRef?.current;
