@@ -1,7 +1,6 @@
 import {
   ZoomInIcon,
   ZoomOutIcon,
-  BookmarkIcon,
   ChevronLeft,
   ChevronRight,
   RotateCcw,
@@ -12,14 +11,14 @@ import Image from "next/image";
 import styles from "./CropStep.module.scss";
 import { UploadPostProps } from "..";
 
-export default function CropStep({
+const CropStep = function CropStep({
   mediaType,
   mediaPreview,
   crop,
-  onCropComplete: onCropDone,
-  isCropping,
-  canProceedCrop,
-  croppedAreaPixels: croppedAreaPixelsFromProps,
+  imagePosition,
+  setImagePosition,
+  zoomLevel,
+  setZoomLevel,
 }: Pick<UploadPostProps, "mediaType" | "mediaPreview"> & {
   crop?: {
     crop: { x: number; y: number };
@@ -33,17 +32,14 @@ export default function CropStep({
   isCropping?: boolean;
   setIsCropping?: (v: boolean) => void;
   canProceedCrop?: boolean;
-  croppedAreaPixels?: Area | null;
+  imagePosition: { x: number; y: number };
+  setImagePosition: (pos: { x: number; y: number }) => void;
+  zoomLevel: number;
+  setZoomLevel: (z: number) => void;
 }) {
-  const [, setCroppedAreaPixels] = useState<Area | null>(
-    croppedAreaPixelsFromProps ?? null
-  );
-
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  const [imagePosition, setImagePosition] = useState({ x: 0, y: 0 });
-  const [zoomLevel, setZoomLevel] = useState(1);
   const [imageNaturalSize, setImageNaturalSize] = useState({
     width: 0,
     height: 0,
@@ -62,6 +58,25 @@ export default function CropStep({
 
   // Get current media
   const currentMedia = mediaItems[currentSlide];
+
+  useEffect(() => {
+    return () => {
+      // Cleanup khi component bị unmount
+      setCurrentSlide(0);
+      setIsDragging(false);
+      setImageNaturalSize({ width: 0, height: 0 });
+      setIsCropMode(false);
+    };
+  }, []);
+
+  // THÊM: Reset states khi mediaPreview thay đổi hoặc component được re-render
+  useEffect(() => {
+    setCurrentSlide(0);
+    setIsDragging(false);
+    setIsCropMode(false);
+    setImagePosition({ x: 0, y: 0 });
+    setZoomLevel(1);
+  }, [mediaPreview, setImagePosition, setZoomLevel]);
 
   // Load image and get natural size
   useEffect(() => {
@@ -83,7 +98,7 @@ export default function CropStep({
     setImagePosition({ x: 0, y: 0 });
     setZoomLevel(1);
     setIsCropMode(false);
-  }, [currentSlide]);
+  }, [currentSlide, setImagePosition, setZoomLevel]);
 
   // Calculate container size (full screen crop area)
   const getContainerSize = () => {
@@ -208,7 +223,13 @@ export default function CropStep({
 
       setImagePosition(newPosition);
     },
-    [isDragging, dragStart, isCropMode, constrainImagePosition]
+    [
+      isDragging,
+      dragStart,
+      isCropMode,
+      constrainImagePosition,
+      setImagePosition,
+    ]
   );
 
   const handleMouseUp = useCallback(() => {
@@ -260,7 +281,6 @@ export default function CropStep({
           height: visibleHeight,
         };
 
-        setCroppedAreaPixels(cropArea);
         crop?.setCroppedAreaPixels(cropArea);
       } catch (error) {
         console.error("Error calculating crop area:", error);
@@ -307,10 +327,6 @@ export default function CropStep({
     }
   };
 
-  const handleCrop = () => {
-    onCropDone?.("");
-  };
-
   return (
     <div className={styles.cropContent}>
       <div className={styles.cropImageContainer} ref={containerRef}>
@@ -319,8 +335,6 @@ export default function CropStep({
             {/* Image display */}
             <div
               style={{
-                width: "100%",
-                height: "100%",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -511,8 +525,6 @@ export default function CropStep({
               src={currentMedia}
               controls
               style={{
-                width: "100%",
-                height: "100%",
                 objectFit: "contain",
               }}
             />
@@ -527,7 +539,17 @@ export default function CropStep({
             onClick={toggleCropMode}
             title="Toggle crop mode"
           >
-            <BookmarkIcon size={20} />
+            <svg
+              aria-label="Chọn kích thước cắt"
+              fill="currentColor"
+              height="16"
+              role="img"
+              viewBox="0 0 24 24"
+              width="16"
+            >
+              <title>Chọn kích thước cắt</title>
+              <path d="M10 20H4v-6a1 1 0 0 0-2 0v7a1 1 0 0 0 1 1h7a1 1 0 0 0 0-2ZM20.999 2H14a1 1 0 0 0 0 2h5.999v6a1 1 0 0 0 2 0V3a1 1 0 0 0-1-1Z"></path>
+            </svg>
           </button>
 
           {/* Crop mode tools */}
@@ -558,23 +580,10 @@ export default function CropStep({
               </button>
             </>
           )}
-
-          {/* Done button */}
-          {isCropMode && (
-            <button
-              className={styles.cropTool}
-              disabled={!canProceedCrop || isCropping}
-              onClick={handleCrop}
-              title="Apply crop"
-              style={{
-                backgroundColor: "#0095f6",
-              }}
-            >
-              ✓
-            </button>
-          )}
         </div>
       </div>
     </div>
   );
-}
+};
+
+export default CropStep;
