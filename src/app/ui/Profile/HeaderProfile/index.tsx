@@ -15,8 +15,8 @@ export default function HeaderProfile({ user }: { user: User }) {
             <Image
               src="/icons/checkMark/checkMark.png"
               alt="check mark"
-              width={15}
-              height={15}
+              width={13}
+              height={13}
               className={styles.checkMark}
             />
           )}

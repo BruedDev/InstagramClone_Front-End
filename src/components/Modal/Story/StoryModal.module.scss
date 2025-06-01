@@ -4,3 +4,17 @@
     margin-top: 10px;
   }
 }
+
+.container {
+  @media (max-width: 768px) {
+    gap: 0 !important;
+  }
+}
+
+.input {
+  background-color: transparent;
+
+  &::placeholder {
+    color: #fff;
+  }
+}

@@ -7,6 +7,12 @@ export interface Story {
     profilePicture?: string;
     checkMark?: boolean;
   };
+  media?: string;
+  mediaType?: string;
+  audio?: string;
+  audioDuration?: number;
+  videoDuration?: number; // Thêm dòng này để hỗ trợ video thường
+  createdAt?: string;
 }
 
 export interface GroupedStory {

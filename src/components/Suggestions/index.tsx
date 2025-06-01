@@ -114,8 +114,8 @@ export default function Suggestions() {
                   <Image
                     src="/icons/checkMark/checkMark.png"
                     alt="Verified"
-                    width={14}
-                    height={14}
+                    width={12}
+                    height={12}
                     className={styles.checkMarkIcon}
                   />
                 )}

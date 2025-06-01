@@ -3,6 +3,7 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { getStoryHome } from "@/server/home";
 import { getStoriesByUser } from "@/server/story";
+import { socketService } from "@/server/socket";
 import { initialState, Story, GroupedStory } from "@/types/story.type";
 
 // Thunk async để lấy stories từ API
@@ -61,6 +62,7 @@ export const storySlice = createSlice({
     currentUserStories: [] as Story[], // stories của user đang xem
     isPlaying: true,
     isMuted: false,
+    storyViewers: {} as Record<string, Array<{ _id: string; username: string; fullName: string; profilePicture?: string; viewedAt: string }>>,
   },
   reducers: {
     // Action để reset lại state nếu cần
@@ -80,6 +82,11 @@ export const storySlice = createSlice({
     },
     setCurrentUserStories: (state, action) => {
       state.currentUserStories = action.payload;
+    },
+    setStoryViewers: (state, action) => {
+      // action.payload: { storyId, viewers }
+      const { storyId, viewers } = action.payload;
+      state.storyViewers[storyId] = viewers;
     },
   },
   extraReducers: (builder) => {
@@ -114,6 +121,15 @@ export const storySlice = createSlice({
 });
 
 // Export reducer và actions
-export const { clearStories, setIsPlaying, setIsMuted, setCurrentUserStories } = storySlice.actions;
+export const { clearStories, setIsPlaying, setIsMuted, setCurrentUserStories, setStoryViewers } = storySlice.actions;
+
+// Lắng nghe realtime story:viewed từ socket và dispatch vào store
+import type { AppDispatch } from "@/store"; // Add this import at the top if not present
+
+export const listenStoryViewedSocket = () => (dispatch: AppDispatch) => {
+  socketService.onStoryViewed(({ storyId, viewers }) => {
+    dispatch(setStoryViewers({ storyId, viewers }));
+  });
+};
 
 export default storySlice.reducer;

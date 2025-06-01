@@ -1,21 +1,15 @@
 "use client";
 
 import React, { useEffect, useCallback, useState, useRef } from "react";
-import styles from "./StoryModal.module.scss";
-
-import Image from "next/image";
-import {
-  X,
-  Volume2,
-  VolumeX,
-  Pause,
-  Play,
-  ChevronLeft,
-  ChevronRight,
-} from "lucide-react";
-import { Swiper, SwiperSlide } from "swiper/react";
+import { X } from "lucide-react";
 import SwiperCore from "swiper";
 import "swiper/css";
+import { useDispatch, useSelector } from "react-redux";
+import { RootState } from "@/store";
+import { listenStoryViewedSocket } from "@/store/story";
+import type { AppDispatch } from "@/store";
+import { socketService } from "@/server/socket";
+import StoryUi from "./StoryUi";
 
 interface Author {
   _id: string;
@@ -31,6 +25,8 @@ interface Story {
   audioUrl?: string;
   createdAt: string;
   audioDuration?: number;
+  videoDuration?: number;
+  hasAudio?: boolean;
 }
 
 interface StoryModalProps {
@@ -81,6 +77,13 @@ const StoryModal: React.FC<
 
   const prevPathRef = useRef<string>("/");
   const wasOpenRef = useRef<boolean>(false);
+  const dispatch: AppDispatch = useDispatch();
+  const storyViewers = useSelector(
+    (state: RootState) => state.story.storyViewers
+  );
+  // Lấy userId từ localStorage (FE không có user slice chuẩn)
+  const userId =
+    typeof window !== "undefined" ? localStorage.getItem("id") : null;
 
   const resetProgress = useCallback(() => {
     if (rafRef.current !== null) {
@@ -128,9 +131,21 @@ const StoryModal: React.FC<
     const update = () => {
       const now = Date.now();
       const totalElapsed = elapsed + (now - startTime);
-      const newProgress = Math.min(100, (totalElapsed / duration) * 100);
+      let actualDuration = duration;
+      // Nếu là video thường, lấy duration thực tế từ videoRef (max 1 phút)
+      if (
+        story?.mediaType === "video" &&
+        !story?.audioUrl &&
+        videoRef &&
+        videoRef.duration &&
+        !isNaN(videoRef.duration) &&
+        videoRef.readyState >= 1
+      ) {
+        actualDuration = Math.min(Math.round(videoRef.duration * 1000), 60000);
+      }
+      const newProgress = Math.min(100, (totalElapsed / actualDuration) * 100);
       setProgress(newProgress);
-      if (totalElapsed >= duration) {
+      if (totalElapsed >= actualDuration) {
         setProgress(100);
         if (swiperRef.current) {
           if (current < stories.length - 1) {
@@ -161,6 +176,10 @@ const StoryModal: React.FC<
     stories.length,
     onClose,
     elapsed,
+    story,
+    videoRef,
+    videoRef?.duration,
+    videoRef?.readyState,
   ]);
 
   useEffect(() => {
@@ -177,7 +196,8 @@ const StoryModal: React.FC<
     const activeVideo = videoRef;
 
     if (activeAudio) {
-      activeAudio.muted = isMuted;
+      // Nếu có audioUrl (video/audio hoặc image/audio), điều khiển muted của audio custom
+      activeAudio.muted = !!story?.audioUrl ? isMuted : true;
       if (isPlaying) {
         activeAudio.play().catch(() => {});
       } else {
@@ -186,7 +206,9 @@ const StoryModal: React.FC<
     }
 
     if (activeVideo) {
-      activeVideo.muted = true;
+      // Nếu có audioUrl (video/audio hoặc image/audio), luôn mute video gốc
+      // Nếu là video thường (không có audioUrl), điều khiển muted của video gốc bằng isMuted
+      activeVideo.muted = !!story?.audioUrl ? true : isMuted;
       if (isPlaying) {
         activeVideo.play().catch(() => {});
       } else {
@@ -202,7 +224,7 @@ const StoryModal: React.FC<
         activeVideo.pause();
       }
     };
-  }, [audioRef, videoRef, isPlaying, isMuted]);
+  }, [audioRef, videoRef, isPlaying, isMuted, story]);
 
   useEffect(() => {
     if (open && !wasOpenRef.current) {
@@ -273,8 +295,33 @@ const StoryModal: React.FC<
       !isNaN(currentStoryData.audioDuration)
     ) {
       d = Math.round(currentStoryData.audioDuration * 1000);
-    } else if (currentStoryData.mediaType.startsWith("video")) {
+    } else if (
+      currentStoryData.mediaType === "video" &&
+      !currentStoryData.audioUrl
+    ) {
+      // Video thường: FE lấy duration thực tế từ videoRef, max 1 phút
       if (
+        videoRef &&
+        videoRef.duration &&
+        !isNaN(videoRef.duration) &&
+        videoRef.readyState >= 1
+      ) {
+        d = Math.min(Math.round(videoRef.duration * 1000), 60000); // max 1 phút
+      } else {
+        // Nếu chưa có metadata thì chờ lần sau
+        return;
+      }
+    } else if (
+      currentStoryData.mediaType === "video" &&
+      currentStoryData.audioUrl
+    ) {
+      // video/audio, ưu tiên audioDuration nếu có, nếu không thì lấy videoRef.duration
+      if (
+        currentStoryData.audioDuration &&
+        !isNaN(currentStoryData.audioDuration)
+      ) {
+        d = Math.round(currentStoryData.audioDuration * 1000);
+      } else if (
         videoRef &&
         videoRef.duration &&
         !isNaN(videoRef.duration) &&
@@ -282,7 +329,7 @@ const StoryModal: React.FC<
       ) {
         d = Math.round(videoRef.duration * 1000);
       } else {
-        d = 15000;
+        return;
       }
     }
     setDuration(d);
@@ -343,6 +390,26 @@ const StoryModal: React.FC<
     ? profileOpen
     : open;
 
+  // Lắng nghe realtime viewers khi mount
+  useEffect(() => {
+    dispatch(listenStoryViewedSocket());
+    return () => {
+      socketService.offStoryViewed(() => {}); // cleanup
+    };
+  }, [dispatch]);
+
+  // Gửi sự kiện xem story khi chuyển story
+  useEffect(() => {
+    if (open && userId && stories[current]?._id) {
+      socketService.emitStoryView({ storyId: stories[current]._id, userId });
+    }
+  }, [open, current, userId, stories]);
+
+  // Lấy số lượt xem hiện tại (đã loại trùng lặp)
+  const currentStoryId = stories[current]?._id;
+  const rawViewers = storyViewers[currentStoryId] || [];
+  const uniqueViewerCount = new Set(rawViewers.map((v) => v._id)).size;
+
   if (!shouldShow || (waitForConfirm && !confirmed)) return null;
 
   if (!stories || stories.length === 0) {
@@ -366,261 +433,35 @@ const StoryModal: React.FC<
   }
 
   return (
-    <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black bg-opacity-90 w-screen h-[100dvh]">
-      <div className="flex items-center justify-center w-full h-full relative">
-        <div className="hidden min-[481px]:flex absolute left-4 top-1/2 transform -translate-y-1/2 z-30">
-          <button
-            onClick={prevStory}
-            disabled={current === 0}
-            className={`p-3 rounded-full bg-black bg-opacity-50 hover:bg-opacity-70 transition-all ${
-              current === 0
-                ? "opacity-50 cursor-not-allowed"
-                : "opacity-80 hover:opacity-100"
-            }`}
-          >
-            <ChevronLeft className="w-6 h-6 text-white" />
-          </button>
-        </div>
-
-        <div className="hidden min-[481px]:flex absolute right-4 top-1/2 transform -translate-y-1/2 z-30">
-          <button
-            onClick={nextStory}
-            disabled={current === stories.length - 1 && !onClose}
-            className={`p-3 rounded-full bg-black bg-opacity-50 hover:bg-opacity-70 transition-all ${
-              current === stories.length - 1
-                ? "opacity-50 cursor-not-allowed"
-                : "opacity-80 hover:opacity-100"
-            }`}
-          >
-            <ChevronRight className="w-6 h-6 text-white" />
-          </button>
-        </div>
-
-        <div className="hidden min-[481px]:flex absolute top-4 right-4 z-30">
-          <button
-            onClick={() => {
-              if (deltail) {
-                onClose();
-              } else {
-                window.history.replaceState({}, "", prevPathRef.current || "/");
-                onClose();
-              }
-            }}
-            className="p-3 rounded-full bg-black bg-opacity-50 hover:bg-opacity-70 transition-all opacity-80 hover:opacity-100"
-          >
-            <X className="w-6 h-6 text-white" />
-          </button>
-        </div>
-
-        <div className="relative flex flex-col items-center justify-center bg-black rounded-2xl shadow-2xl aspect-[9/16] w-[min(420px,95vw)] h-[min(700px,95vh)] max-w-full max-h-full max-[480px]:w-full max-[480px]:h-[100dvh] max-[480px]:rounded-none max-[480px]:aspect-auto">
-          <div
-            className={`absolute top-0 left-0 w-full z-20 rounded-t-2xl overflow-hidden px-2 pt-2 pb-1 flex gap-1 max-[480px]:rounded-none max-[480px] ${styles.progressBar}`}
-          >
-            {stories.map((s, idx) => (
-              <div
-                key={`${s._id}-${idx}`}
-                className="flex-1 h-1 bg-zinc-800 rounded-full relative overflow-hidden"
-              >
-                <div
-                  className="h-full bg-white transition-none rounded-full absolute left-0 top-0"
-                  style={{
-                    width:
-                      idx < current
-                        ? "100%"
-                        : idx === current
-                        ? `${progress}%`
-                        : "0%",
-                    transition: "none",
-                  }}
-                />
-              </div>
-            ))}
-          </div>
-
-          <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-black/60 via-black/40 to-transparent z-10 rounded-t-2xl max-[480px]:rounded-none pointer-events-none"></div>
-
-          <div
-            className={`absolute top-0 left-0 w-full flex items-center justify-between px-4 pt-4 pb-2 z-20 ${styles.header}`}
-          >
-            <div className={`flex items-center gap-2 ${styles.authorInfo}`}>
-              <Image
-                src={author.profilePicture || "/api/placeholder/40/40"}
-                alt={author.username}
-                width={36}
-                height={36}
-                className="rounded-full object-cover border border-zinc-700"
-              />
-
-              <div className="flex flex-col">
-                <span className="text-white font-semibold text-base flex gap-1 items-center">
-                  {author.username}
-                  {author.checkMark && (
-                    <Image
-                      src="/icons/checkMark/checkMark.png"
-                      alt="Verified"
-                      width={13}
-                      height={13}
-                      className="ml-1"
-                    />
-                  )}
-                </span>
-                <span className="text-xs text-zinc-300">
-                  {story?.createdAt ? timeAgo(story.createdAt) : ""}
-                </span>
-              </div>
-            </div>
-
-            <div className={`flex items-center gap-2 ${styles.controls}`}>
-              <button
-                onClick={() => setIsMuted((m) => !m)}
-                className="p-2 rounded-full hover:bg-white/20 transition-colors"
-              >
-                {isMuted ? (
-                  <VolumeX className="w-5 h-5 text-white" />
-                ) : (
-                  <Volume2 className="w-5 h-5 text-white" />
-                )}
-              </button>
-              <button
-                onClick={() => setIsPlaying((p) => !p)}
-                className="p-2 rounded-full hover:bg-white/20 transition-colors"
-              >
-                {isPlaying ? (
-                  <Pause className="w-5 h-5 text-white" />
-                ) : (
-                  <Play className="w-5 h-5 text-white" />
-                )}
-              </button>
-              <button
-                onClick={() => {
-                  if (deltail) {
-                    onClose();
-                  } else {
-                    window.history.replaceState(
-                      {},
-                      "",
-                      prevPathRef.current || "/"
-                    );
-                    onClose();
-                  }
-                }}
-                className="p-2 rounded-full hover:bg-white/20 transition-colors max-[480px]:flex min-[481px]:hidden"
-              >
-                <X className="w-5 h-5 text-white" />
-              </button>
-            </div>
-          </div>
-
-          <div className="flex-1 w-full h-full flex items-center justify-center rounded-2xl overflow-hidden max-[480px]:rounded-none">
-            <Swiper
-              onSwiper={(swiper) => (swiperRef.current = swiper)}
-              initialSlide={initialIndex}
-              slidesPerView={1}
-              allowTouchMove={true}
-              onSlideChange={handleSlideChange}
-              className={`w-full h-full`}
-            >
-              {stories.map((s, idx) => {
-                const fitClassForThisSlide =
-                  storyFitStyles[s._id] || "object-cover";
-
-                return (
-                  <SwiperSlide
-                    key={`${s._id}-slide-${idx}`}
-                    className="flex items-center justify-center"
-                  >
-                    {s.mediaType.startsWith("video") ? (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <video
-                          ref={idx === current ? (el) => setVideoRef(el) : null}
-                          src={s.mediaUrl}
-                          controls={false}
-                          muted={true}
-                          onLoadedMetadata={(e) => {
-                            // Luôn gắn handler
-                            const video = e.currentTarget;
-                            const determinedFit =
-                              video.videoWidth > video.videoHeight
-                                ? "object-contain"
-                                : "object-cover";
-                            setStoryFitStyles((prevStyles) => ({
-                              ...prevStyles,
-                              [s._id]: determinedFit,
-                            }));
-                          }}
-                          className={`w-full h-full ${fitClassForThisSlide} rounded-2xl bg-black max-[480px]:rounded-none`}
-                          onEnded={() => {
-                            if (swiperRef.current && idx < stories.length - 1) {
-                              swiperRef.current.slideNext();
-                            } else {
-                              onClose();
-                            }
-                          }}
-                        />
-                        {s.audioUrl && (
-                          <audio
-                            ref={
-                              idx === current ? (el) => setAudioRef(el) : null
-                            }
-                            controls={false}
-                            className="hidden"
-                            src={s.audioUrl}
-                          />
-                        )}
-                      </div>
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <Image
-                          src={s.mediaUrl}
-                          alt="story"
-                          fill
-                          onLoadingComplete={({
-                            naturalWidth,
-                            naturalHeight,
-                          }) => {
-                            // Luôn gắn handler
-                            const determinedFit =
-                              naturalWidth > naturalHeight
-                                ? "object-contain"
-                                : "object-cover";
-                            setStoryFitStyles((prevStyles) => ({
-                              ...prevStyles,
-                              [s._id]: determinedFit,
-                            }));
-                          }}
-                          className={`${fitClassForThisSlide} rounded-2xl bg-black max-[480px]:rounded-none`}
-                        />
-                        {s.audioUrl && (
-                          <audio
-                            ref={
-                              idx === current ? (el) => setAudioRef(el) : null
-                            }
-                            controls={false}
-                            className="hidden"
-                            src={s.audioUrl}
-                          />
-                        )}
-                      </div>
-                    )}
-                  </SwiperSlide>
-                );
-              })}
-            </Swiper>
-          </div>
-        </div>
-      </div>
-    </div>
+    <StoryUi
+      author={author}
+      stories={stories}
+      current={current}
+      progress={progress}
+      isMuted={isMuted}
+      isPlaying={isPlaying}
+      onClose={() => {
+        if (deltail) {
+          onClose();
+        } else {
+          window.history.replaceState({}, "", prevPathRef.current || "/");
+          onClose();
+        }
+      }}
+      prevStory={prevStory}
+      nextStory={nextStory}
+      setIsMuted={setIsMuted}
+      setIsPlaying={setIsPlaying}
+      initialIndex={initialIndex}
+      swiperRef={swiperRef}
+      handleSlideChange={handleSlideChange}
+      storyFitStyles={storyFitStyles}
+      setStoryFitStyles={setStoryFitStyles}
+      setAudioRef={setAudioRef}
+      setVideoRef={setVideoRef}
+      uniqueViewerCount={uniqueViewerCount}
+    />
   );
 };
-
-function timeAgo(dateStr: string) {
-  const date = new Date(dateStr);
-  const now = new Date();
-  const diff = Math.floor((now.getTime() - date.getTime()) / 1000);
-  if (diff < 60) return `${diff}s trước`;
-  if (diff < 3600) return `${Math.floor(diff / 60)} phút trước`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)} giờ trước`;
-  return `${Math.floor(diff / 86400)} ngày trước`;
-}
 
 export default StoryModal;

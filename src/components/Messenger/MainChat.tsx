@@ -1,10 +1,5 @@
 import Image from "next/image";
-import {
-  SendHorizontal,
-  Smile,
-  Image as ImageIcon,
-  ArrowLeft,
-} from "lucide-react";
+import { Smile, ArrowLeft } from "lucide-react";
 import styles from "./Messenger.module.scss";
 import type { User, Message } from "@/types/user.type";
 import { useEffect, useRef, useState, useCallback } from "react";
@@ -15,6 +10,7 @@ import { useTimeOffline } from "@/app/hooks/useTimeOffline";
 import { OnlineIndicator } from "@/components/OnlineIndicator";
 import StoryAvatar from "@/components/Story/StoryAvatar";
 import { useHandleUserClick } from "@/utils/useHandleUserClick";
+import MessageInput from "./MessageInput";
 
 // Extend User type to allow hasStory for MainChat
 export type MainChatProps = {
@@ -208,8 +204,8 @@ export default function MainChat({
                     <Image
                       src="/icons/checkMark/checkMark.png"
                       alt="check mark"
-                      width={14}
-                      height={14}
+                      width={12}
+                      height={12}
                       className={styles.checkMark}
                       style={{ objectFit: "contain" }}
                     />
@@ -381,40 +377,12 @@ export default function MainChat({
       )}
 
       {/* Message Input */}
-      {selectedUser && (
-        <div
-          className={`border-t border-[#222] p-4 bg-[#111] ${styles.messageInput}`}
-        >
-          <div className="flex items-center">
-            <Smile className="h-6 w-6 mr-3 text-gray-400 cursor-pointer hover:text-gray-200 flex-shrink-0" />
-            <div className="flex-1 bg-[#1a1a1a] rounded-full border border-[#222] flex items-center">
-              <input
-                type="text"
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder="Message..."
-                className="flex-1 bg-transparent px-4 py-2 focus:outline-none"
-              />
-              <button className="mr-2 hover:text-gray-200 flex-shrink-0">
-                <ImageIcon className="h-5 w-5 text-gray-400" />
-              </button>
-            </div>
-            <button
-              className="ml-3 text-gray-400 hover:text-gray-200 flex-shrink-0"
-              onClick={handleSendMessage}
-            >
-              <div className="flex items-center justify-center h-8 w-8">
-                {message ? (
-                  <SendHorizontal className="h-5 w-5 text-blue-500" />
-                ) : (
-                  <SendHorizontal className="h-5 w-5" />
-                )}
-              </div>
-            </button>
-          </div>
-        </div>
-      )}
+      <MessageInput
+        message={message}
+        setMessage={setMessage}
+        handleSendMessage={handleSendMessage}
+        handleKeyPress={handleKeyPress}
+      />
     </div>
   );
 }

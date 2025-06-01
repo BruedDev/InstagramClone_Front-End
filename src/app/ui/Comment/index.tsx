@@ -1,8 +1,3 @@
-// === COMMENT LOGIC: ONLY FETCH API ON INITIAL LOAD ===
-// After initial load, all comment updates are handled via socket events (comments:updated).
-// Do NOT call API to fetch comments after joining room.
-// When sending comment, only dispatch addComment (which emits socket event), do not call API directly.
-
 import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState, AppDispatch } from "@/store";

@@ -219,6 +219,10 @@
   @media (max-width: 768px) {
     background-color: #1a1a1a;
   }
+
+  @media (max-width: 480px) {
+    background-color: #0d1015;
+  }
 }
 
 .mobileFilterTab {
@@ -268,12 +272,19 @@
     z-index: 99;
     max-height: 60vh;
     overflow: hidden;
+
+    @media (max-width: 480px) {
+      background-color: #0d1015;
+    }
   }
 }
 
 .mobileFilterPanel.show {
   @media (max-width: 768px) {
     transform: translateY(10);
+  }
+  @media (max-width: 480px) {
+    background-color: #0d1015;
   }
 }
 
@@ -309,6 +320,9 @@
     padding: 8px 4px;
     border-radius: 8px;
     transition: background-color 0.2s;
+  }
+  @media (max-width: 480px) {
+    background-color: #0d1015;
   }
 }
 

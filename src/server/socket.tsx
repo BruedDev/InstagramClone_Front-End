@@ -538,4 +538,40 @@ export const socketService = {
     const currentSocket = socketService.getSocket();
     currentSocket.emit("comments:get", data);
   },
+
+  // --- Story View Realtime ---
+  emitStoryView: (data: { storyId: string; userId: string }) => {
+    const currentSocket = socketService.getSocket();
+    currentSocket.emit("story:view", data);
+  },
+  onStoryViewed: (
+    callback: (data: {
+      storyId: string;
+      viewers: Array<{
+        _id: string;
+        username: string;
+        fullName: string;
+        profilePicture?: string;
+        viewedAt: string;
+      }>;
+    }) => void
+  ) => {
+    const currentSocket = socketService.getSocket();
+    currentSocket.on("story:viewed", callback);
+  },
+  offStoryViewed: (
+    callback: (data: {
+      storyId: string;
+      viewers: Array<{
+        _id: string;
+        username: string;
+        fullName: string;
+        profilePicture?: string;
+        viewedAt: string;
+      }>;
+    }) => void
+  ) => {
+    const currentSocket = socketService.getSocket();
+    currentSocket.off("story:viewed", callback);
+  },
 };

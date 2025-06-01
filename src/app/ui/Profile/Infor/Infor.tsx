@@ -185,8 +185,8 @@ export default function Infor({ user }: { user: User }) {
               <Image
                 src="/icons/checkMark/checkMark.png"
                 alt="check mark"
-                width={15}
-                height={15}
+                width={14}
+                height={14}
                 className={styles.checkMark}
               />
             )}

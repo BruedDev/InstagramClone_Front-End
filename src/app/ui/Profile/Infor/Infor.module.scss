@@ -50,11 +50,6 @@
 
 .checkMark {
   object-fit: contain;
-
-  @media (max-width: 480px) {
-    width: 12px;
-    height: 12px;
-  }
 }
 
 .action_btn {
