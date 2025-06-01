@@ -48,6 +48,7 @@ export default function MessengerComponent({
       message: string;
       timestamp: string;
       receiverId?: string;
+      replyTo?: string | null;
     }) => {
       const convertedMsg: Message = {
         id: msg.timestamp,
@@ -59,6 +60,7 @@ export default function MessengerComponent({
         updatedAt: msg.timestamp,
         read: false,
         message: msg.message,
+        replyTo: typeof msg.replyTo === "string" ? msg.replyTo : null,
       };
 
       if (

@@ -1,4 +1,4 @@
-@import "../UploadPost.module.scss";
+@use "../UploadPost.module.scss" as *;
 
 .captionContent {
   flex: 1;
