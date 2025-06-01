@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { Smile, ArrowLeft } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import styles from "./Messenger.module.scss";
 import type { User, Message } from "@/types/user.type";
 import { useEffect, useRef, useState, useCallback } from "react";
@@ -11,6 +11,7 @@ import { OnlineIndicator } from "@/components/OnlineIndicator";
 import StoryAvatar from "@/components/Story/StoryAvatar";
 import { useHandleUserClick } from "@/utils/useHandleUserClick";
 import MessageInput from "./MessageInput";
+import ReplyMessageContent from "./ReplyMessage";
 
 // Extend User type to allow hasStory for MainChat
 export type MainChatProps = {
@@ -77,7 +78,6 @@ export default function MainChat({
       const { scrollHeight } = messagesContainerRef.current;
       setPreviousScrollHeight(scrollHeight);
       setShouldMaintainScrollPosition(true);
-      // Gọi onLoadMore chỉ khi hasMore và loadingMore = false
       onLoadMore();
     }
   }, [hasMore, loadingMore, onLoadMore]);
@@ -96,19 +96,19 @@ export default function MainChat({
     }
   }, [loadingMore, shouldMaintainScrollPosition, previousScrollHeight]);
 
-  // Auto scroll to bottom khi có tin nhắn mới, nhưng KHÔNG cuộn nếu user đang đọc ở trên (giống Facebook)
+  // Auto scroll to bottom khi có tin nhắn mới
   useEffect(() => {
     if (!messagesEndRef.current || !messagesContainerRef.current) return;
-    if (loadingMore) return; // Không scroll khi đang load thêm tin nhắn
+    if (loadingMore) return;
     const container = messagesContainerRef.current;
     const { scrollTop, scrollHeight, clientHeight } = container;
-    const isNearBottom = scrollHeight - scrollTop - clientHeight < 100; // 100px là ngưỡng cho phép
+    const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
     if (isNearBottom) {
       messagesEndRef.current.scrollIntoView({ behavior: "auto" });
     }
   }, [messages.length, loadingMore]);
 
-  // Scroll to bottom khi vào MainChat hoặc đổi user, chỉ khi đã load xong messages lần đầu cho user mới
+  // Scroll to bottom khi vào MainChat hoặc đổi user
   const prevUserIdRef = useRef<string | null>(null);
   const prevLoadingRef = useRef<boolean>(true);
 
@@ -117,9 +117,6 @@ export default function MainChat({
     const prevLoading = prevLoadingRef.current;
     const currentUserId = selectedUser?._id || null;
 
-    // Scroll xuống cuối khi:
-    // - Vào chat mới (selectedUser._id đổi)
-    // - Hoặc vừa load xong messages lần đầu (loading từ true -> false)
     if (
       messagesEndRef.current &&
       currentUserId &&
@@ -142,6 +139,22 @@ export default function MainChat({
       return `${msg._id}-${index}`;
     }
     return `temp-${msg.senderId}-${Date.now()}-${index}`;
+  };
+
+  // Hàm scroll đến tin nhắn gốc khi click reply - Highlight bubble tin nhắn
+  const handleReplyClick = (replyToId: string) => {
+    const el = document.getElementById(`message-${replyToId}`);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      // Tìm bubble tin nhắn chính bên trong container
+      const messageBubble = el.querySelector(".message-bubble");
+      if (messageBubble) {
+        messageBubble.classList.add("ring-2", "ring-white");
+        setTimeout(() => {
+          messageBubble.classList.remove("ring-2", "ring-white");
+        }, 1200);
+      }
+    }
   };
 
   return (
@@ -239,14 +252,14 @@ export default function MainChat({
             position: "relative",
           }}
         >
-          {/* Simple loading indicator at top */}
+          {/* Loading indicator at top */}
           {loadingMore && (
             <div className="flex justify-center py-2 mb-4">
               <div className="w-4 h-4 border-2 border-gray-600 border-t-blue-400 rounded-full animate-spin"></div>
             </div>
           )}
 
-          {/* Overlay spinner when loading new conversation but keep old messages visible */}
+          {/* Overlay spinner when loading new conversation */}
           {loading && messages.length > 0 && (
             <div
               style={{
@@ -272,7 +285,6 @@ export default function MainChat({
             </div>
           ) : messages.length > 0 ? (
             messages.map((msg, index) => {
-              // Xử lý trường hợp senderId/receiverId là object hoặc string, không dùng any
               function getId(id: unknown): string {
                 if (!id) return "";
                 if (typeof id === "string") return id;
@@ -301,10 +313,11 @@ export default function MainChat({
               return (
                 <div
                   key={messageKey}
-                  className={`flex mb-4 ${isCurrentUser ? "justify-end" : ""}`}
+                  id={`message-${msg._id}`}
+                  className={`flex mb-4 ${isCurrentUser ? "justify-end" : ""}`} // Tăng margin-bottom từ mb-2 lên mb-4
                 >
                   {!isCurrentUser && (
-                    <div className="w-8 h-8 rounded-full overflow-hidden mr-2 relative flex-shrink-0">
+                    <div className="w-8 h-8 rounded-full overflow-hidden mr-3 relative flex-shrink-0">
                       {selectedUser.profilePicture ? (
                         <Image
                           src={selectedUser.profilePicture}
@@ -319,34 +332,73 @@ export default function MainChat({
                       )}
                     </div>
                   )}
+
                   <div className="max-w-md">
                     <div
-                      className={`flex items-start mb-1 ${
-                        isCurrentUser ? "justify-end" : ""
+                      className={`flex flex-col ${
+                        isCurrentUser ? "items-end" : "items-start"
                       }`}
                     >
-                      {isCurrentUser && (
-                        <button className="mr-2 text-gray-500 hover:text-gray-300 flex-shrink-0">
-                          <Smile className="h-4 w-4" />
-                        </button>
-                      )}
+                      {/* Container cho reply + tin nhắn chính - KHÔNG dùng position relative */}
                       <div
-                        className={`${
-                          isCurrentUser ? "bg-blue-600" : "bg-[#222]"
-                        } rounded-lg p-3 break-words`}
+                        className={`flex flex-col ${
+                          isCurrentUser ? "items-end" : "items-start"
+                        } max-w-xs gap-1`} // Thêm gap-1 để tạo khoảng cách
                       >
-                        <p className={`${styles.text}`}>{msg.message}</p>
+                        {/* Tin nhắn được reply (nếu có) - Bỏ position absolute */}
+                        {msg.replyTo && (
+                          <div
+                            className={`${
+                              isCurrentUser ? "bg-[#333]" : "bg-[#333]"
+                            } rounded-xl px-3 py-2 cursor-pointer hover:opacity-80 transition-opacity mb-1 max-w-full`}
+                            style={{ marginBottom: "-5px" }}
+                            onClick={() => {
+                              const repliedMsgId =
+                                typeof msg.replyTo === "string"
+                                  ? msg.replyTo
+                                  : msg.replyTo;
+                              if (repliedMsgId) handleReplyClick(repliedMsgId);
+                            }}
+                          >
+                            <ReplyMessageContent
+                              replyTo={msg.replyTo}
+                              availableUsers={availableUsers}
+                              messages={messages}
+                              userId={userId}
+                              isCurrentUser={isCurrentUser}
+                            />
+                          </div>
+                        )}
+
+                        {/* Tin nhắn chính */}
+                        <div
+                          className={`message-bubble ${
+                            isCurrentUser ? "bg-blue-600" : "bg-[#222]"
+                          } rounded-3xl px-4 py-3 break-words ${
+                            msg.replyTo
+                              ? isCurrentUser
+                                ? "rounded-tr-lg"
+                                : "rounded-tl-lg"
+                              : ""
+                          }`}
+                          style={{
+                            borderRadius: msg.replyTo
+                              ? isCurrentUser
+                                ? "24px 8px 24px 24px"
+                                : "8px 24px 24px 24px"
+                              : "24px",
+                          }}
+                        >
+                          <p
+                            className={`${styles.text} text-white text-sm leading-relaxed`}
+                          >
+                            {msg.message}
+                          </p>
+                        </div>
                       </div>
-                      {!isCurrentUser && (
-                        <button className="ml-2 text-gray-500 hover:text-gray-300 flex-shrink-0">
-                          <Smile className="h-4 w-4" />
-                        </button>
-                      )}
-                    </div>
-                    <div
-                      className={`flex ${isCurrentUser ? "justify-end" : ""}`}
-                    >
-                      <p className="text-xs text-gray-500">
+
+                      {/* Thời gian tin nhắn */}
+                      <p className="text-xs text-gray-500 mt-1 px-1">
                         {formatTime(
                           typeof msg.createdAt === "number"
                             ? new Date(msg.createdAt)

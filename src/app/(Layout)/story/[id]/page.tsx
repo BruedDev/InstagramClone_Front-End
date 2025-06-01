@@ -50,7 +50,6 @@ export default function StoryPageDetail() {
     return (currentUserStories || []).map((story) => {
       // Nếu story là kiểu API trả về (có author, media, mediaType...)
       if ("author" in story) {
-        // @ts-expect-error: API trả về story không đúng định dạng StoryModal, cần chuyển đổi thủ công
         const s = story as {
           _id: string;
           media: string;

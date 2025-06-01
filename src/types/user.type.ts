@@ -45,6 +45,7 @@ export interface Message {
   createdAt: string;
   updatedAt: string;
   message: string;
+  replyTo?: string | null;
 }
 
 export interface UploadAvatarResponse {
