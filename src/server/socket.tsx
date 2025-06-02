@@ -114,6 +114,8 @@ export const socketService = {
     message: string;
     tempId?: string;
     replyTo?: string | null;
+    media?: string; // base64 hoặc url
+    mediaType?: "image" | "video";
   }) => {
     const currentSocket = socketService.getSocket();
     currentSocket.emit("sendMessage", data);

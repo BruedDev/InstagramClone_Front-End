@@ -14,6 +14,13 @@ import MessageInput from "./MessageInput";
 import ReplyMessageContent from "./ReplyMessage";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { clearReplyTo, setReplyTo } from "@/store/messengerSlice";
+import {
+  MessageSkeleton,
+  MessageSkeletonRight,
+  MessageSkeletonShort,
+  MessageSkeletonRightShort,
+  TypingSkeleton,
+} from "@/Skeleton/messenger";
 
 // Extend User type to allow hasStory for MainChat
 export type MainChatProps = {
@@ -33,83 +40,6 @@ export type MainChatProps = {
   showMainChat: boolean;
   setShowMainChat: (show: boolean) => void;
 };
-
-// Skeleton component cho loading messages - tin nhắn người khác (bên trái)
-const MessageSkeleton = () => (
-  <div className="flex mb-6 animate-pulse">
-    <div className="w-8 h-8 rounded-full bg-gray-600 mr-3 flex-shrink-0 self-end"></div>
-    <div className="flex-1 max-w-xs">
-      <div className="bg-gray-600 rounded-3xl px-4 py-3 space-y-2">
-        <div className="h-4 bg-gray-500 rounded-full"></div>
-        <div className="h-4 bg-gray-500 rounded-full w-4/5"></div>
-        <div className="h-4 bg-gray-500 rounded-full w-3/5"></div>
-      </div>
-      <div className="h-3 bg-gray-600 rounded-full w-12 mt-2 ml-2"></div>
-    </div>
-  </div>
-);
-
-// Skeleton component cho loading messages - tin nhắn của mình (bên phải)
-const MessageSkeletonRight = () => (
-  <div className="flex mb-6 justify-end animate-pulse">
-    <div className="flex-1 flex flex-col items-end max-w-xs">
-      <div className="bg-blue-500 rounded-3xl px-4 py-3 space-y-2 w-full">
-        <div className="h-4 bg-blue-400 rounded-full"></div>
-        <div className="h-4 bg-blue-400 rounded-full w-3/4 ml-auto"></div>
-        <div className="h-4 bg-blue-400 rounded-full w-1/2 ml-auto"></div>
-      </div>
-      <div className="h-3 bg-gray-600 rounded-full w-12 mt-2 mr-2"></div>
-    </div>
-  </div>
-);
-
-// Skeleton component cho tin nhắn ngắn
-const MessageSkeletonShort = () => (
-  <div className="flex mb-6 animate-pulse">
-    <div className="w-8 h-8 rounded-full bg-gray-600 mr-3 flex-shrink-0 self-end"></div>
-    <div className="flex-1 max-w-xs">
-      <div className="bg-gray-600 rounded-3xl px-4 py-3">
-        <div className="h-4 bg-gray-500 rounded-full w-24"></div>
-      </div>
-      <div className="h-3 bg-gray-600 rounded-full w-12 mt-2 ml-2"></div>
-    </div>
-  </div>
-);
-
-// Skeleton component cho tin nhắn của mình ngắn
-const MessageSkeletonRightShort = () => (
-  <div className="flex mb-6 justify-end animate-pulse">
-    <div className="flex-1 flex flex-col items-end max-w-xs">
-      <div className="bg-blue-500 rounded-3xl px-4 py-3 w-32">
-        <div className="h-4 bg-blue-400 rounded-full"></div>
-      </div>
-      <div className="h-3 bg-gray-600 rounded-full w-12 mt-2 mr-2"></div>
-    </div>
-  </div>
-);
-
-// Skeleton cho typing indicator (bonus)
-const TypingSkeleton = () => (
-  <div className="flex mb-4 animate-pulse">
-    <div className="w-8 h-8 rounded-full bg-gradient-to-r from-gray-800 to-gray-700 mr-3 flex-shrink-0 self-end relative overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-gray-600 to-transparent animate-shimmer"></div>
-    </div>
-    <div className="bg-gradient-to-r from-gray-800 to-gray-700 rounded-3xl px-4 py-3 relative overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-gray-600 to-transparent animate-shimmer"></div>
-      <div className="flex space-x-1">
-        <div className="w-2 h-2 bg-gray-600 rounded-full animate-bounce"></div>
-        <div
-          className="w-2 h-2 bg-gray-600 rounded-full animate-bounce"
-          style={{ animationDelay: "0.1s" }}
-        ></div>
-        <div
-          className="w-2 h-2 bg-gray-600 rounded-full animate-bounce"
-          style={{ animationDelay: "0.2s" }}
-        ></div>
-      </div>
-    </div>
-  </div>
-);
 
 export default function MainChat({
   selectedUser,
@@ -494,31 +424,99 @@ export default function MainChat({
                               />
                             </div>
                           )}
-
                           {/* Tin nhắn chính */}
-                          <div
-                            className={`message-bubble ${
-                              isCurrentUser ? "bg-blue-600" : "bg-[#222]"
-                            } rounded-3xl px-4 py-3 break-words ${
-                              msg.replyTo
-                                ? isCurrentUser
-                                  ? "rounded-tr-lg"
-                                  : "rounded-tl-lg"
-                                : ""
-                            }`}
-                            style={{
-                              borderRadius: msg.replyTo
-                                ? isCurrentUser
-                                  ? "24px 8px 24px 24px"
-                                  : "8px 24px 24px 24px"
-                                : "24px",
-                            }}
-                          >
-                            <p
-                              className={`${styles.text} text-white text-sm leading-relaxed`}
-                            >
-                              {msg.message}
-                            </p>
+                          <div className="flex flex-col gap-2">
+                            {/* Text message bubble với border-radius đã sửa */}
+                            {msg.message && (
+                              <div
+                                className={`message-bubble ${
+                                  isCurrentUser ? "bg-blue-600" : "bg-[#333]"
+                                } px-4 py-3`}
+                                style={{
+                                  borderRadius: isCurrentUser
+                                    ? msg.replyTo
+                                      ? "24px 8px 8px 24px" // Có reply: góc trên phải và dưới phải nhỏ
+                                      : "24px 24px 8px 24px" // Không reply: chỉ góc dưới phải nhỏ
+                                    : msg.replyTo
+                                    ? "8px 24px 24px 8px" // Có reply: góc trên trái và dưới trái nhỏ
+                                    : "24px 24px 24px 8px", // Không reply: chỉ góc dưới trái nhỏ
+                                }}
+                              >
+                                <p
+                                  className={`${styles.text} text-white text-sm leading-relaxed`}
+                                >
+                                  {msg.message}
+                                </p>
+                              </div>
+                            )}
+
+                            {/* Media với border-radius đã sửa */}
+                            {msg.mediaUrl && (
+                              <div
+                                className="overflow-hidden max-w-[200px]"
+                                style={{
+                                  backgroundColor:
+                                    msg.mediaType === "image"
+                                      ? "white"
+                                      : "transparent",
+                                  borderRadius: isCurrentUser
+                                    ? msg.mediaType === "video"
+                                      ? "16px 16px 4px 16px" // Video: border nhỏ hơn
+                                      : "24px 24px 8px 24px" // Image: border như cũ
+                                    : msg.mediaType === "video"
+                                    ? "16px 16px 16px 4px" // Video: border nhỏ hơn
+                                    : "24px 24px 24px 8px", // Image: border như cũ
+                                }}
+                              >
+                                {msg.mediaType === "image" ? (
+                                  <Image
+                                    src={msg.mediaUrl}
+                                    alt="Shared image"
+                                    width={200}
+                                    height={150}
+                                    className="object-cover w-full h-auto cursor-pointer hover:opacity-90 transition-opacity"
+                                    style={{
+                                      maxHeight: "200px",
+                                      minHeight: "80px",
+                                      display: "block",
+                                    }}
+                                    onClick={() => {
+                                      window.open(msg.mediaUrl, "_blank");
+                                    }}
+                                    onError={() => {
+                                      console.error(
+                                        "Failed to load image:",
+                                        msg.mediaUrl
+                                      );
+                                    }}
+                                  />
+                                ) : msg.mediaType === "video" ? (
+                                  <video
+                                    src={msg.mediaUrl}
+                                    controls
+                                    className="w-full h-auto"
+                                    style={{
+                                      maxHeight: "200px",
+                                      minHeight: "80px",
+                                      display: "block",
+                                      borderRadius: isCurrentUser
+                                        ? "16px 16px 4px 16px"
+                                        : "16px 16px 16px 4px",
+                                    }}
+                                    preload="metadata"
+                                    onError={() => {
+                                      console.error(
+                                        "Failed to load video:",
+                                        msg.mediaUrl
+                                      );
+                                    }}
+                                  >
+                                    <source src={msg.mediaUrl} />
+                                    Trình duyệt không hỗ trợ phát video này.
+                                  </video>
+                                ) : null}
+                              </div>
+                            )}
                           </div>
                         </div>
 

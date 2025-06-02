@@ -65,21 +65,26 @@ export default function MessengerComponent({
             isRead?: boolean;
             replyTo?: string | null;
           };
+      // Thêm các trường media
+      mediaUrl?: string;
+      mediaType?: "image" | "video" | "file";
+      isOwnMessage?: boolean;
     }) => {
-      // Xử lý realtime replyTo: nếu msg.replyTo là string, tìm trong messages, nếu là object thì map về Message tối thiểu
+      // Xử lý realtime replyTo như cũ...
       let replyToValue: string | null = null;
       if (msg.replyTo) {
         if (typeof msg.replyTo === "string") {
           const found = messages.find((m) => m._id === msg.replyTo);
           replyToValue = found ? found._id : msg.replyTo;
         } else if (typeof msg.replyTo === "object" && msg.replyTo._id) {
-          // Nếu object, chỉ lấy _id để truyền xuống ReplyMessageContent, FE sẽ tự resolve object
           replyToValue = msg.replyTo._id;
         }
       }
+
       const id = msg._id || msg.timestamp || "";
       const createdAt = msg.createdAt || msg.timestamp || "";
       const updatedAt = msg.updatedAt || msg.timestamp || "";
+
       const convertedMsg: Message = {
         id,
         _id: id,
@@ -91,6 +96,10 @@ export default function MessengerComponent({
         read: msg.isRead ?? false,
         message: msg.message,
         replyTo: replyToValue,
+        // Thêm các trường media
+        mediaUrl: msg.mediaUrl,
+        mediaType: msg.mediaType,
+        isOwnMessage: msg.isOwnMessage,
       };
 
       if (

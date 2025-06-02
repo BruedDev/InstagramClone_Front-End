@@ -137,7 +137,7 @@ export default function ReplyMessageContent({
 
   let currentUserId = userId;
   if (!currentUserId && typeof window !== "undefined") {
-    currentUserId = localStorage.getItem("userId") || "";
+    currentUserId = localStorage.getItem("id") || "";
   }
   const isCurrentUserReceiver = getId(receiverId) === currentUserId;
 
