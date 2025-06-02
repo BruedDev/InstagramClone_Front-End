@@ -15,6 +15,7 @@ import {
 } from "@/server/messenger";
 import { socketService, type MessageData } from "@/server/socket";
 import StoryAvatar from "@/components/Story/StoryAvatar";
+import { SiderBarSkeleton, SearchResultsSkeleton } from "@/Skeleton/siderbar";
 
 type UserWithStory = User & { hasStory?: boolean };
 
@@ -53,6 +54,7 @@ export default function SiderBar({
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [recentChats, setRecentChats] = useState<RecentChat[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSearching, setIsSearching] = useState(false);
   const router = useRouter();
   const currentUserIdRef = useRef<string | null>(null);
   const [userIdForSocket, setUserIdForSocket] = useState<string | null>(null);
@@ -74,7 +76,7 @@ export default function SiderBar({
         prevChats.map((chat) => {
           if (
             chat.user._id === chatUserId &&
-            chat.lastMessage && // Kiểm tra chat.lastMessage tồn tại
+            chat.lastMessage &&
             chat.lastMessage._id === messageId &&
             !chat.lastMessage.isOwnMessage
           ) {
@@ -207,21 +209,15 @@ export default function SiderBar({
 
     const handleIncomingMessageCallback = (data: MessageData) =>
       handleNewMessage(data);
-    // const handleChatUpdateCallback = (data: RecentChat) => {
-    //   if (data.user && data.user._id === currentUserIdRef.current) return;
-    //   updateRecentChatItem(data);
-    // };
     const handleMessageReadUpdateCallback = (data: {
       messageId: string;
       chatUserId: string;
     }) => markChatMessageAsRead(data.messageId, data.chatUserId);
 
-    // socketService.onUpdateRecentChat(handleChatUpdateCallback);
     socketService.onUpdateMessageRead(handleMessageReadUpdateCallback);
     socketService.onReceiveMessageSiderBar(handleIncomingMessageCallback);
 
     return () => {
-      // socketService.offUpdateRecentChat(handleChatUpdateCallback);
       socketService.offUpdateMessageRead(handleMessageReadUpdateCallback);
       socketService.offReceiveMessageSiderBar(handleIncomingMessageCallback);
     };
@@ -263,7 +259,6 @@ export default function SiderBar({
     }
   }, [userIdForSocket]);
 
-  // useEffect mới để tự động đánh dấu đã đọc khi đang trong cuộc trò chuyện
   useEffect(() => {
     const currentUserId = currentUserIdRef.current;
     if (!selectedUser || !currentUserId || recentChats.length === 0) {
@@ -277,33 +272,27 @@ export default function SiderBar({
     if (
       activeChatInSidebar &&
       activeChatInSidebar.lastMessage &&
-      !activeChatInSidebar.lastMessage.isOwnMessage && // Tin nhắn từ selectedUser
-      !activeChatInSidebar.lastMessage.isRead // Và chưa đọc trong state của SiderBar
+      !activeChatInSidebar.lastMessage.isOwnMessage &&
+      !activeChatInSidebar.lastMessage.isRead
     ) {
       const messageIdToMark = activeChatInSidebar.lastMessage._id;
-      const partnerId = activeChatInSidebar.user._id; // Chính là selectedUser._id
+      const partnerId = activeChatInSidebar.user._id;
 
-      // console.log(`SiderBar Effect: Auto marking message ${messageIdToMark} as read for user ${partnerId}`);
-
-      // 1. Cập nhật UI cục bộ (Optimistic Update)
       markChatMessageAsRead(messageIdToMark, partnerId);
 
-      // 2. Gọi API để cập nhật server
       markMessagesAsReadApi([messageIdToMark], partnerId).catch((error) => {
         console.error(
           "SiderBar Effect: Lỗi khi tự động đánh dấu tin nhắn đã đọc trên server:",
           error
         );
-        // Cân nhắc rollback optimistic update ở đây nếu cần
       });
     }
-  }, [selectedUser, recentChats, markChatMessageAsRead]); // Phụ thuộc vào selectedUser, recentChats và hàm markChatMessageAsRead (đã memoized)
+  }, [selectedUser, recentChats, markChatMessageAsRead]);
 
   const handleChatClick = (chat: RecentChat) => {
     if (!chat.user) return;
     const currentUserId = currentUserIdRef.current;
 
-    // Kiểm tra và đánh dấu tin nhắn đã đọc khi click (vẫn giữ logic này phòng trường hợp cần)
     if (
       chat.lastMessage &&
       !chat.lastMessage.isOwnMessage &&
@@ -313,16 +302,13 @@ export default function SiderBar({
       const messageIdToMark = chat.lastMessage._id;
       const partnerId = chat.user._id;
 
-      // console.log(`SiderBar Click: Marking message ${messageIdToMark} as read for user ${partnerId}`);
-
-      markChatMessageAsRead(messageIdToMark, partnerId); // Cập nhật UI ngay
-      markMessagesAsReadApi([messageIdToMark], partnerId) // Gọi API
-        .catch((error) => {
-          console.error(
-            "SiderBar Click: Lỗi khi đánh dấu tin nhắn đã đọc trên server:",
-            error
-          );
-        });
+      markChatMessageAsRead(messageIdToMark, partnerId);
+      markMessagesAsReadApi([messageIdToMark], partnerId).catch((error) => {
+        console.error(
+          "SiderBar Click: Lỗi khi đánh dấu tin nhắn đã đọc trên server:",
+          error
+        );
+      });
     }
 
     const userToSelect: ExtendedUser = {
@@ -393,6 +379,19 @@ export default function SiderBar({
     return isOwn ? `Bạn: ${messageText}` : messageText;
   };
 
+  // Handle search with debouncing
+  useEffect(() => {
+    if (searchQuery) {
+      setIsSearching(true);
+      const timer = setTimeout(() => {
+        setIsSearching(false);
+      }, 300);
+      return () => clearTimeout(timer);
+    } else {
+      setIsSearching(false);
+    }
+  }, [searchQuery]);
+
   const filteredChats = recentChats.filter((chat) => {
     const currentId = currentUserIdRef.current;
     return (
@@ -416,8 +415,12 @@ export default function SiderBar({
     router.push("/");
   };
 
+  // Show full skeleton when initially loading
+  if (isLoading && recentChats.length === 0) {
+    return <SiderBarSkeleton />;
+  }
+
   return (
-    // --- Phần JSX giữ nguyên ---
     <div
       className={`w-80 bg-[#0f0f0f] border-r border-[#222] flex flex-col ${styles.sidebar}`}
     >
@@ -474,11 +477,9 @@ export default function SiderBar({
       </div>
 
       <div className="flex-1 overflow-y-auto bg-[#0f0f0f] px-2 py-1">
-        {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-12 text-center">
-            <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-            <p className="text-gray-400 text-sm">Đang tải...</p>
-          </div>
+        {/* Show search skeleton when searching */}
+        {isSearching ? (
+          <SearchResultsSkeleton />
         ) : (
           <>
             {filteredChats.length > 0 && (
@@ -492,7 +493,6 @@ export default function SiderBar({
                     chat.lastMessage &&
                     !chat.lastMessage.isOwnMessage &&
                     !chat.lastMessage.isRead;
-                  // Lấy hasStory từ availableUsers nếu chat.user chưa có
                   const userFromList = availableUsers.find(
                     (u) => u._id === chat.user._id
                   );
@@ -545,7 +545,7 @@ export default function SiderBar({
                           <p
                             className={`truncate font-medium ${
                               hasUnreadMessage
-                                ? "text-white font-semibold" // Nổi bật nếu có tin nhắn chưa đọc
+                                ? "text-white font-semibold"
                                 : "text-white"
                             }`}
                           >
@@ -567,7 +567,7 @@ export default function SiderBar({
                           <span
                             className={`text-sm truncate flex-1 mr-2 ${
                               hasUnreadMessage
-                                ? "text-white font-medium" // Nổi bật nếu có tin nhắn chưa đọc
+                                ? "text-white font-medium"
                                 : "text-gray-400"
                             }`}
                           >

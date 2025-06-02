@@ -1,13 +1,21 @@
 import { SendHorizontal, Smile, Image as ImageIcon } from "lucide-react";
 import styles from "./Messenger.module.scss";
 import InputStory from "../Modal/Story/StoryInput";
+import ReplyMessageContent from "./ReplyMessage";
+import type { User, Message } from "@/types/user.type";
 
-type MessageInputProps = {
+export type MessageInputProps = {
   message: string;
   setMessage: (value: string) => void;
   handleSendMessage: () => void;
   handleKeyPress: (e: React.KeyboardEvent<HTMLInputElement>) => void;
-  inputStory?: boolean; // Thêm prop inputStory, mặc định false
+  inputStory?: boolean;
+  // --- Reply feature ---
+  replyTo?: string | null;
+  clearReplyTo?: () => void;
+  messages?: Message[];
+  availableUsers?: User[];
+  userId?: string;
 };
 
 export default function MessageInput({
@@ -15,7 +23,12 @@ export default function MessageInput({
   setMessage,
   handleSendMessage,
   handleKeyPress,
-  inputStory = false, // default false
+  inputStory = false,
+  replyTo,
+  clearReplyTo,
+  messages = [],
+  availableUsers = [],
+  userId = "",
 }: MessageInputProps) {
   if (inputStory) {
     // Giao diện tối giản cho story: input ở giữa, heart icon, send button
@@ -33,6 +46,27 @@ export default function MessageInput({
     <div
       className={`border-t border-[#222] p-4 bg-[#111] ${styles.messageInput}`}
     >
+      {/* Reply preview below input */}
+      {replyTo && (
+        <div className="flex items-center mb-2 bg-[#232323] rounded-lg px-3 py-2 relative">
+          <div className="flex-1 min-w-0">
+            <ReplyMessageContent
+              replyTo={replyTo}
+              availableUsers={availableUsers}
+              messages={messages}
+              userId={userId}
+            />
+          </div>
+          <button
+            className="ml-2 text-gray-400 hover:text-red-400 text-xs px-1"
+            onClick={clearReplyTo}
+            title="Hủy trả lời"
+            type="button"
+          >
+            ✕
+          </button>
+        </div>
+      )}
       <div className="flex items-center">
         <Smile className="h-6 w-6 mr-3 text-gray-400 cursor-pointer hover:text-gray-200 flex-shrink-0" />
         <div className="flex-1 bg-[#1a1a1a] rounded-full border border-[#222] flex items-center">

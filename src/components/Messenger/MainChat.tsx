@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Smile, Reply } from "lucide-react";
 import styles from "./Messenger.module.scss";
 import type { User, Message } from "@/types/user.type";
 import { useEffect, useRef, useState, useCallback } from "react";
@@ -12,6 +12,8 @@ import StoryAvatar from "@/components/Story/StoryAvatar";
 import { useHandleUserClick } from "@/utils/useHandleUserClick";
 import MessageInput from "./MessageInput";
 import ReplyMessageContent from "./ReplyMessage";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import { clearReplyTo, setReplyTo } from "@/store/messengerSlice";
 
 // Extend User type to allow hasStory for MainChat
 export type MainChatProps = {
@@ -31,6 +33,83 @@ export type MainChatProps = {
   showMainChat: boolean;
   setShowMainChat: (show: boolean) => void;
 };
+
+// Skeleton component cho loading messages - tin nhắn người khác (bên trái)
+const MessageSkeleton = () => (
+  <div className="flex mb-6 animate-pulse">
+    <div className="w-8 h-8 rounded-full bg-gray-600 mr-3 flex-shrink-0 self-end"></div>
+    <div className="flex-1 max-w-xs">
+      <div className="bg-gray-600 rounded-3xl px-4 py-3 space-y-2">
+        <div className="h-4 bg-gray-500 rounded-full"></div>
+        <div className="h-4 bg-gray-500 rounded-full w-4/5"></div>
+        <div className="h-4 bg-gray-500 rounded-full w-3/5"></div>
+      </div>
+      <div className="h-3 bg-gray-600 rounded-full w-12 mt-2 ml-2"></div>
+    </div>
+  </div>
+);
+
+// Skeleton component cho loading messages - tin nhắn của mình (bên phải)
+const MessageSkeletonRight = () => (
+  <div className="flex mb-6 justify-end animate-pulse">
+    <div className="flex-1 flex flex-col items-end max-w-xs">
+      <div className="bg-blue-500 rounded-3xl px-4 py-3 space-y-2 w-full">
+        <div className="h-4 bg-blue-400 rounded-full"></div>
+        <div className="h-4 bg-blue-400 rounded-full w-3/4 ml-auto"></div>
+        <div className="h-4 bg-blue-400 rounded-full w-1/2 ml-auto"></div>
+      </div>
+      <div className="h-3 bg-gray-600 rounded-full w-12 mt-2 mr-2"></div>
+    </div>
+  </div>
+);
+
+// Skeleton component cho tin nhắn ngắn
+const MessageSkeletonShort = () => (
+  <div className="flex mb-6 animate-pulse">
+    <div className="w-8 h-8 rounded-full bg-gray-600 mr-3 flex-shrink-0 self-end"></div>
+    <div className="flex-1 max-w-xs">
+      <div className="bg-gray-600 rounded-3xl px-4 py-3">
+        <div className="h-4 bg-gray-500 rounded-full w-24"></div>
+      </div>
+      <div className="h-3 bg-gray-600 rounded-full w-12 mt-2 ml-2"></div>
+    </div>
+  </div>
+);
+
+// Skeleton component cho tin nhắn của mình ngắn
+const MessageSkeletonRightShort = () => (
+  <div className="flex mb-6 justify-end animate-pulse">
+    <div className="flex-1 flex flex-col items-end max-w-xs">
+      <div className="bg-blue-500 rounded-3xl px-4 py-3 w-32">
+        <div className="h-4 bg-blue-400 rounded-full"></div>
+      </div>
+      <div className="h-3 bg-gray-600 rounded-full w-12 mt-2 mr-2"></div>
+    </div>
+  </div>
+);
+
+// Skeleton cho typing indicator (bonus)
+const TypingSkeleton = () => (
+  <div className="flex mb-4 animate-pulse">
+    <div className="w-8 h-8 rounded-full bg-gradient-to-r from-gray-800 to-gray-700 mr-3 flex-shrink-0 self-end relative overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-gray-600 to-transparent animate-shimmer"></div>
+    </div>
+    <div className="bg-gradient-to-r from-gray-800 to-gray-700 rounded-3xl px-4 py-3 relative overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-gray-600 to-transparent animate-shimmer"></div>
+      <div className="flex space-x-1">
+        <div className="w-2 h-2 bg-gray-600 rounded-full animate-bounce"></div>
+        <div
+          className="w-2 h-2 bg-gray-600 rounded-full animate-bounce"
+          style={{ animationDelay: "0.1s" }}
+        ></div>
+        <div
+          className="w-2 h-2 bg-gray-600 rounded-full animate-bounce"
+          style={{ animationDelay: "0.2s" }}
+        ></div>
+      </div>
+    </div>
+  </div>
+);
 
 export default function MainChat({
   selectedUser,
@@ -54,6 +133,11 @@ export default function MainChat({
   const [shouldMaintainScrollPosition, setShouldMaintainScrollPosition] =
     useState(false);
   const [previousScrollHeight, setPreviousScrollHeight] = useState(0);
+
+  // State để theo dõi số lượng tin nhắn trước đó
+  const [previousMessageCount, setPreviousMessageCount] = useState(0);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+
   const { formatTime } = useTime();
   const handleUserClick = useHandleUserClick();
   const { isUserOnline } = useCheckOnline(availableUsers);
@@ -66,6 +150,8 @@ export default function MainChat({
       : null,
     isUserOnline(selectedUser?._id || "") ? "online" : "offline"
   );
+  const dispatch = useAppDispatch();
+  const replyTo = useAppSelector((state) => state.messenger.replyTo);
 
   // Simple scroll handler - only load more when at top
   const handleScroll = useCallback(() => {
@@ -96,19 +182,28 @@ export default function MainChat({
     }
   }, [loadingMore, shouldMaintainScrollPosition, previousScrollHeight]);
 
-  // Auto scroll to bottom khi có tin nhắn mới
+  // Auto scroll to bottom cho tin nhắn mới (không áp dụng cho lần đầu load)
   useEffect(() => {
     if (!messagesEndRef.current || !messagesContainerRef.current) return;
     if (loadingMore) return;
+
     const container = messagesContainerRef.current;
     const { scrollTop, scrollHeight, clientHeight } = container;
-    const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
-    if (isNearBottom) {
-      messagesEndRef.current.scrollIntoView({ behavior: "auto" });
-    }
-  }, [messages.length, loadingMore]);
+    const isNearBottom = scrollHeight - scrollTop - clientHeight < 700;
 
-  // Scroll to bottom khi vào MainChat hoặc đổi user
+    if (
+      !isInitialLoad &&
+      messages.length > previousMessageCount &&
+      isNearBottom
+    ) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+
+    // Cập nhật số lượng tin nhắn trước đó
+    setPreviousMessageCount(messages.length);
+  }, [messages.length, loadingMore, isInitialLoad, previousMessageCount]);
+
+  // Scroll to bottom khi vào MainChat hoặc đổi user (chỉ cho lần đầu)
   const prevUserIdRef = useRef<string | null>(null);
   const prevLoadingRef = useRef<boolean>(true);
 
@@ -124,7 +219,17 @@ export default function MainChat({
       (prevUserId !== currentUserId || (prevLoading && !loading))
     ) {
       messagesEndRef.current.scrollIntoView({ behavior: "auto" });
+      // Đánh dấu đã load xong lần đầu
+      setIsInitialLoad(false);
+      setPreviousMessageCount(messages.length);
     }
+
+    // Reset trạng thái khi đổi user
+    if (prevUserId !== currentUserId) {
+      setIsInitialLoad(true);
+      setPreviousMessageCount(0);
+    }
+
     prevUserIdRef.current = currentUserId;
     prevLoadingRef.current = loading;
   }, [selectedUser?._id, loading, messages.length]);
@@ -157,20 +262,18 @@ export default function MainChat({
     }
   };
 
+  // Hàm xử lý emoji reaction (tạm thời chỉ console.log)
+  const handleEmojiReaction = (messageId: string) => {
+    console.log("Emoji reaction for message:", messageId);
+    // TODO: Implement emoji reaction logic
+  };
+
   return (
     <div
       className={`flex-1 flex flex-col bg-[#111] ${styles.mainChat} ${
         showMainChat ? styles.showMainChat : ""
       }`}
     >
-      <style jsx>{`
-        @media (max-width: 622px) {
-          .${styles.backBtn} {
-            display: block !important;
-          }
-        }
-      `}</style>
-
       {/* Chat Header */}
       <div
         className={`flex justify-between items-center p-4 border-b border-[#222] position-relative bg-[#0f0f0f] ${styles.chatHeader}`}
@@ -252,36 +355,26 @@ export default function MainChat({
             position: "relative",
           }}
         >
-          {/* Loading indicator at top */}
+          {/* Loading indicator at top for loadingMore */}
           {loadingMore && (
             <div className="flex justify-center py-2 mb-4">
               <div className="w-4 h-4 border-2 border-gray-600 border-t-blue-400 rounded-full animate-spin"></div>
             </div>
           )}
 
-          {/* Overlay spinner when loading new conversation */}
-          {loading && messages.length > 0 && (
-            <div
-              style={{
-                position: "absolute",
-                top: 0,
-                left: 0,
-                width: "100%",
-                height: "100%",
-                background: "rgba(17,17,17,0.7)",
-                zIndex: 10,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <div className="w-8 h-8 border-4 border-gray-600 border-t-blue-400 rounded-full animate-spin"></div>
-            </div>
-          )}
-
+          {/* Skeleton loading khi đang load tin nhắn ban đầu */}
           {loading && messages.length === 0 ? (
-            <div className="flex justify-center items-center h-full">
-              <div className="w-6 h-6 border-2 border-gray-600 border-t-blue-400 rounded-full animate-spin"></div>
+            <div className="space-y-0">
+              <MessageSkeleton />
+              <MessageSkeletonRightShort />
+              <MessageSkeletonShort />
+              <MessageSkeletonRight />
+              <TypingSkeleton />
+              <MessageSkeleton />
+              <MessageSkeletonRight />
+              <MessageSkeletonShort />
+              <MessageSkeletonRight />
+              <MessageSkeleton />
             </div>
           ) : messages.length > 0 ? (
             messages.map((msg, index) => {
@@ -314,100 +407,133 @@ export default function MainChat({
                 <div
                   key={messageKey}
                   id={`message-${msg._id}`}
-                  className={`flex mb-4 ${isCurrentUser ? "justify-end" : ""}`} // Tăng margin-bottom từ mb-2 lên mb-4
+                  className={`${styles.messageContainer} flex mb-4 ${
+                    isCurrentUser ? "justify-end" : ""
+                  }`}
                 >
-                  {!isCurrentUser && (
-                    <div className="w-8 h-8 rounded-full overflow-hidden mr-3 relative flex-shrink-0">
-                      {selectedUser.profilePicture ? (
-                        <Image
-                          src={selectedUser.profilePicture}
-                          alt={selectedUser.username}
-                          fill
-                          className="object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-gray-600 flex items-center justify-center text-xs">
-                          {selectedUser.username.charAt(0).toUpperCase()}
-                        </div>
-                      )}
-                    </div>
-                  )}
+                  <div className="max-w-md relative flex">
+                    {/* Avatar chỉ hiển thị cho tin nhắn của người khác */}
+                    {!isCurrentUser && (
+                      <div
+                        className={`w-8 h-8 rounded-full overflow-hidden mr-3 relative flex-shrink-0 self-end ${styles.avatarContainer}`}
+                      >
+                        {selectedUser.profilePicture ? (
+                          <Image
+                            src={selectedUser.profilePicture}
+                            alt={selectedUser.username}
+                            fill
+                            className="object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-gray-600 flex items-center justify-center text-xs">
+                            {selectedUser.username.charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                      </div>
+                    )}
 
-                  <div className="max-w-md">
-                    <div
-                      className={`flex flex-col ${
-                        isCurrentUser ? "items-end" : "items-start"
-                      }`}
-                    >
-                      {/* Container cho reply + tin nhắn chính - KHÔNG dùng position relative */}
+                    {/* Container cho nội dung tin nhắn */}
+                    <div className="flex-1">
+                      {/* Message Actions */}
+                      <div
+                        className={`${styles.messageActions} ${
+                          isCurrentUser ? styles.currentUser : styles.otherUser
+                        }`}
+                      >
+                        <button
+                          className={`${styles.messageActionBtn} ${styles.emojiBtn}`}
+                          onClick={() => handleEmojiReaction(msg._id)}
+                          title="Thêm emoji"
+                          aria-label="Thêm emoji reaction"
+                        >
+                          <Smile strokeWidth={2} />
+                        </button>
+                        <button
+                          className={`${styles.messageActionBtn} ${styles.replyBtn}`}
+                          onClick={() => dispatch(setReplyTo(msg._id))}
+                          title="Trả lời tin nhắn"
+                          aria-label="Trả lời tin nhắn này"
+                        >
+                          <Reply strokeWidth={2} />
+                        </button>
+                      </div>
+
                       <div
                         className={`flex flex-col ${
                           isCurrentUser ? "items-end" : "items-start"
-                        } max-w-xs gap-1`} // Thêm gap-1 để tạo khoảng cách
+                        }`}
                       >
-                        {/* Tin nhắn được reply (nếu có) - Bỏ position absolute */}
-                        {msg.replyTo && (
+                        {/* Container cho reply + tin nhắn chính */}
+                        <div
+                          className={`flex flex-col ${
+                            isCurrentUser ? "items-end" : "items-start"
+                          } max-w-xs gap-1`}
+                        >
+                          {/* Tin nhắn được reply (nếu có) */}
+                          {msg.replyTo && (
+                            <div
+                              className={`${
+                                isCurrentUser ? "bg-[#333]" : "bg-[#333]"
+                              } rounded-xl px-3 py-2 cursor-pointer hover:opacity-80 transition-opacity mb-1 max-w-full`}
+                              style={{ marginBottom: "-5px" }}
+                              onClick={() => {
+                                const repliedMsgId =
+                                  typeof msg.replyTo === "string"
+                                    ? msg.replyTo
+                                    : msg.replyTo;
+                                if (repliedMsgId)
+                                  handleReplyClick(repliedMsgId);
+                              }}
+                            >
+                              <ReplyMessageContent
+                                replyTo={msg.replyTo}
+                                availableUsers={availableUsers}
+                                messages={messages}
+                                userId={userId}
+                                isCurrentUser={isCurrentUser}
+                              />
+                            </div>
+                          )}
+
+                          {/* Tin nhắn chính */}
                           <div
-                            className={`${
-                              isCurrentUser ? "bg-[#333]" : "bg-[#333]"
-                            } rounded-xl px-3 py-2 cursor-pointer hover:opacity-80 transition-opacity mb-1 max-w-full`}
-                            style={{ marginBottom: "-5px" }}
-                            onClick={() => {
-                              const repliedMsgId =
-                                typeof msg.replyTo === "string"
-                                  ? msg.replyTo
-                                  : msg.replyTo;
-                              if (repliedMsgId) handleReplyClick(repliedMsgId);
+                            className={`message-bubble ${
+                              isCurrentUser ? "bg-blue-600" : "bg-[#222]"
+                            } rounded-3xl px-4 py-3 break-words ${
+                              msg.replyTo
+                                ? isCurrentUser
+                                  ? "rounded-tr-lg"
+                                  : "rounded-tl-lg"
+                                : ""
+                            }`}
+                            style={{
+                              borderRadius: msg.replyTo
+                                ? isCurrentUser
+                                  ? "24px 8px 24px 24px"
+                                  : "8px 24px 24px 24px"
+                                : "24px",
                             }}
                           >
-                            <ReplyMessageContent
-                              replyTo={msg.replyTo}
-                              availableUsers={availableUsers}
-                              messages={messages}
-                              userId={userId}
-                              isCurrentUser={isCurrentUser}
-                            />
+                            <p
+                              className={`${styles.text} text-white text-sm leading-relaxed`}
+                            >
+                              {msg.message}
+                            </p>
                           </div>
-                        )}
-
-                        {/* Tin nhắn chính */}
-                        <div
-                          className={`message-bubble ${
-                            isCurrentUser ? "bg-blue-600" : "bg-[#222]"
-                          } rounded-3xl px-4 py-3 break-words ${
-                            msg.replyTo
-                              ? isCurrentUser
-                                ? "rounded-tr-lg"
-                                : "rounded-tl-lg"
-                              : ""
-                          }`}
-                          style={{
-                            borderRadius: msg.replyTo
-                              ? isCurrentUser
-                                ? "24px 8px 24px 24px"
-                                : "8px 24px 24px 24px"
-                              : "24px",
-                          }}
-                        >
-                          <p
-                            className={`${styles.text} text-white text-sm leading-relaxed`}
-                          >
-                            {msg.message}
-                          </p>
                         </div>
-                      </div>
 
-                      {/* Thời gian tin nhắn */}
-                      <p className="text-xs text-gray-500 mt-1 px-1">
-                        {formatTime(
-                          typeof msg.createdAt === "number"
-                            ? new Date(msg.createdAt)
-                            : !isNaN(Number(msg.createdAt))
-                            ? new Date(Number(msg.createdAt))
-                            : msg.createdAt,
-                          "HH:mm"
-                        )}
-                      </p>
+                        {/* Thời gian tin nhắn */}
+                        <p className="text-xs text-gray-500 mt-1 px-1">
+                          {formatTime(
+                            typeof msg.createdAt === "number"
+                              ? new Date(msg.createdAt)
+                              : !isNaN(Number(msg.createdAt))
+                              ? new Date(Number(msg.createdAt))
+                              : msg.createdAt,
+                            "HH:mm"
+                          )}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -434,6 +560,11 @@ export default function MainChat({
         setMessage={setMessage}
         handleSendMessage={handleSendMessage}
         handleKeyPress={handleKeyPress}
+        replyTo={replyTo}
+        clearReplyTo={() => dispatch(clearReplyTo())}
+        messages={messages}
+        availableUsers={availableUsers}
+        userId={userId}
       />
     </div>
   );

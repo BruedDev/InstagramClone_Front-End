@@ -163,3 +163,233 @@
     display: none;
   }
 }
+// Message Actions Styles
+.messageActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-80%);
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s ease-in-out;
+  z-index: 10;
+
+  // Positioning based on user type
+  &.currentUser {
+    // For current user - actions on the left side of message bubble
+    right: calc(100% + 12px);
+    flex-direction: row;
+  }
+
+  &.otherUser {
+    // For other user - actions on the right side of message bubble
+    left: calc(100% + 12px);
+    flex-direction: row-reverse;
+  }
+}
+
+// Show actions on hover
+.messageContainer {
+  position: relative;
+
+  .avatarContainer {
+    margin-bottom: 25px;
+  }
+
+  &:hover {
+    .messageActions {
+      opacity: 1;
+      visibility: visible;
+    }
+  }
+}
+
+// Action buttons styling
+.messageActionBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  backdrop-filter: blur(10px);
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.1);
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+
+  svg {
+    width: 16px;
+    height: 16px;
+  }
+}
+
+// Specific button styles
+.emojiBtn {
+  &:hover {
+    background: rgba(255, 193, 7, 0.2);
+    color: #ffc107;
+  }
+}
+
+.replyBtn {
+  &:hover {
+    background: rgba(0, 123, 255, 0.2);
+    color: #007bff;
+  }
+}
+
+// Mobile responsive
+@media (max-width: 768px) {
+  .messageActions {
+    gap: 6px;
+
+    &.currentUser {
+      right: calc(100% + 8px);
+    }
+
+    &.otherUser {
+      left: calc(100% + 8px);
+    }
+  }
+
+  .messageActionBtn {
+    width: 28px;
+    height: 28px;
+
+    svg {
+      width: 14px;
+      height: 14px;
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .messageActions {
+    gap: 4px;
+
+    &.currentUser {
+      right: calc(100% + 6px);
+    }
+
+    &.otherUser {
+      left: calc(100% + 6px);
+    }
+  }
+
+  .messageActionBtn {
+    width: 26px;
+    height: 26px;
+
+    svg {
+      width: 12px;
+      height: 12px;
+    }
+  }
+}
+
+// Animation for smooth appearance
+@keyframes fadeInActions {
+  from {
+    opacity: 0;
+    transform: translateY(-50%) scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(-50%) scale(1);
+  }
+}
+
+// Ensure message bubble container has relative positioning for absolute positioning of actions
+.messageContainer .max-w-md .message-bubble {
+  position: relative;
+}
+
+// Additional styling for better visual hierarchy
+.messageActions {
+  // Add subtle shadow for better visibility
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+// Touch devices - show actions on tap/touch
+@media (hover: none) and (pointer: coarse) {
+  .messageContainer {
+    &:active {
+      .messageActions {
+        opacity: 1;
+        visibility: visible;
+      }
+    }
+  }
+}
+
+// High contrast mode support
+@media (prefers-contrast: high) {
+  .messageActionBtn {
+    background: rgba(255, 255, 255, 0.9);
+    color: #000;
+
+    &:hover {
+      background: #fff;
+    }
+  }
+}
+
+// Reduced motion support
+@media (prefers-reduced-motion: reduce) {
+  .messageActions,
+  .messageActionBtn {
+    transition: none;
+  }
+
+  .messageContainer:hover .messageActions {
+    animation: none;
+  }
+}
+@media (max-width: 480px) {
+  .messageActions {
+    display: none;
+  }
+}
+// Thêm vào Messenger.module.scss
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 1.5s infinite;
+}
+
+// Cải thiện skeleton loading container
+.skeleton-container {
+  .animate-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  @keyframes pulse {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.7;
+    }
+  }
+}
