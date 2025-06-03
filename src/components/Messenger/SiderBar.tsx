@@ -26,6 +26,8 @@ type SiderBarProps = {
   setShowMainChat: (show: boolean) => void;
   userId: string;
   hasStory?: boolean;
+  preview?: boolean; // Thêm prop preview
+  onClose?: () => void; // Thêm prop onClose
 };
 
 interface ExtendedUser extends User {
@@ -49,6 +51,8 @@ export default function SiderBar({
   selectedUser,
   setSelectedUser,
   setShowMainChat,
+  preview = false, // default là false
+  onClose,
 }: SiderBarProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchFocused, setIsSearchFocused] = useState(false);
@@ -333,13 +337,20 @@ export default function SiderBar({
 
     setSelectedUser(userToSelect as User);
     setShowMainChat(true);
-    router.push(`/messages?id=${chat.user._id}`);
+    if (preview) {
+      // Chỉ cập nhật url trên thanh địa chỉ, không điều hướng thật
+      window.history.replaceState(null, "", `/messages?id=${chat.user._id}`);
+    } else {
+      router.push(`/messages?id=${chat.user._id}`);
+    }
   };
 
   const handleUserClick = (user: User) => {
     setSelectedUser(user);
     setShowMainChat(true);
-    router.push(`/messages?id=${user._id}`);
+    if (!preview) {
+      router.push(`/messages?id=${user._id}`);
+    }
   };
 
   const formatTime = (dateString: string) => {
@@ -352,13 +363,13 @@ export default function SiderBar({
     if (diffInSeconds < 60) return "Vừa xong";
 
     const diffInMinutes = Math.floor(diffInSeconds / 60);
-    if (diffInMinutes < 60) return `${diffInMinutes}ph`;
+    if (diffInMinutes < 60) return `${diffInMinutes} phút trước`;
 
     const diffInHours = Math.floor(diffInMinutes / 60);
-    if (diffInHours < 24) return `${diffInHours}h`;
+    if (diffInHours < 24) return `${diffInHours} giờ trước`;
 
     const diffInDays = Math.floor(diffInHours / 24);
-    return `${diffInDays}d`;
+    return `${diffInDays} ngày trước`;
   };
 
   const formatMessage = (chat: RecentChat) => {
@@ -422,9 +433,21 @@ export default function SiderBar({
 
   return (
     <div
-      className={`w-80 bg-[#0f0f0f] border-r border-[#222] flex flex-col ${styles.sidebar}`}
+      className={`bg-[#0f0f0f] border-r border-[#222] flex flex-col ${
+        preview ? "w-full" : "w-80"
+      } ${styles.sidebar}`}
+      style={
+        preview
+          ? {
+              width: "100%",
+              minWidth: 0,
+              maxWidth: "100%",
+              background: "#212328",
+            }
+          : {}
+      }
     >
-      <div className="flex justify-between items-center px-4 py-3 border-b border-[#222] bg-[#0f0f0f]">
+      <div className="flex justify-between items-center px-4 py-3 border-b border-[#222]">
         <div className="flex items-center">
           <button
             onClick={handleBackClick}
@@ -432,15 +455,32 @@ export default function SiderBar({
           >
             <ArrowLeft className="h-5 w-5 text-gray-200" />
           </button>
-          <h1 className="font-bold text-2xl text-white">Tin Nhắn</h1>
+          <h1
+            className={`font-bold text-2xl text-white${
+              preview ? " !text-lg" : ""
+            }`}
+            style={preview ? { fontSize: "1.1rem" } : {}}
+          >
+            Tin Nhắn
+          </h1>
           <ChevronDown className="ml-2 h-4 w-4 text-gray-300" />
         </div>
-        <div className="w-9 h-9 rounded-full bg-[#1a1a1a] hover:bg-[#2a2a2a] flex items-center justify-center cursor-pointer transition-colors">
-          <Edit className="h-4 w-4 text-gray-200" />
-        </div>
+        {preview && onClose ? (
+          <button
+            className="w-9 h-9 rounded-full bg-[#1a1a1a] hover:bg-[#2a2a2a] flex items-center justify-center cursor-pointer transition-colors"
+            onClick={onClose}
+            aria-label="Đóng Messenger"
+          >
+            <X className="h-4 w-4 text-gray-200" />
+          </button>
+        ) : (
+          <div className="w-9 h-9 rounded-full bg-[#1a1a1a] hover:bg-[#2a2a2a] flex items-center justify-center cursor-pointer transition-colors">
+            <Edit className="h-4 w-4 text-gray-200" />
+          </div>
+        )}
       </div>
 
-      <div className="px-4 py-3 bg-[#0f0f0f]">
+      <div className="px-4 py-3">
         <div
           className={`relative flex items-center bg-[#1a1a1a] rounded-full px-3 py-2 transition-all ${
             isSearchFocused ? "ring-1 ring-blue-500" : ""
@@ -467,249 +507,257 @@ export default function SiderBar({
         </div>
       </div>
 
-      <div className="flex bg-[#0f0f0f] px-4 pb-2">
-        <button className="flex-1 py-2 px-4 mx-1 rounded-full text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors">
-          Hộp thư
-        </button>
-        <button className="flex-1 py-2 px-4 mx-1 rounded-full text-sm font-medium text-gray-300 hover:bg-[#1a1a1a] transition-colors">
-          Tin nhắn chờ
-        </button>
-      </div>
+      <div className={`overflow-y-auto ${styles.chatList}`}>
+        <div className="flex px-4 pb-2">
+          <button className="flex-1 py-2 px-4 mx-1 rounded-full text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors">
+            Hộp thư
+          </button>
+          <button className="flex-1 py-2 px-4 mx-1 rounded-full text-sm font-medium text-gray-300 hover:bg-[#1a1a1a] transition-colors">
+            Tin nhắn chờ
+          </button>
+        </div>
 
-      <div className="flex-1 overflow-y-auto bg-[#0f0f0f] px-2 py-1">
-        {/* Show search skeleton when searching */}
-        {isSearching ? (
-          <SearchResultsSkeleton />
-        ) : (
-          <>
-            {filteredChats.length > 0 && (
-              <>
-                {filteredChats.map((chat) => {
-                  if (!chat.user) return null;
-                  const isChatSelected =
-                    selectedUser && selectedUser._id === chat.user._id;
-                  const isOnline = chat.user.isOnline ?? false;
-                  const hasUnreadMessage =
-                    chat.lastMessage &&
-                    !chat.lastMessage.isOwnMessage &&
-                    !chat.lastMessage.isRead;
-                  const userFromList = availableUsers.find(
-                    (u) => u._id === chat.user._id
-                  );
-                  const hasStory = (userFromList?.hasStory ?? false) === true;
+        <div className="flex-1 overflow-y-auto px-2 py-1">
+          {/* Show search skeleton when searching */}
+          {isSearching ? (
+            <SearchResultsSkeleton />
+          ) : (
+            <>
+              {filteredChats.length > 0 && (
+                <>
+                  {filteredChats.map((chat) => {
+                    if (!chat.user) return null;
+                    const isChatSelected =
+                      selectedUser && selectedUser._id === chat.user._id;
+                    const isOnline = chat.user.isOnline ?? false;
+                    const hasUnreadMessage =
+                      chat.lastMessage &&
+                      !chat.lastMessage.isOwnMessage &&
+                      !chat.lastMessage.isRead;
+                    const userFromList = availableUsers.find(
+                      (u) => u._id === chat.user._id
+                    );
+                    const hasStory = (userFromList?.hasStory ?? false) === true;
 
-                  return (
-                    <div
-                      key={chat.user._id}
-                      className={`flex items-center p-2 cursor-pointer rounded-lg hover:bg-[#1a1a1a] transition-colors mb-1 ${
-                        isChatSelected ? "bg-[#1a1a1a]" : ""
-                      }`}
-                    >
-                      <div className="w-12 h-12 rounded-full mr-3 relative flex-shrink-0">
-                        {hasStory ? (
-                          <StoryAvatar
-                            author={chat.user}
-                            hasStories={true}
-                            variant="messenger"
-                            size="large"
-                            showUsername={false}
-                            initialIndex={0}
-                          />
-                        ) : chat.user.profilePicture ? (
-                          <Image
-                            src={chat.user.profilePicture}
-                            alt={chat.user.username}
-                            layout="fill"
-                            objectFit="cover"
-                            className="rounded-full"
-                            style={{ cursor: "pointer" }}
-                            onClick={() => handleChatClick(chat)}
-                          />
-                        ) : (
-                          <div
-                            className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold text-lg rounded-full"
-                            style={{ cursor: "pointer" }}
-                            onClick={() => handleChatClick(chat)}
-                          >
-                            {chat.user.username.charAt(0).toUpperCase()}
-                          </div>
-                        )}
-                        <OnlineIndicator isOnline={isOnline} />
-                      </div>
-
+                    return (
                       <div
-                        className="flex-1 min-w-0"
-                        onClick={() => handleChatClick(chat)}
+                        key={chat.user._id}
+                        className={`flex items-center p-2 cursor-pointer rounded-lg hover:bg-[#1a1a1a] transition-colors mb-1 ${
+                          isChatSelected ? "bg-[#1a1a1a]" : ""
+                        }`}
                       >
-                        <div className="flex items-center gap-1.5 mb-0.5">
-                          <p
-                            className={`truncate font-medium ${
-                              hasUnreadMessage
-                                ? "text-white font-semibold"
-                                : "text-white"
-                            }`}
-                          >
-                            {chat.user.username}
-                          </p>
-                          {chat.user.checkMark && (
-                            <Image
-                              src="/icons/checkMark/checkMark.png"
-                              alt="check mark"
-                              width={12}
-                              height={12}
-                              className={styles.checkMark}
-                              style={{ objectFit: "contain" }}
+                        <div className="w-12 h-12 rounded-full mr-3 relative flex-shrink-0">
+                          {hasStory ? (
+                            <StoryAvatar
+                              author={chat.user}
+                              hasStories={true}
+                              variant="messenger"
+                              size="large"
+                              showUsername={false}
+                              initialIndex={0}
                             />
+                          ) : chat.user.profilePicture ? (
+                            <Image
+                              src={chat.user.profilePicture}
+                              alt={chat.user.username}
+                              layout="fill"
+                              objectFit="cover"
+                              className="rounded-full"
+                              style={{ cursor: "pointer" }}
+                              onClick={() => handleChatClick(chat)}
+                            />
+                          ) : (
+                            <div
+                              className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold text-lg rounded-full"
+                              style={{ cursor: "pointer" }}
+                              onClick={() => handleChatClick(chat)}
+                            >
+                              {chat.user.username.charAt(0).toUpperCase()}
+                            </div>
                           )}
+                          <OnlineIndicator isOnline={isOnline} />
                         </div>
 
-                        <div className="flex items-center justify-between">
-                          <span
-                            className={`text-sm truncate flex-1 mr-2 ${
-                              hasUnreadMessage
-                                ? "text-white font-medium"
-                                : "text-gray-400"
-                            }`}
-                          >
-                            {formatMessage(chat)}
-                          </span>
-                          <div className="flex items-center gap-2 flex-shrink-0">
-                            <span className="text-xs text-gray-500">
-                              {chat.lastMessage
-                                ? formatTime(chat.lastMessage.createdAt)
-                                : ""}
-                            </span>
-                            {hasUnreadMessage && (
-                              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                        <div
+                          className="flex-1 min-w-0"
+                          onClick={() => handleChatClick(chat)}
+                        >
+                          <div className="flex items-center gap-1.5 mb-0.5">
+                            <p
+                              className={`truncate font-medium ${
+                                hasUnreadMessage
+                                  ? "text-white font-semibold"
+                                  : "text-white"
+                              }`}
+                            >
+                              {chat.user.username}
+                            </p>
+                            {chat.user.checkMark && (
+                              <svg
+                                aria-label="Đã xác minh"
+                                fill="#0095F6"
+                                height="12"
+                                role="img"
+                                viewBox="0 0 40 40"
+                                width="12"
+                              >
+                                <title>Đã xác minh</title>
+                                <path
+                                  d="M19.998 3.094 14.638 0l-2.972 5.15H5.432v6.354L0 14.64 3.094 20 0 25.359l5.432 3.137v5.905h5.975L14.638 40l5.36-3.094L25.358 40l3.232-5.6h6.162v-6.01L40 25.359 36.905 20 40 14.641l-5.248-3.03v-6.46h-6.419L25.358 0l-5.36 3.094Zm7.415 11.225 2.254 2.287-11.43 11.5-6.835-6.93 2.244-2.258 4.587 4.581 9.18-9.18Z"
+                                  fillRule="evenodd"
+                                ></path>
+                              </svg>
                             )}
                           </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </>
-            )}
 
-            {filteredAvailableUsers.length > 0 && (
-              <>
-                {searchQuery && filteredChats.length === 0 && (
-                  <hr className="border-gray-700 my-2" />
-                )}
-                {filteredAvailableUsers.map((user) => {
-                  const isChatSelected =
-                    selectedUser && selectedUser._id === user._id;
-                  const isOnline = isUserOnline(user._id);
-                  const hasStory = user.hasStory === true;
-                  return (
-                    <div
-                      key={user._id}
-                      className={`flex items-center p-2 cursor-pointer rounded-lg hover:bg-[#1a1a1a] transition-colors mb-1 ${
-                        isChatSelected ? "bg-[#1a1a1a]" : ""
-                      }`}
-                      onClick={() => handleUserClick(user)}
-                    >
-                      <div className="w-12 h-12 rounded-full mr-3 relative flex-shrink-0">
-                        {hasStory ? (
-                          <StoryAvatar
-                            author={user}
-                            hasStories={true}
-                            variant="messenger"
-                            size="small"
-                            showUsername={false}
-                            initialIndex={0}
-                            onClick={() => handleUserClick(user)}
-                          />
-                        ) : user.profilePicture ? (
-                          <Image
-                            src={user.profilePicture}
-                            alt={user.username}
-                            layout="fill"
-                            objectFit="cover"
-                            className="rounded-full"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleUserClick(user);
-                            }}
-                            style={{ cursor: "pointer" }}
-                          />
-                        ) : (
-                          <div
-                            className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold text-lg rounded-full"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleUserClick(user);
-                            }}
-                            style={{ cursor: "pointer" }}
-                          >
-                            {user.username.charAt(0).toUpperCase()}
+                          <div className="flex items-center justify-between">
+                            <span
+                              className={`text-sm truncate flex-1 mr-2 ${
+                                hasUnreadMessage
+                                  ? "text-white font-medium"
+                                  : "text-gray-400"
+                              }`}
+                            >
+                              {formatMessage(chat)}
+                            </span>
+                            <div className="flex items-center gap-2 flex-shrink-0">
+                              <span className="text-xs text-gray-500">
+                                {chat.lastMessage
+                                  ? formatTime(chat.lastMessage.createdAt)
+                                  : ""}
+                              </span>
+                              {hasUnreadMessage && (
+                                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                              )}
+                            </div>
                           </div>
-                        )}
-                        <OnlineIndicator isOnline={isOnline} />
-                      </div>
-
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1 mb-0.5">
-                          <p className="text-white truncate font-medium">
-                            {user.username}
-                          </p>
-                          {user.checkMark && (
-                            <Image
-                              src="/icons/checkMark/checkMark.png"
-                              alt="check mark"
-                              width={16}
-                              height={16}
-                              className={styles.checkMark}
-                              style={{ objectFit: "contain" }}
-                            />
-                          )}
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-gray-400">
-                            Nhấn để bắt đầu trò chuyện
-                          </span>
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
-              </>
-            )}
-
-            {filteredChats.length === 0 &&
-              filteredAvailableUsers.length === 0 && (
-                <>
-                  {searchQuery ? (
-                    <div className="flex flex-col items-center justify-center py-12 text-center">
-                      <div className="w-16 h-16 bg-[#1a1a1a] rounded-full flex items-center justify-center mb-4">
-                        <Search className="h-8 w-8 text-gray-400" />
-                      </div>
-                      <p className="text-gray-300 font-medium">
-                        Không tìm thấy kết quả
-                      </p>
-                      <p className="text-gray-500 text-sm mt-1">
-                        Thử tìm kiếm với từ khóa khác hoặc kiểm tra danh sách
-                        bạn bè.
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-center justify-center py-12 text-center">
-                      <div className="w-16 h-16 bg-[#1a1a1a] rounded-full flex items-center justify-center mb-4">
-                        <Edit className="h-8 w-8 text-gray-400" />
-                      </div>
-                      <p className="text-gray-300 font-medium">
-                        Không có cuộc trò chuyện nào
-                      </p>
-                      <p className="text-gray-500 text-sm mt-1">
-                        Bắt đầu cuộc trò chuyện mới với bạn bè hoặc tìm kiếm
-                        người dùng.
-                      </p>
-                    </div>
-                  )}
+                    );
+                  })}
                 </>
               )}
-          </>
-        )}
+
+              {filteredAvailableUsers.length > 0 && (
+                <>
+                  {searchQuery && filteredChats.length === 0 && (
+                    <hr className="border-gray-700 my-2" />
+                  )}
+                  {filteredAvailableUsers.map((user) => {
+                    const isChatSelected =
+                      selectedUser && selectedUser._id === user._id;
+                    const isOnline = isUserOnline(user._id);
+                    const hasStory = user.hasStory === true;
+                    return (
+                      <div
+                        key={user._id}
+                        className={`flex items-center p-2 cursor-pointer rounded-lg hover:bg-[#1a1a1a] transition-colors mb-1 ${
+                          isChatSelected ? "bg-[#1a1a1a]" : ""
+                        }`}
+                        onClick={() => handleUserClick(user)}
+                      >
+                        <div className="w-12 h-12 rounded-full mr-3 relative flex-shrink-0">
+                          {hasStory ? (
+                            <StoryAvatar
+                              author={user}
+                              hasStories={true}
+                              variant="messenger"
+                              size="small"
+                              showUsername={false}
+                              initialIndex={0}
+                              onClick={() => handleUserClick(user)}
+                            />
+                          ) : user.profilePicture ? (
+                            <Image
+                              src={user.profilePicture}
+                              alt={user.username}
+                              layout="fill"
+                              objectFit="cover"
+                              className="rounded-full"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleUserClick(user);
+                              }}
+                              style={{ cursor: "pointer" }}
+                            />
+                          ) : (
+                            <div
+                              className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold text-lg rounded-full"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleUserClick(user);
+                              }}
+                              style={{ cursor: "pointer" }}
+                            >
+                              {user.username.charAt(0).toUpperCase()}
+                            </div>
+                          )}
+                          <OnlineIndicator isOnline={isOnline} />
+                        </div>
+
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1 mb-0.5">
+                            <p className="text-white truncate font-medium">
+                              {user.username}
+                            </p>
+                            {user.checkMark && (
+                              <Image
+                                src="/icons/checkMark/checkMark.png"
+                                alt="check mark"
+                                width={16}
+                                height={16}
+                                className={styles.checkMark}
+                                style={{ objectFit: "contain" }}
+                              />
+                            )}
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-gray-400">
+                              Nhấn để bắt đầu trò chuyện
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </>
+              )}
+
+              {filteredChats.length === 0 &&
+                filteredAvailableUsers.length === 0 && (
+                  <>
+                    {searchQuery ? (
+                      <div className="flex flex-col items-center justify-center py-12 text-center">
+                        <div className="w-16 h-16 bg-[#1a1a1a] rounded-full flex items-center justify-center mb-4">
+                          <Search className="h-8 w-8 text-gray-400" />
+                        </div>
+                        <p className="text-gray-300 font-medium">
+                          Không tìm thấy kết quả
+                        </p>
+                        <p className="text-gray-500 text-sm mt-1">
+                          Thử tìm kiếm với từ khóa khác hoặc kiểm tra danh sách
+                          bạn bè.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center py-12 text-center">
+                        <div className="w-16 h-16 bg-[#1a1a1a] rounded-full flex items-center justify-center mb-4">
+                          <Edit className="h-8 w-8 text-gray-400" />
+                        </div>
+                        <p className="text-gray-300 font-medium">
+                          Không có cuộc trò chuyện nào
+                        </p>
+                        <p className="text-gray-500 text-sm mt-1">
+                          Bắt đầu cuộc trò chuyện mới với bạn bè hoặc tìm kiếm
+                          người dùng.
+                        </p>
+                      </div>
+                    )}
+                  </>
+                )}
+            </>
+          )}
+        </div>
       </div>
     </div>
   );

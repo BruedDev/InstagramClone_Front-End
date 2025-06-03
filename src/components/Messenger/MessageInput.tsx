@@ -149,7 +149,10 @@ export default function MessageInput({
               fileInputRef.current.click()
             }
           >
-            <ImageIcon className="h-5 w-5 text-gray-400" />
+            <ImageIcon
+              className="h-5 w-5 text-gray-400"
+              style={{ cursor: "pointer" }}
+            />
             <input
               ref={fileInputRef}
               type="file"

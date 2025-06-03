@@ -22,10 +22,16 @@ import MainChat from "./MainChat";
 
 interface MessengerComponentProps {
   ringtoneRef: React.RefObject<HTMLAudioElement | null>;
+  isModal?: boolean;
+  preview?: boolean; // Thêm prop preview để truyền xuống SiderBar nếu cần
+  onClose?: () => void; // Thêm prop onClose
 }
 
 export default function MessengerComponent({
   ringtoneRef,
+  isModal = false,
+  preview = false,
+  onClose,
 }: MessengerComponentProps) {
   const dispatch = useAppDispatch();
   const {
@@ -270,6 +276,83 @@ export default function MessengerComponent({
       dispatch(resetMessagesState());
     };
   }, [dispatch]);
+
+  // Nếu là modal hoặc preview thì chỉ render SiderBar hoặc MainChat theo state riêng
+  const [showMainChatModal, setShowMainChatModal] = useState(false);
+
+  if (isModal || preview) {
+    // Nếu đã chọn user và showMainChatModal=true thì render MainChat, ngược lại render SiderBar
+    if (selectedUser && showMainChatModal) {
+      return (
+        <div
+          className={`flex h-full bg-[#0a0a0a] text-gray-200 ${styles.container} ${styles.modalContainer}`}
+          style={{
+            width: "100%",
+            height: "100%",
+            position: "static",
+            padding: 0,
+            margin: 0,
+            left: "unset",
+            top: "unset",
+            transform: "none",
+          }}
+        >
+          <MainChat
+            selectedUser={selectedUser}
+            messages={messages}
+            message={message}
+            setMessage={(msg) => dispatch(setMessage(msg))}
+            handleSendMessage={handleSendMessage}
+            handleKeyPress={handleKeyPress}
+            loading={loading}
+            userId={userId}
+            onLoadMore={handleLoadMore}
+            hasMore={hasMore}
+            loadingMore={loadingMore}
+            ringtoneRef={ringtoneRef}
+            availableUsers={availableUsers}
+            showMainChat={showMainChatModal}
+            setShowMainChat={setShowMainChatModal}
+            file={file}
+            setFile={setFile}
+            filePreview={filePreview}
+            setFilePreview={setFilePreview}
+            fileInputRef={fileInputRef}
+            preview={true}
+          />
+        </div>
+      );
+    }
+    // Chưa chọn user hoặc showMainChatModal=false thì chỉ render SiderBar
+    return (
+      <div
+        className={`flex h-full bg-[#0a0a0a] text-gray-200 ${styles.container} ${styles.modalContainer}`}
+        style={{
+          width: "100%",
+          height: "100%",
+          position: "static",
+          padding: 0,
+          margin: 0,
+          left: "unset",
+          top: "unset",
+          transform: "none",
+        }}
+      >
+        <SiderBar
+          availableUsers={availableUsers}
+          selectedUser={selectedUser}
+          setSelectedUser={(user) => {
+            dispatch(setSelectedUser(user));
+            setShowMainChatModal(true);
+          }}
+          userId={userId}
+          setShowMainChat={setShowMainChatModal}
+          preview={true}
+          onClose={onClose}
+        />
+      </div>
+    );
+  }
 
   return (
     <div

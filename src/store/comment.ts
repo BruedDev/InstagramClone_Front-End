@@ -11,6 +11,7 @@ export interface Comment {
     profilePicture?: string;
     fullname?: string;
     isVerified?: boolean;
+    checkMark?: boolean; // <-- Add this line
   };
   text: string;
   post?: string;

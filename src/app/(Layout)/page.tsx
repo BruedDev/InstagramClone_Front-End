@@ -11,6 +11,7 @@ import { ScrollContainerContext } from "@/contexts/ScrollContainerContext";
 import StoryUserHome from "@/components/StoryUserHome";
 import { usePostContext } from "@/contexts/PostContext";
 import Suggestions from "@/components/Suggestions";
+import MessengerPreview from "@/components/MessengerPreview";
 
 export default function Home() {
   const { posts, setPosts, handleLikeRealtime } = usePostContext();
@@ -112,6 +113,7 @@ export default function Home() {
         onLikeRealtime={handleLikeRealtime}
       />
       <Suggestions />
+      <MessengerPreview />
     </div>
   );
 }

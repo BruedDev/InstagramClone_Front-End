@@ -1,9 +1,13 @@
 // @/skeleton/siderbar.tsx
+import styles from "./siderBarSkeleton.module.scss";
+
 export const SiderBarSkeleton = () => {
   return (
-    <div className="w-80 bg-[#0f0f0f] border-r border-[#222] flex flex-col animate-pulse">
+    <div
+      className={`w-70 bg-[#0f0f0f] border-r border-[#222] flex flex-col animate-pulse ${styles.siderBarSkeleton}`}
+    >
       {/* Header Skeleton */}
-      <div className="flex justify-between items-center px-4 py-3 border-b border-[#222] bg-[#0f0f0f]">
+      <div className="flex justify-between items-center px-4 py-3 border-b border-[#222] bg-[#0f0f0f] w-full">
         <div className="flex items-center">
           <div className="h-8 bg-gray-600 rounded-full w-24"></div>
           <div className="ml-2 h-4 w-4 bg-gray-600 rounded-full"></div>
@@ -12,21 +16,21 @@ export const SiderBarSkeleton = () => {
       </div>
 
       {/* Search Bar Skeleton */}
-      <div className="px-4 py-3 bg-[#0f0f0f]">
+      <div className="px-4 py-3 bg-[#0f0f0f] w-full">
         <div className="flex items-center bg-[#1a1a1a] rounded-full px-3 py-2">
-          <div className="h-4 w-4 bg-gray-600 rounded mr-2 flex-shrink-0"></div>
+          <div className="h-4 w-4 bg-gray-600 rounded-full mr-2 flex-shrink-0"></div>
           <div className="flex-1 h-8 bg-gray-600 rounded-full w-full"></div>
         </div>
       </div>
 
       {/* Tab Buttons Skeleton */}
-      <div className="flex bg-[#0f0f0f] px-4 pb-2">
+      <div className="flex bg-[#0f0f0f] px-4 pb-2 w-full">
         <div className="flex-1 py-2 px-4 mx-1 rounded-full bg-gray-600 h-8"></div>
         <div className="flex-1 py-2 px-4 mx-1 rounded-full bg-gray-600 h-8"></div>
       </div>
 
       {/* Chat List Skeleton */}
-      <div className="flex-1 overflow-y-auto bg-[#0f0f0f] px-2 py-1 space-y-2">
+      <div className="flex-1 overflow-y-auto bg-[#0f0f0f] px-2 py-1 space-y-2 w-full">
         {Array.from({ length: 8 }).map((_, index) => (
           <ChatItemSkeleton key={index} />
         ))}

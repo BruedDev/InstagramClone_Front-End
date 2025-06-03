@@ -45,6 +45,7 @@ export type MainChatProps = {
   filePreview?: string | null;
   setFilePreview?: (url: string | null) => void;
   fileInputRef?: React.RefObject<HTMLInputElement | null>;
+  preview?: boolean;
 };
 
 export default function MainChat({
@@ -68,6 +69,7 @@ export default function MainChat({
   filePreview,
   setFilePreview,
   fileInputRef,
+  preview = false,
 }: MainChatProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -213,7 +215,17 @@ export default function MainChat({
     <div
       className={`flex-1 flex flex-col bg-[#111] ${styles.mainChat} ${
         showMainChat ? styles.showMainChat : ""
-      }`}
+      } ${preview ? "w-full h-full" : ""}`}
+      style={
+        preview
+          ? {
+              width: "100%",
+              height: "100%",
+              maxWidth: "100%",
+              maxHeight: "100%",
+            }
+          : {}
+      }
     >
       {/* Chat Header */}
       <div
@@ -224,10 +236,17 @@ export default function MainChat({
             <div className="flex items-center">
               <button
                 className={styles.backBtn}
-                onClick={() => setShowMainChat(false)}
+                onClick={() => {
+                  if (preview) {
+                    setShowMainChat(false); // Quay lại SiderBar trong modal/preview
+                  } else {
+                    setShowMainChat(false);
+                    window.history.back(); // Chỉ dùng history.back() ở desktop nếu cần
+                  }
+                }}
                 style={{
                   marginRight: 8,
-                  display: "none",
+                  display: preview ? "block" : "none",
                 }}
               >
                 <ArrowLeft className="h-6 w-6" />
@@ -258,14 +277,20 @@ export default function MainChat({
                     {selectedUser.username}
                   </p>
                   {selectedUser.checkMark && (
-                    <Image
-                      src="/icons/checkMark/checkMark.png"
-                      alt="check mark"
-                      width={12}
-                      height={12}
-                      className={styles.checkMark}
-                      style={{ objectFit: "contain" }}
-                    />
+                    <svg
+                      aria-label="Đã xác minh"
+                      fill="#0095F6"
+                      height="12"
+                      role="img"
+                      viewBox="0 0 40 40"
+                      width="12"
+                    >
+                      <title>Đã xác minh</title>
+                      <path
+                        d="M19.998 3.094 14.638 0l-2.972 5.15H5.432v6.354L0 14.64 3.094 20 0 25.359l5.432 3.137v5.905h5.975L14.638 40l5.36-3.094L25.358 40l3.232-5.6h6.162v-6.01L40 25.359 36.905 20 40 14.641l-5.248-3.03v-6.46h-6.419L25.358 0l-5.36 3.094Zm7.415 11.225 2.254 2.287-11.43 11.5-6.835-6.93 2.244-2.258 4.587 4.581 9.18-9.18Z"
+                        fillRule="evenodd"
+                      ></path>
+                    </svg>
                   )}
                 </div>
                 <p className={`text-xs text-gray-400 ${styles.text2}`}>
@@ -418,7 +443,7 @@ export default function MainChat({
                               currentMessageSenderId={msgSenderId}
                             />
                             <div
-                              className={`$${
+                              className={`${styles.alo}${
                                 isCurrentUser
                                   ? "bg-[#24233526]"
                                   : "bg-[#242526]"
@@ -492,76 +517,84 @@ export default function MainChat({
                           {/* Media với border-radius kết nối */}
                           {msg.mediaUrl && (
                             <div
-                              className="overflow-hidden max-w-[200px]"
+                              className="overflow-hidden max-w-[200px] relative group"
                               style={{
-                                backgroundColor:
-                                  msg.mediaType === "image"
-                                    ? "white"
-                                    : "transparent",
+                                backgroundColor: "transparent",
                                 borderRadius: isCurrentUser
                                   ? msg.message
                                     ? msg.replyTo
-                                      ? "24px 0px 7px 7px" // Có text và reply: góc trên phải = 0, góc dưới = 7px
-                                      : "17px 5px 7px 7px" // Có text: góc trên phải = 0, góc dưới = 7px
+                                      ? "4px 4px 7px 18px" // Có text và reply: góc trên = 4px, góc dưới phải = 18px
+                                      : "4px 4px 7px 18px" // Có text: góc trên = 4px, góc dưới phải = 18px
                                     : msg.replyTo
-                                    ? "24px 0px 7px 7px" // Không text có reply: góc trên phải = 0, góc dưới = 7px
-                                    : "24px 0px 7px 7px" // Không text: góc trên phải = 0, góc dưới = 7px
+                                    ? "18px 18px 7px 18px" // Chỉ có media và reply: góc trên = 18px, góc dưới phải = 18px
+                                    : "18px 18px 18px 18px" // Chỉ có media: border-radius đều = 18px
                                   : msg.message
                                   ? msg.replyTo
-                                    ? "0px 24px 7px 7px" // Có text và reply: góc trên trái = 0, góc dưới = 7px
-                                    : "0px 24px 7px 7px" // Có text: góc trên trái = 0, góc dưới = 7px
+                                    ? "4px 4px 18px 7px" // Có text và reply: góc trên = 4px, góc dưới trái = 18px
+                                    : "4px 4px 18px 7px" // Có text: góc trên = 4px, góc dưới trái = 18px
                                   : msg.replyTo
-                                  ? "0px 24px 7px 7px" // Không text có reply: góc trên trái = 0, góc dưới = 7px
-                                  : "0px 24px 7px 7px", // Không text: góc trên trái = 0, góc dưới = 7px
+                                  ? "18px 18px 18px 7px" // Chỉ có media và reply: góc trên = 18px, góc dưới trái = 7px
+                                  : "18px 18px 18px 18px", // Chỉ có media: border-radius đều = 18px
                               }}
                             >
-                              {msg.mediaType === "image" ? (
-                                <Image
-                                  src={msg.mediaUrl}
-                                  alt="Shared image"
-                                  width={200}
-                                  height={150}
-                                  className="object-cover w-full h-auto cursor-pointer hover:opacity-90 transition-opacity"
-                                  style={{
-                                    maxHeight: "200px",
-                                    minHeight: "80px",
-                                    display: "block",
-                                  }}
-                                  onClick={() => {
-                                    window.open(msg.mediaUrl, "_blank");
-                                  }}
-                                  onError={() => {
-                                    console.error(
-                                      "Failed to load image:",
-                                      msg.mediaUrl
-                                    );
-                                  }}
-                                />
-                              ) : msg.mediaType === "video" ? (
-                                <video
-                                  src={msg.mediaUrl}
-                                  controls
-                                  className="w-full h-auto"
-                                  style={{
-                                    maxHeight: "200px",
-                                    minHeight: "80px",
-                                    display: "block",
-                                    borderRadius: isCurrentUser
-                                      ? "24px 0px 7px 7px" // Người login: góc trên phải = 0, góc dưới = 7px
-                                      : "0px 24px 7px 7px", // Người khác: góc trên trái = 0, góc dưới = 7px
-                                  }}
-                                  preload="metadata"
-                                  onError={() => {
-                                    console.error(
-                                      "Failed to load video:",
-                                      msg.mediaUrl
-                                    );
-                                  }}
-                                >
-                                  <source src={msg.mediaUrl} />
-                                  Trình duyệt không hỗ trợ phát video này.
-                                </video>
-                              ) : null}
+                              {/* Overlay hiệu ứng hover */}
+                              <div
+                                className="absolute inset-0 pointer-events-none rounded-[inherit] opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                                style={{
+                                  background: "rgba(0,0,0,0.08)",
+                                }}
+                              />
+                              {/* Hiệu ứng scale khi hover */}
+                              <div className="transition-transform duration-200 group-hover:scale-[1.03]">
+                                {msg.mediaType === "image" ? (
+                                  <Image
+                                    src={msg.mediaUrl}
+                                    alt="Shared image"
+                                    width={200}
+                                    height={150}
+                                    className="object-cover w-full h-auto cursor-pointer"
+                                    style={{
+                                      maxHeight: "200px",
+                                      minHeight: "80px",
+                                      display: "block",
+                                      borderRadius: "inherit",
+                                      background: "transparent",
+                                    }}
+                                    onClick={() => {
+                                      window.open(msg.mediaUrl, "_blank");
+                                    }}
+                                    onError={() => {
+                                      console.error(
+                                        "Failed to load image:",
+                                        msg.mediaUrl
+                                      );
+                                    }}
+                                  />
+                                ) : msg.mediaType === "video" ? (
+                                  <video
+                                    src={msg.mediaUrl}
+                                    controls
+                                    className="w-full h-auto cursor-pointer object-cover"
+                                    style={{
+                                      maxHeight: "200px",
+                                      minHeight: "80px",
+                                      display: "block",
+                                      borderRadius: "inherit",
+                                      background: "transparent",
+                                    }}
+                                    preload="metadata"
+                                    onError={() => {
+                                      console.error(
+                                        "Failed to load video:",
+                                        msg.mediaUrl
+                                      );
+                                    }}
+                                  >
+                                    <source src={msg.mediaUrl} />
+                                    Trình duyệt không hỗ trợ phát video này.
+                                  </video>
+                                ) : null}
+                              </div>
                             </div>
                           )}
                         </div>
@@ -584,7 +617,10 @@ export default function MainChat({
             })
           ) : (
             <div className="flex justify-center items-center h-full">
-              <p className="text-gray-400">
+              <p
+                className="text-gray-400 w-full"
+                style={{ textAlign: "center" }}
+              >
                 Chưa có tin nhắn nào. Hãy bắt đầu cuộc trò chuyện!
               </p>
             </div>
