@@ -11,7 +11,7 @@ import { OnlineIndicator } from "@/components/OnlineIndicator";
 import StoryAvatar from "@/components/Story/StoryAvatar";
 import { useHandleUserClick } from "@/utils/useHandleUserClick";
 import MessageInput from "./MessageInput";
-import ReplyMessageContent from "./ReplyMessage";
+import { ReplyMessageDisplayText, ReplyMessageBubble } from "./ReplyMessage";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { clearReplyTo, setReplyTo } from "@/store/messengerSlice";
 import {
@@ -39,6 +39,12 @@ export type MainChatProps = {
   availableUsers: User[];
   showMainChat: boolean;
   setShowMainChat: (show: boolean) => void;
+  // Thêm các props cho file upload
+  file?: File | null;
+  setFile?: (f: File | null) => void;
+  filePreview?: string | null;
+  setFilePreview?: (url: string | null) => void;
+  fileInputRef?: React.RefObject<HTMLInputElement | null>;
 };
 
 export default function MainChat({
@@ -57,6 +63,11 @@ export default function MainChat({
   availableUsers,
   showMainChat,
   setShowMainChat,
+  file,
+  setFile,
+  filePreview,
+  setFilePreview,
+  fileInputRef,
 }: MainChatProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -387,25 +398,34 @@ export default function MainChat({
                           <Reply strokeWidth={2} />
                         </button>
                       </div>
-
+                      {/* Container cho reply + tin nhắn chính */}
                       <div
                         className={`flex flex-col ${
                           isCurrentUser ? "items-end" : "items-start"
-                        }`}
+                        } max-w-xs gap-1`}
                       >
-                        {/* Container cho reply + tin nhắn chính */}
-                        <div
-                          className={`flex flex-col ${
-                            isCurrentUser ? "items-end" : "items-start"
-                          } max-w-xs gap-1`}
-                        >
-                          {/* Tin nhắn được reply (nếu có) */}
-                          {msg.replyTo && (
+                        {/* Tin nhắn được reply (nếu có) */}
+                        {msg.replyTo && (
+                          <div
+                            className="w-full flex flex-col mb-1"
+                            style={{ marginTop: "20px" }}
+                          >
+                            <ReplyMessageDisplayText
+                              replyTo={msg.replyTo}
+                              availableUsers={availableUsers}
+                              messages={messages}
+                              userId={userId}
+                              currentMessageSenderId={msgSenderId}
+                            />
                             <div
-                              className={`${
-                                isCurrentUser ? "bg-[#333]" : "bg-[#333]"
-                              } rounded-xl px-3 py-2 cursor-pointer hover:opacity-80 transition-opacity mb-1 max-w-full`}
-                              style={{ marginBottom: "-5px" }}
+                              className={`$${
+                                isCurrentUser
+                                  ? "bg-[#24233526]"
+                                  : "bg-[#242526]"
+                              } rounded-xl  py-2 cursor-pointer  transition-opacity max-w-full`}
+                              style={{
+                                marginBottom: "-22px",
+                              }}
                               onClick={() => {
                                 const repliedMsgId =
                                   typeof msg.replyTo === "string"
@@ -415,124 +435,148 @@ export default function MainChat({
                                   handleReplyClick(repliedMsgId);
                               }}
                             >
-                              <ReplyMessageContent
+                              <ReplyMessageBubble
                                 replyTo={msg.replyTo}
-                                availableUsers={availableUsers}
+                                // availableUsers={availableUsers}
                                 messages={messages}
                                 userId={userId}
-                                isCurrentUser={isCurrentUser}
-                                currentMessageSenderId={msgSenderId} // Thêm prop này
                               />
                             </div>
-                          )}
-                          {/* Tin nhắn chính */}
-                          <div className="flex flex-col gap-2">
-                            {/* Text message bubble với border-radius đã sửa */}
-                            {msg.message && (
-                              <div
-                                className={`message-bubble ${
-                                  isCurrentUser ? "bg-blue-600" : "bg-[#333]"
-                                } px-4 py-3`}
-                                style={{
-                                  borderRadius: isCurrentUser
-                                    ? msg.replyTo
-                                      ? "24px 8px 8px 24px" // Có reply: góc trên phải và dưới phải nhỏ
-                                      : "24px 24px 8px 24px" // Không reply: chỉ góc dưới phải nhỏ
-                                    : msg.replyTo
-                                    ? "8px 24px 24px 8px" // Có reply: góc trên trái và dưới trái nhỏ
-                                    : "24px 24px 24px 8px", // Không reply: chỉ góc dưới trái nhỏ
-                                }}
-                              >
-                                <p
-                                  className={`${styles.text} text-white text-sm leading-relaxed`}
-                                >
-                                  {msg.message}
-                                </p>
-                              </div>
-                            )}
-
-                            {/* Media với border-radius đã sửa */}
-                            {msg.mediaUrl && (
-                              <div
-                                className="overflow-hidden max-w-[200px]"
-                                style={{
-                                  backgroundColor:
-                                    msg.mediaType === "image"
-                                      ? "white"
-                                      : "transparent",
-                                  borderRadius: isCurrentUser
-                                    ? msg.mediaType === "video"
-                                      ? "16px 16px 4px 16px" // Video: border nhỏ hơn
-                                      : "24px 24px 8px 24px" // Image: border như cũ
-                                    : msg.mediaType === "video"
-                                    ? "16px 16px 16px 4px" // Video: border nhỏ hơn
-                                    : "24px 24px 24px 8px", // Image: border như cũ
-                                }}
-                              >
-                                {msg.mediaType === "image" ? (
-                                  <Image
-                                    src={msg.mediaUrl}
-                                    alt="Shared image"
-                                    width={200}
-                                    height={150}
-                                    className="object-cover w-full h-auto cursor-pointer hover:opacity-90 transition-opacity"
-                                    style={{
-                                      maxHeight: "200px",
-                                      minHeight: "80px",
-                                      display: "block",
-                                    }}
-                                    onClick={() => {
-                                      window.open(msg.mediaUrl, "_blank");
-                                    }}
-                                    onError={() => {
-                                      console.error(
-                                        "Failed to load image:",
-                                        msg.mediaUrl
-                                      );
-                                    }}
-                                  />
-                                ) : msg.mediaType === "video" ? (
-                                  <video
-                                    src={msg.mediaUrl}
-                                    controls
-                                    className="w-full h-auto"
-                                    style={{
-                                      maxHeight: "200px",
-                                      minHeight: "80px",
-                                      display: "block",
-                                      borderRadius: isCurrentUser
-                                        ? "16px 16px 4px 16px"
-                                        : "16px 16px 16px 4px",
-                                    }}
-                                    preload="metadata"
-                                    onError={() => {
-                                      console.error(
-                                        "Failed to load video:",
-                                        msg.mediaUrl
-                                      );
-                                    }}
-                                  >
-                                    <source src={msg.mediaUrl} />
-                                    Trình duyệt không hỗ trợ phát video này.
-                                  </video>
-                                ) : null}
-                              </div>
-                            )}
                           </div>
-                        </div>
+                        )}
 
-                        {/* Thời gian tin nhắn */}
-                        <p className="text-xs text-gray-500 mt-1 px-1">
-                          {formatTime(
-                            typeof msg.createdAt === "number"
-                              ? new Date(msg.createdAt)
-                              : !isNaN(Number(msg.createdAt))
-                              ? new Date(Number(msg.createdAt))
-                              : msg.createdAt,
-                            "HH:mm"
+                        {/* Tin nhắn chính */}
+                        <div className="flex flex-col gap-0">
+                          {/* Text message bubble (nếu có) */}
+                          <style jsx>{`
+                            .message-bubble-current {
+                              border-radius: 18px 18px 18px 18px;
+                            }
+
+                            .message-bubble-other {
+                              border-radius: 18px 18px 18px 18px;
+                            }
+
+                            .message-bubble-current.has-media {
+                              border-radius: 18px 18px 4px 18px;
+                            }
+
+                            .message-bubble-other.has-media {
+                              border-radius: 18px 18px 18px 4px;
+                            }
+                          `}</style>
+
+                          {/* Sử dụng với CSS classes */}
+                          {msg.message && (
+                            <div
+                              className={`message-bubble px-4 py-3 ${
+                                isCurrentUser ? "bg-blue-600" : "bg-[#242526]"
+                              } ${
+                                isCurrentUser
+                                  ? `message-bubble-current ${
+                                      msg.mediaUrl ? "has-media" : ""
+                                    }`
+                                  : `message-bubble-other ${
+                                      msg.mediaUrl ? "has-media" : ""
+                                    }`
+                              }`}
+                            >
+                              <p
+                                className={`${styles.text} text-white text-sm leading-relaxed`}
+                              >
+                                {msg.message}
+                              </p>
+                            </div>
                           )}
-                        </p>
+
+                          {/* Media với border-radius kết nối */}
+                          {msg.mediaUrl && (
+                            <div
+                              className="overflow-hidden max-w-[200px]"
+                              style={{
+                                backgroundColor:
+                                  msg.mediaType === "image"
+                                    ? "white"
+                                    : "transparent",
+                                borderRadius: isCurrentUser
+                                  ? msg.message
+                                    ? msg.replyTo
+                                      ? "24px 0px 7px 7px" // Có text và reply: góc trên phải = 0, góc dưới = 7px
+                                      : "17px 5px 7px 7px" // Có text: góc trên phải = 0, góc dưới = 7px
+                                    : msg.replyTo
+                                    ? "24px 0px 7px 7px" // Không text có reply: góc trên phải = 0, góc dưới = 7px
+                                    : "24px 0px 7px 7px" // Không text: góc trên phải = 0, góc dưới = 7px
+                                  : msg.message
+                                  ? msg.replyTo
+                                    ? "0px 24px 7px 7px" // Có text và reply: góc trên trái = 0, góc dưới = 7px
+                                    : "0px 24px 7px 7px" // Có text: góc trên trái = 0, góc dưới = 7px
+                                  : msg.replyTo
+                                  ? "0px 24px 7px 7px" // Không text có reply: góc trên trái = 0, góc dưới = 7px
+                                  : "0px 24px 7px 7px", // Không text: góc trên trái = 0, góc dưới = 7px
+                              }}
+                            >
+                              {msg.mediaType === "image" ? (
+                                <Image
+                                  src={msg.mediaUrl}
+                                  alt="Shared image"
+                                  width={200}
+                                  height={150}
+                                  className="object-cover w-full h-auto cursor-pointer hover:opacity-90 transition-opacity"
+                                  style={{
+                                    maxHeight: "200px",
+                                    minHeight: "80px",
+                                    display: "block",
+                                  }}
+                                  onClick={() => {
+                                    window.open(msg.mediaUrl, "_blank");
+                                  }}
+                                  onError={() => {
+                                    console.error(
+                                      "Failed to load image:",
+                                      msg.mediaUrl
+                                    );
+                                  }}
+                                />
+                              ) : msg.mediaType === "video" ? (
+                                <video
+                                  src={msg.mediaUrl}
+                                  controls
+                                  className="w-full h-auto"
+                                  style={{
+                                    maxHeight: "200px",
+                                    minHeight: "80px",
+                                    display: "block",
+                                    borderRadius: isCurrentUser
+                                      ? "24px 0px 7px 7px" // Người login: góc trên phải = 0, góc dưới = 7px
+                                      : "0px 24px 7px 7px", // Người khác: góc trên trái = 0, góc dưới = 7px
+                                  }}
+                                  preload="metadata"
+                                  onError={() => {
+                                    console.error(
+                                      "Failed to load video:",
+                                      msg.mediaUrl
+                                    );
+                                  }}
+                                >
+                                  <source src={msg.mediaUrl} />
+                                  Trình duyệt không hỗ trợ phát video này.
+                                </video>
+                              ) : null}
+                            </div>
+                          )}
+                        </div>
                       </div>
+                      {/* Thời gian tin nhắn */}
+                      <p className="text-xs text-gray-500 mt-4 px-1">
+                        {formatTime(
+                          typeof msg.createdAt === "number"
+                            ? new Date(msg.createdAt)
+                            : !isNaN(Number(msg.createdAt))
+                            ? new Date(Number(msg.createdAt))
+                            : msg.createdAt,
+                          "HH:mm"
+                        )}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -564,6 +608,11 @@ export default function MainChat({
         messages={messages}
         availableUsers={availableUsers}
         userId={userId}
+        file={file}
+        setFile={setFile}
+        filePreview={filePreview}
+        setFilePreview={setFilePreview}
+        fileInputRef={fileInputRef}
       />
     </div>
   );

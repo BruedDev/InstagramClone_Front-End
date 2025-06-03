@@ -143,28 +143,55 @@ export const getMessagesWithPagination = async (
 // Gửi tin nhắn qua REST API
 export const sendMessage = async (
   receiverId: string,
-  message: string
+  message: string,
+  file?: File,
+  replyTo?: string
 ): Promise<{ message: Message }> => {
   const token = getAuthToken();
   if (!token) throw new Error("Không có token xác thực");
 
-  const response = await fetch(`${BASE_URL}/messenger/sendMessage`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({
-      receiverId,
-      message,
-    }),
-  });
-
-  if (!response.ok) {
-    throw new Error("Không thể gửi tin nhắn");
+  if (file) {
+    // Gửi file qua FormData
+    const formData = new FormData();
+    formData.append("receiverId", receiverId);
+    formData.append("message", message);
+    if (replyTo) formData.append("replyTo", replyTo);
+    formData.append("file", file);
+    const response = await fetch(`${BASE_URL}/messenger/sendMessage`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        // KHÔNG set Content-Type ở đây!
+      },
+      credentials: "include",
+      body: formData,
+    });
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("File upload error response:", errorText);
+      throw new Error("Không thể gửi tin nhắn (file)");
+    }
+    return response.json();
+  } else {
+    // Gửi text như cũ
+    const response = await fetch(`${BASE_URL}/messenger/sendMessage`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      credentials: "include",
+      body: JSON.stringify({
+        receiverId,
+        message,
+        ...(replyTo ? { replyTo } : {}),
+      }),
+    });
+    if (!response.ok) {
+      throw new Error("Không thể gửi tin nhắn");
+    }
+    return response.json();
   }
-
-  return response.json();
 };
 
 // Đánh dấu tin nhắn đã đọc (ĐÃ SỬA)
