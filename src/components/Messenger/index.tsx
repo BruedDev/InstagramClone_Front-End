@@ -44,23 +44,62 @@ export default function MessengerComponent({
 
   useEffect(() => {
     const handleReceiveMessage = (msg: {
+      _id?: string;
       senderId: string;
-      message: string;
-      timestamp: string;
       receiverId?: string;
-      replyTo?: string | null;
+      message: string;
+      createdAt?: string;
+      updatedAt?: string;
+      isRead?: boolean;
+      timestamp?: string;
+      replyTo?:
+        | string
+        | null
+        | {
+            _id: string;
+            senderId?: { _id: string } | string;
+            receiverId?: { _id: string } | string;
+            message?: string;
+            createdAt?: string;
+            updatedAt?: string;
+            isRead?: boolean;
+            replyTo?: string | null;
+          };
+      // Thêm các trường media
+      mediaUrl?: string;
+      mediaType?: "image" | "video" | "file";
+      isOwnMessage?: boolean;
     }) => {
+      // Xử lý realtime replyTo như cũ...
+      let replyToValue: string | null = null;
+      if (msg.replyTo) {
+        if (typeof msg.replyTo === "string") {
+          const found = messages.find((m) => m._id === msg.replyTo);
+          replyToValue = found ? found._id : msg.replyTo;
+        } else if (typeof msg.replyTo === "object" && msg.replyTo._id) {
+          replyToValue = msg.replyTo._id;
+        }
+      }
+
+      const id = msg._id || msg.timestamp || "";
+      const createdAt = msg.createdAt || msg.timestamp || "";
+      const updatedAt = msg.updatedAt || msg.timestamp || "";
+
       const convertedMsg: Message = {
-        id: msg.timestamp,
-        _id: msg.timestamp,
+        id,
+        _id: id,
         senderId: msg.senderId,
         receiverId: msg.receiverId ?? "",
         content: msg.message,
-        createdAt: msg.timestamp,
-        updatedAt: msg.timestamp,
-        read: false,
+        createdAt,
+        updatedAt,
+        read: msg.isRead ?? false,
         message: msg.message,
-        replyTo: typeof msg.replyTo === "string" ? msg.replyTo : null,
+        replyTo: replyToValue,
+        // Thêm các trường media
+        mediaUrl: msg.mediaUrl,
+        mediaType: msg.mediaType,
+        isOwnMessage: msg.isOwnMessage,
       };
 
       if (
@@ -74,12 +113,11 @@ export default function MessengerComponent({
       }
     };
 
-    // ✅ Only setup message listener, don't reinitialize socket
     socketService.onReceiveMessage(handleReceiveMessage);
     return () => {
       socketService.offReceiveMessage(handleReceiveMessage);
     };
-  }, [selectedUser, userId, dispatch]);
+  }, [selectedUser, userId, dispatch, messages]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -115,14 +153,39 @@ export default function MessengerComponent({
     }
   }, [selectedUser, userId, dispatch]);
 
+  const replyTo = useAppSelector((state) => state.messenger.replyTo);
+
   const handleSendMessage = async () => {
     if (!message.trim() || !selectedUser || !userId) return;
-    socketService.sendMessage({
-      senderId: userId,
-      receiverId: selectedUser._id,
-      message,
-    });
+    // Nếu đang reply thì gửi thêm trường replyTo, còn không thì gửi như cũ
+    let replyToId: string | undefined = undefined;
+    if (replyTo) {
+      if (typeof replyTo === "string") {
+        replyToId = replyTo;
+      } else if (
+        typeof replyTo === "object" &&
+        replyTo !== null &&
+        "_id" in replyTo
+      ) {
+        replyToId = (replyTo as { _id: string })._id;
+      }
+    }
+    if (replyToId) {
+      socketService.sendMessage({
+        senderId: userId,
+        receiverId: selectedUser._id,
+        message,
+        replyTo: replyToId,
+      });
+    } else {
+      socketService.sendMessage({
+        senderId: userId,
+        receiverId: selectedUser._id,
+        message,
+      });
+    }
     dispatch(setMessage(""));
+    dispatch({ type: "messenger/clearReplyTo" });
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {

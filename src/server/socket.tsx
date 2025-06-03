@@ -19,6 +19,20 @@ export type MessageData = {
   };
   createdAt: string;
   isRead: boolean;
+  replyTo?:
+    | string
+    | {
+        _id: string;
+        message: string;
+        senderId:
+          | string
+          | { _id: string; username?: string; fullName?: string };
+        receiverId:
+          | string
+          | { _id: string; username?: string; fullName?: string };
+        createdAt: string;
+      }
+    | null;
 };
 
 type GenericMessagePayload = {
@@ -99,6 +113,9 @@ export const socketService = {
     receiverId: string;
     message: string;
     tempId?: string;
+    replyTo?: string | null;
+    media?: string; // base64 hoặc url
+    mediaType?: "image" | "video";
   }) => {
     const currentSocket = socketService.getSocket();
     currentSocket.emit("sendMessage", data);

@@ -100,6 +100,8 @@ const initialState: MessengerState = {
  status: "missed",
  // Thêm biến này để lưu userId đã fetch gần nhất
  lastFetchedUserId: undefined,
+ // --- Add replyTo ---
+ replyTo: null,
 };
 
 const messengerSlice = createSlice({
@@ -108,12 +110,11 @@ const messengerSlice = createSlice({
  reducers: {
    setSelectedUser: (state, action: PayloadAction<User | null>) => {
      state.selectedUser = action.payload;
-     // KHÔNG xóa messages ở đây nữa để tránh nhấp nháy
      state.before = undefined;
      state.hasMore = true;
      state.showMainChat = !!action.payload;
+     state.replyTo = null; // Clear reply when switching user
    },
-
    setMessage: (state, action: PayloadAction<string>) => {
      state.message = action.payload;
    },
@@ -122,6 +123,13 @@ const messengerSlice = createSlice({
    },
    setShowMainChat: (state, action: PayloadAction<boolean>) => {
      state.showMainChat = action.payload;
+   },
+   // --- Add replyTo actions ---
+   setReplyTo: (state, action: PayloadAction<string | null>) => {
+     state.replyTo = action.payload;
+   },
+   clearReplyTo: (state) => {
+     state.replyTo = null;
    },
    // Call actions
    setInCall: (state, action: PayloadAction<boolean>) => {
@@ -227,6 +235,8 @@ export const {
  addCallHistory,
  resetMessagesState,
  resetUserStatus,
+ setReplyTo,
+ clearReplyTo,
 } = messengerSlice.actions;
 
 export default messengerSlice.reducer;

@@ -46,6 +46,9 @@ export interface Message {
   updatedAt: string;
   message: string;
   replyTo?: string | null;
+  mediaUrl?: string;
+  mediaType?: "image" | "video" | "file";
+  isOwnMessage?: boolean;
 }
 
 export interface UploadAvatarResponse {

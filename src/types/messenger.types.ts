@@ -33,6 +33,8 @@ export interface MessengerState {
   status: "missed" | "answered" | "outgoing";
   // Thêm dòng này để hỗ trợ lưu userId đã fetch gần nhất
   lastFetchedUserId?: string;
+  // --- Add replyTo for reply message feature ---
+  replyTo: string | null;
 }
 
 
