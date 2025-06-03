@@ -1,7 +1,7 @@
 // src/components/Messenger/index.tsx
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Message } from "@/types/user.type";
 import styles from "./Messenger.module.scss";
 import { socketService } from "@/server/socket";
@@ -41,6 +41,9 @@ export default function MessengerComponent({
 
   const searchParams = useSearchParams();
   const [userId, setUserId] = useState("");
+  const [file, setFile] = useState<File | null>(null);
+  const [filePreview, setFilePreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const handleReceiveMessage = (msg: {
@@ -155,9 +158,26 @@ export default function MessengerComponent({
 
   const replyTo = useAppSelector((state) => state.messenger.replyTo);
 
+  // Lắng nghe updateMessageMedia từ socket để cập nhật mediaUrl cho message
+  useEffect(() => {
+    const handleUpdateMessageMedia = (data: {
+      messageId: string;
+      mediaUrl: string;
+    }) => {
+      console.log("[Messenger] updateMessageMedia received:", data);
+      dispatch({
+        type: "messenger/updateMessageMedia",
+        payload: { messageId: data.messageId, mediaUrl: data.mediaUrl },
+      });
+    };
+    socketService.onUpdateMessageMedia(handleUpdateMessageMedia);
+    return () => {
+      socketService.offUpdateMessageMedia(handleUpdateMessageMedia);
+    };
+  }, [dispatch]);
+
   const handleSendMessage = async () => {
-    if (!message.trim() || !selectedUser || !userId) return;
-    // Nếu đang reply thì gửi thêm trường replyTo, còn không thì gửi như cũ
+    if ((!message.trim() && !file) || !selectedUser || !userId) return;
     let replyToId: string | undefined = undefined;
     if (replyTo) {
       if (typeof replyTo === "string") {
@@ -170,19 +190,54 @@ export default function MessengerComponent({
         replyToId = (replyTo as { _id: string })._id;
       }
     }
-    if (replyToId) {
-      socketService.sendMessage({
-        senderId: userId,
-        receiverId: selectedUser._id,
-        message,
-        replyTo: replyToId,
-      });
+    if (file) {
+      // Đọc file thành base64
+      const reader = new FileReader();
+      reader.onload = () => {
+        const base64 = reader.result as string;
+        console.log("[Messenger] Sending media message:", {
+          senderId: userId,
+          receiverId: selectedUser._id,
+          message: message || "", // Nếu chỉ gửi media thì message là rỗng
+          tempId: Date.now().toString(),
+          replyTo: replyToId,
+          media: base64,
+          mediaType: file.type.startsWith("image/") ? "image" : "video",
+        });
+        socketService.emitUploadMediaComplete({
+          messageId: Date.now().toString(), // Tạo tạm, BE sẽ update lại
+          media: base64,
+          mediaType: file.type.startsWith("image/") ? "image" : "video",
+        });
+        socketService.sendMessage({
+          senderId: userId,
+          receiverId: selectedUser._id,
+          message: message || "", // Nếu chỉ gửi media thì message là rỗng
+          tempId: Date.now().toString(),
+          replyTo: replyToId,
+          media: base64,
+          mediaType: file.type.startsWith("image/") ? "image" : "video",
+        });
+        setFile(null);
+        setFilePreview(null);
+        if (fileInputRef.current) fileInputRef.current.value = "";
+      };
+      reader.readAsDataURL(file);
     } else {
-      socketService.sendMessage({
-        senderId: userId,
-        receiverId: selectedUser._id,
-        message,
-      });
+      if (replyToId) {
+        socketService.sendMessage({
+          senderId: userId,
+          receiverId: selectedUser._id,
+          message,
+          replyTo: replyToId,
+        });
+      } else {
+        socketService.sendMessage({
+          senderId: userId,
+          receiverId: selectedUser._id,
+          message,
+        });
+      }
     }
     dispatch(setMessage(""));
     dispatch({ type: "messenger/clearReplyTo" });
@@ -243,6 +298,11 @@ export default function MessengerComponent({
         availableUsers={availableUsers}
         showMainChat={showMainChat}
         setShowMainChat={(show) => dispatch(setShowMainChat(show))}
+        file={file}
+        setFile={setFile}
+        filePreview={filePreview}
+        setFilePreview={setFilePreview}
+        fileInputRef={fileInputRef}
       />
     </div>
   );

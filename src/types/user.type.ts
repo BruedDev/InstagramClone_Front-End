@@ -49,6 +49,7 @@ export interface Message {
   mediaUrl?: string;
   mediaType?: "image" | "video" | "file";
   isOwnMessage?: boolean;
+  tempId?: string; // Add this line for optimistic update and deduplication
 }
 
 export interface UploadAvatarResponse {

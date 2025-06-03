@@ -158,6 +158,9 @@ const messengerSlice = createSlice({
    ) => {
      state.callHistory.push(action.payload);
    },
+   setMessages: (state, action: PayloadAction<Message[]>) => {
+     state.messages = action.payload;
+   },
    resetMessagesState: (state) => {
      state.messages = [];
      state.before = undefined;
@@ -237,6 +240,7 @@ export const {
  resetUserStatus,
  setReplyTo,
  clearReplyTo,
+ setMessages,
 } = messengerSlice.actions;
 
 export default messengerSlice.reducer;

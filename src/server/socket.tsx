@@ -591,4 +591,26 @@ export const socketService = {
     const currentSocket = socketService.getSocket();
     currentSocket.off("story:viewed", callback);
   },
+
+  // --- Media Upload Events ---
+  emitUploadMediaComplete: (data: {
+    messageId: string;
+    media: string; // base64 hoặc url
+    mediaType: "image" | "video";
+  }) => {
+    const currentSocket = socketService.getSocket();
+    currentSocket.emit("uploadMediaComplete", data);
+  },
+  onUpdateMessageMedia: (
+    callback: (data: { messageId: string; mediaUrl: string }) => void
+  ) => {
+    const currentSocket = socketService.getSocket();
+    currentSocket.on("updateMessageMedia", callback);
+  },
+  offUpdateMessageMedia: (
+    callback: (data: { messageId: string; mediaUrl: string }) => void
+  ) => {
+    const currentSocket = socketService.getSocket();
+    currentSocket.off("updateMessageMedia", callback);
+  },
 };
