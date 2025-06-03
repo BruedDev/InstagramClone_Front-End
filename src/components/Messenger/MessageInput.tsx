@@ -55,6 +55,8 @@ export default function MessageInput({
               availableUsers={availableUsers}
               messages={messages}
               userId={userId}
+              isPreview={true}
+              currentMessageSenderId={userId} // Luôn là userId khi preview
             />
           </div>
           <button

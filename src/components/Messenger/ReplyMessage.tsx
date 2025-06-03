@@ -12,13 +12,16 @@ export default function ReplyMessageContent({
   availableUsers,
   messages,
   userId,
-}: // isCurrentUser,
-{
+  isPreview = false,
+  currentMessageSenderId, // Thêm prop này để biết ai đang gửi tin nhắn reply hiện tại
+}: {
   replyTo: string | ReplyMessageData | null;
   availableUsers: User[];
   messages: Message[];
   userId: string;
   isCurrentUser?: boolean;
+  isPreview?: boolean;
+  currentMessageSenderId?: string; // ID của người gửi tin nhắn reply hiện tại
 }) {
   if (!replyTo) return null;
 
@@ -72,83 +75,60 @@ export default function ReplyMessageContent({
     return "";
   }
 
-  const senderId = replyObj.senderId;
-  const receiverId =
-    typeof replyObj !== "object"
-      ? ""
-      : "receiverId" in replyObj
-      ? (
-          replyObj as {
-            receiverId?:
-              | string
-              | { _id: string; username?: string; fullName?: string };
-          }
-        ).receiverId || ""
-      : "";
-  const isCurrentUserSender = getId(senderId) === userId;
-  const displayId = isCurrentUserSender ? receiverId : senderId;
-  let senderName = "Unknown User";
-  let receiverName = "Unknown User";
+  // senderId của tin nhắn GỐC (tin nhắn được reply)
+  const originalSenderId = getId(replyObj.senderId);
 
-  if (typeof displayId === "object" && displayId !== null) {
-    if (displayId.username) {
-      senderName = displayId.username;
-    } else if (displayId._id) {
-      const found = availableUsers.find((user) => user._id === displayId._id);
-      if (found) senderName = found.username || found.fullName || senderName;
+  // ID của người đang gửi tin nhắn reply hiện tại
+  const replySenderId = currentMessageSenderId || userId;
+
+  // Lấy thông tin user names
+  const getUserName = (id: string): string => {
+    const found = availableUsers.find((user) => user._id === id);
+    return found
+      ? found.username || found.fullName || "Unknown User"
+      : "Unknown User";
+  };
+
+  // Logic hiển thị text
+  let displayText = "";
+  const originalSenderName = getUserName(originalSenderId);
+
+  if (isPreview) {
+    // Khi đang preview trong input
+    if (originalSenderId === userId) {
+      // Tin nhắn gốc là của mình
+      displayText = "Bạn đang trả lời chính mình";
     } else {
-      senderName = JSON.stringify(displayId);
+      // Tin nhắn gốc là của người khác
+      displayText = `Bạn đang trả lời ${originalSenderName}`;
     }
-  } else if (typeof displayId === "string") {
-    const found = availableUsers.find((user) => user._id === displayId);
-    if (found) senderName = found.username || found.fullName || senderName;
-  }
-  if (
-    senderName === "Unknown User" &&
-    typeof displayId === "object" &&
-    displayId !== null &&
-    displayId.fullName
-  ) {
-    senderName = displayId.fullName;
-  }
-
-  if (typeof receiverId === "object" && receiverId !== null) {
-    if (receiverId.username) {
-      receiverName = receiverId.username;
-    } else if (receiverId._id) {
-      const found = availableUsers.find((user) => user._id === receiverId._id);
-      if (found)
-        receiverName = found.username || found.fullName || receiverName;
+  } else {
+    // Khi hiển thị trong chat
+    if (replySenderId === userId) {
+      // Mình là người gửi tin nhắn reply
+      if (originalSenderId === userId) {
+        displayText = "Bạn đã trả lời chính mình";
+      } else {
+        displayText = `Bạn đã trả lời ${originalSenderName}`;
+      }
     } else {
-      receiverName = JSON.stringify(receiverId);
+      // Người khác là người gửi tin nhắn reply
+      const replySenderName = getUserName(replySenderId);
+      if (originalSenderId === userId) {
+        displayText = `${replySenderName} đã trả lời bạn`;
+      } else if (originalSenderId === replySenderId) {
+        displayText = `${replySenderName} đã trả lời chính mình`;
+      } else {
+        displayText = `${replySenderName} đã trả lời ${originalSenderName}`;
+      }
     }
-  } else if (typeof receiverId === "string") {
-    const found = availableUsers.find((user) => user._id === receiverId);
-    if (found) receiverName = found.username || found.fullName || receiverName;
   }
-  if (
-    receiverName === "Unknown User" &&
-    typeof receiverId === "object" &&
-    receiverId !== null &&
-    receiverId.fullName
-  ) {
-    receiverName = receiverId.fullName;
-  }
-
-  let currentUserId = userId;
-  if (!currentUserId && typeof window !== "undefined") {
-    currentUserId = localStorage.getItem("id") || "";
-  }
-  const isCurrentUserReceiver = getId(receiverId) === currentUserId;
 
   return (
     <>
       <p className="text-[10px] text-gray-300 font-medium mb-0.5">
-        {isCurrentUserReceiver
-          ? `Bạn đã trả lời ${senderName}`
-          : `${receiverName || senderName} đã trả lời bạn`}
+        {displayText}
       </p>
-
       <p className="text-xs text-gray-200 line-clamp-2">
         {replyObj.message || "Tin nhắn"}
       </p>

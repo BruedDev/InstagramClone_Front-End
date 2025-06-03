@@ -421,6 +421,7 @@ export default function MainChat({
                                 messages={messages}
                                 userId={userId}
                                 isCurrentUser={isCurrentUser}
+                                currentMessageSenderId={msgSenderId} // Thêm prop này
                               />
                             </div>
                           )}
