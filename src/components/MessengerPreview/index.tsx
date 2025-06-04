@@ -15,8 +15,10 @@ export default function MessengerPreview() {
   );
 
   useEffect(() => {
-    dispatch(fetchAvailableUsers());
-  }, [dispatch]);
+    if (availableUsers.length === 0) {
+      dispatch(fetchAvailableUsers());
+    }
+  }, [dispatch, availableUsers.length]);
 
   const top3Users = availableUsers.slice(0, 3);
 
