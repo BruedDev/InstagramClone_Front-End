@@ -5,8 +5,7 @@ import { User, Message } from "./user.type";
 export interface MessengerState {
   availableUsers: User[];
   selectedUser: User | null;
-  messagesByUser: { [userId: string]: Message[] }; // Thêm dòng này
-  messages: Message[]; // Giữ lại để tránh lỗi, sẽ loại bỏ sau khi refactor xong toàn bộ
+  messages: Message[];
   message: string;
   loading: boolean;
   loadingMore: boolean;
