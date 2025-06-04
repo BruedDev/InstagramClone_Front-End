@@ -123,7 +123,16 @@ const StoryUi: React.FC<StoryUiProps> = ({
     <div
       className={`fixed inset-0 z-[1000] flex flex-col items-center justify-center bg-black bg-opacity-90 w-screen h-[100dvh] overflow-hidden ${styles.container}`}
       {...(!isOwner
-        ? { style: { padding: "55px 0 50px 0", gap: "10px" } }
+        ? {
+            style: {
+              ...(window.innerWidth <= 768
+                ? { gap: 0, paddingTop: 38, paddingBottom: 40 }
+                : {}),
+              padding: "55px 0 50px 0",
+              gap: "10px",
+              ...(!isOwner && window.innerWidth > 768 ? {} : {}),
+            },
+          }
         : {})}
     >
       <div className="flex items-center justify-center w-full h-full relative">
