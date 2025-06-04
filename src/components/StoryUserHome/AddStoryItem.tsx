@@ -31,7 +31,7 @@ export default function AddStoryItem() {
       </div>
 
       {/* them tin */}
-      <span className="text-white text-xs text-center max-w-16 truncate">
+      <span className="text-white text-xs text-center max-w-16 truncate mt-1">
         Tin của bạn
       </span>
     </button>

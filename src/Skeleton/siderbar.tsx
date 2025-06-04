@@ -1,10 +1,17 @@
 // @/skeleton/siderbar.tsx
 import styles from "./siderBarSkeleton.module.scss";
 
-export const SiderBarSkeleton = () => {
+export const SiderBarSkeleton = ({
+  preview = false,
+}: {
+  preview?: boolean;
+}) => {
   return (
     <div
-      className={`w-70 bg-[#0f0f0f] border-r border-[#222] flex flex-col animate-pulse ${styles.siderBarSkeleton}`}
+      className={`w-70 bg-[#0f0f0f] border-r border-[#222] flex flex-col animate-pulse ${
+        styles.siderBarSkeleton
+      } ${preview ? "!w-full" : ""}`}
+      style={preview ? { width: "100%", minWidth: 0, maxWidth: "100%" } : {}}
     >
       {/* Header Skeleton */}
       <div className="flex justify-between items-center px-4 py-3 border-b border-[#222] bg-[#0f0f0f] w-full">

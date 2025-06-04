@@ -428,7 +428,7 @@ export default function SiderBar({
 
   // Show full skeleton when initially loading
   if (isLoading && recentChats.length === 0) {
-    return <SiderBarSkeleton />;
+    return <SiderBarSkeleton preview={preview} />;
   }
 
   return (

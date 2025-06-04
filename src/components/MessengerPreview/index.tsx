@@ -5,6 +5,7 @@ import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { fetchAvailableUsers } from "@/store/messengerSlice";
 import MessengerModal from "./MessengerModal";
 import Image from "next/image";
+import styles from "./MessengerPreview.module.scss";
 
 export default function MessengerPreview() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -32,7 +33,7 @@ export default function MessengerPreview() {
       {/* Nút Messenger */}
       <div
         onClick={handleOpenModal}
-        className="fixed bottom-6 right-12 z-[997] h-14 rounded-full shadow-lg flex items-center justify-between px-4 cursor-pointer hover:shadow-xl transition-shadow min-w-[250px] bg-[#212328] hover:bg-[#38393e]"
+        className={`fixed bottom-6 right-12 z-[997] h-14 rounded-full shadow-lg flex items-center justify-between px-4 cursor-pointer hover:shadow-xl transition-shadow min-w-[250px] bg-[#212328] hover:bg-[#38393e] ${styles.messengerPreview}`}
       >
         {/* Bên trái: Icon và Text */}
         <div className="flex items-center">
