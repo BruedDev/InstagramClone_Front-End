@@ -277,10 +277,23 @@ export default function MessengerComponent({
     };
   }, [dispatch]);
 
-  // Nếu là modal hoặc preview thì chỉ render SiderBar hoặc MainChat theo state riêng
+  // State kiểm tra màn hình lớn hơn 768px
+  const [isLargeScreen, setIsLargeScreen] = useState(
+    typeof window !== "undefined" ? window.innerWidth > 768 : true
+  );
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsLargeScreen(window.innerWidth > 768);
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // Nếu là modal hoặc preview thì chỉ render SiderBar hoặc MainChat theo state riêng, chỉ áp dụng khi màn hình lớn hơn 768px
   const [showMainChatModal, setShowMainChatModal] = useState(false);
 
-  if (isModal || preview) {
+  if (isLargeScreen && (isModal || preview)) {
     // Nếu đã chọn user và showMainChatModal=true thì render MainChat, ngược lại render SiderBar
     if (selectedUser && showMainChatModal) {
       return (

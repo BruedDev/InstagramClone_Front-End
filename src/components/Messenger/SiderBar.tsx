@@ -44,6 +44,7 @@ interface ExtendedUser extends User {
   updatedAt: string;
   isOnline?: boolean;
   hasStory?: boolean;
+  className?: string;
 }
 
 export default function SiderBar({
