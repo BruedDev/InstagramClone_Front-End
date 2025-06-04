@@ -1,5 +1,8 @@
 import Image from "next/image";
-import { ArrowLeft, Smile, Reply } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
+import { MdOutlineReply } from "react-icons/md";
+import { HiOutlineFaceSmile } from "react-icons/hi2";
+import { IoMdMore } from "react-icons/io";
 import styles from "./Messenger.module.scss";
 import type { User, Message } from "@/types/user.type";
 import { useEffect, useRef, useState, useCallback } from "react";
@@ -21,6 +24,11 @@ import {
   MessageSkeletonRightShort,
   TypingSkeleton,
 } from "@/Skeleton/messenger";
+import dynamic from "next/dynamic";
+const ImageVideoPreview = dynamic(
+  () => import("@/components/Preview/ImageVideo"),
+  { ssr: false }
+);
 
 export type MainChatProps = {
   selectedUser: (User & { hasStory?: boolean }) | null;
@@ -76,6 +84,10 @@ export default function MainChat({
   const [previousScrollHeight, setPreviousScrollHeight] = useState(0);
   const [previousMessageCount, setPreviousMessageCount] = useState(0);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [previewMedia, setPreviewMedia] = useState<{
+    src: string;
+    type: "image" | "video";
+  } | null>(null);
 
   const { formatTime } = useTime();
   const handleUserClick = useHandleUserClick();
@@ -396,18 +408,28 @@ export default function MainChat({
                         <button
                           className={`${styles.messageActionBtn} ${styles.emojiBtn}`}
                           onClick={() => handleEmojiReaction(msg._id)}
-                          title="Thêm emoji"
-                          aria-label="Thêm emoji reaction"
+                          title="Xem thêm"
+                          aria-label="Xem thêm"
                         >
-                          <Smile strokeWidth={2} />
+                          <IoMdMore size={24} />
                         </button>
+
                         <button
                           className={`${styles.messageActionBtn} ${styles.replyBtn}`}
                           onClick={() => dispatch(setReplyTo(msg._id))}
                           title="Trả lời tin nhắn"
                           aria-label="Trả lời tin nhắn này"
                         >
-                          <Reply strokeWidth={2} />
+                          <MdOutlineReply size={24} />
+                        </button>
+
+                        <button
+                          className={`${styles.messageActionBtn} ${styles.emojiBtn}`}
+                          onClick={() => handleEmojiReaction(msg._id)}
+                          title="Thêm emoji"
+                          aria-label="Thêm emoji reaction"
+                        >
+                          <HiOutlineFaceSmile size={24} />
                         </button>
                       </div>
 
@@ -436,12 +458,11 @@ export default function MainChat({
                                 currentMessageSenderId={msgSenderId}
                               />
                               <div
-                                className={`${styles.alo} ${
-                                  isCurrentUser
-                                    ? "bg-[#24233526]"
-                                    : "bg-[#3a3b3c]"
-                                } rounded-xl py-2 cursor-pointer transition-opacity max-w-full`}
-                                style={{ marginBottom: "-22px" }}
+                                className={`${styles.alo} cursor-pointer transition-opacity max-w-full`}
+                                style={{
+                                  marginBottom: "-20px",
+                                  borderRadius: "18px", // Reply bubble cũng tròn đều
+                                }}
                                 onClick={() => {
                                   const repliedMsgId =
                                     typeof msg.replyTo === "string"
@@ -459,26 +480,61 @@ export default function MainChat({
                                   replyTo={msg.replyTo}
                                   messages={messages}
                                   userId={userId}
+                                  sender={msgSenderId}
+                                  receiver={msgReceiverId}
                                 />
                               </div>
                             </div>
                           )}
+
                           {/* Tin nhắn chính */}
-                          <div className="flex flex-col gap-2">
-                            {/* Text message bubble với border-radius đã sửa */}
+                          <div
+                            className={`flex flex-col gap-2 ${
+                              isCurrentUser ? "items-end" : "items-start"
+                            }`}
+                          >
+                            {/* Text message bubble với width tự nhiên */}
                             {msg.message && (
                               <div
                                 className={`message-bubble ${
                                   isCurrentUser ? "bg-blue-600" : "bg-[#333]"
-                                } px-4 py-3`}
+                                } px-3 py-2 inline-block max-w-[280px] w-fit`}
                                 style={{
-                                  borderRadius: isCurrentUser
-                                    ? msg.replyTo
-                                      ? "24px 8px 8px 24px"
-                                      : "24px 24px 8px 24px"
-                                    : msg.replyTo
-                                    ? "8px 24px 24px 8px"
-                                    : "24px 24px 24px 8px",
+                                  zIndex: 2,
+                                  borderRadius: (() => {
+                                    // Tính toán border-radius dựa trên độ dài tin nhắn
+                                    const messageLength =
+                                      msg.message?.length || 0;
+                                    let borderRadius;
+
+                                    if (messageLength <= 10) {
+                                      borderRadius = 20;
+                                    } else if (messageLength <= 30) {
+                                      borderRadius = 18;
+                                    } else if (messageLength <= 80) {
+                                      borderRadius = 16;
+                                    } else {
+                                      borderRadius = 14;
+                                    }
+
+                                    // Nếu có media, điều chỉnh border-radius để tạo hiệu ứng nối
+                                    if (msg.mediaUrl) {
+                                      if (isCurrentUser) {
+                                        // Người dùng hiện tại - làm tròn góc trái dưới ít hơn
+                                        return `${borderRadius}px ${borderRadius}px ${
+                                          borderRadius - 17
+                                        }px ${borderRadius}px`;
+                                      } else {
+                                        // Người khác - làm tròn góc phải dưới ít hơn
+                                        return `${borderRadius}px ${borderRadius}px ${borderRadius}px ${
+                                          borderRadius - 17
+                                        }px`;
+                                      }
+                                    }
+
+                                    // Không có media - tất cả góc đều tròn như cũ
+                                    return `${borderRadius}px`;
+                                  })(),
                                 }}
                               >
                                 <p
@@ -489,34 +545,28 @@ export default function MainChat({
                               </div>
                             )}
 
-                            {/* Media với border-radius đã sửa */}
+                            {/* Media với width riêng biệt */}
                             {msg.mediaUrl && (
                               <div
-                                className="overflow-hidden max-w-[200px] relative group"
+                                className="overflow-hidden w-fit relative group"
                                 style={{
                                   backgroundColor: "transparent",
-                                  borderRadius: isCurrentUser
-                                    ? msg.message
-                                      ? msg.replyTo
-                                        ? "4px 4px 7px 18px"
-                                        : "4px 4px 7px 18px"
-                                      : msg.replyTo
-                                      ? "18px 18px 7px 18px"
-                                      : "18px 18px 18px 18px"
-                                    : msg.message
-                                    ? msg.replyTo
-                                      ? "4px 4px 18px 7px"
-                                      : "4px 4px 18px 7px"
-                                    : msg.replyTo
-                                    ? "18px 18px 18px 7px"
-                                    : "18px 18px 18px 18px",
-                                  marginTop: msg.message
-                                    ? msg.replyTo
-                                      ? "-1px"
-                                      : "-1px"
-                                    : msg.replyTo
-                                    ? "0"
-                                    : "0",
+                                  zIndex: 1,
+                                  borderRadius: (() => {
+                                    // Điều chỉnh border-radius của media để nối với text
+                                    if (msg.message) {
+                                      if (isCurrentUser) {
+                                        // Người dùng hiện tại (bên phải) - giảm borderRadius góc phải
+                                        return "16px 5px 16px 16px";
+                                      } else {
+                                        // Người khác (bên trái) - giảm borderRadius góc trái
+                                        return "5px 16px 16px 16px";
+                                      }
+                                    }
+                                    // Không có text - tất cả góc đều tròn
+                                    return "16px";
+                                  })(),
+                                  marginTop: msg.message ? "-8px" : "0",
                                 }}
                               >
                                 <div
@@ -530,16 +580,22 @@ export default function MainChat({
                                       alt="Shared image"
                                       width={200}
                                       height={150}
-                                      className="object-cover w-full h-auto cursor-pointer"
+                                      className="object-cover cursor-pointer"
                                       style={{
                                         maxHeight: "200px",
                                         minHeight: "80px",
+                                        maxWidth: "200px",
+                                        width: "auto",
+                                        height: "auto",
                                         display: "block",
                                         borderRadius: "inherit",
                                         background: "transparent",
                                       }}
                                       onClick={() => {
-                                        window.open(msg.mediaUrl, "_blank");
+                                        setPreviewMedia({
+                                          src: msg.mediaUrl || "",
+                                          type: "image",
+                                        });
                                       }}
                                       onError={() => {
                                         console.error(
@@ -552,15 +608,24 @@ export default function MainChat({
                                     <video
                                       src={msg.mediaUrl}
                                       controls
-                                      className="w-full h-auto cursor-pointer object-cover"
+                                      className="cursor-pointer object-cover"
                                       style={{
                                         maxHeight: "200px",
                                         minHeight: "80px",
+                                        maxWidth: "200px",
+                                        width: "auto",
+                                        height: "auto",
                                         display: "block",
                                         borderRadius: "inherit",
                                         background: "transparent",
                                       }}
                                       preload="metadata"
+                                      onClick={() => {
+                                        setPreviewMedia({
+                                          src: msg.mediaUrl || "",
+                                          type: "video",
+                                        });
+                                      }}
                                       onError={() => {
                                         console.error(
                                           "Failed to load video:",
@@ -568,8 +633,8 @@ export default function MainChat({
                                         );
                                       }}
                                     >
-                                      <source src={msg.mediaUrl} /> Trình duyệt
-                                      không hỗ trợ phát video này.{" "}
+                                      <source src={msg.mediaUrl} />
+                                      Trình duyệt không hỗ trợ phát video này.
                                     </video>
                                   ) : null}
                                 </div>
@@ -579,7 +644,7 @@ export default function MainChat({
                         </div>
 
                         {/* Thời gian tin nhắn */}
-                        <p className="text-xs text-gray-500 mt-1 px-1">
+                        <p className="text-xs text-gray-500 mt-4 px-1">
                           {formatTime(
                             typeof msg.createdAt === "number"
                               ? new Date(msg.createdAt)
@@ -625,7 +690,47 @@ export default function MainChat({
         filePreview={filePreview}
         setFilePreview={setFilePreview}
         fileInputRef={fileInputRef}
+        // Truyền mediaType của replyTo nếu có
+        replyToMediaType={(() => {
+          if (!replyTo) return undefined;
+          if (
+            typeof replyTo === "object" &&
+            replyTo !== null &&
+            "mediaType" in replyTo &&
+            typeof (replyTo as { mediaType?: string }).mediaType === "string"
+          ) {
+            return (replyTo as { mediaType: string }).mediaType;
+          }
+          if (typeof replyTo === "string") {
+            const found = messages.find((msg) => msg._id === replyTo);
+            return found?.mediaType;
+          }
+          return undefined;
+        })()}
       />
+
+      {/* Media Preview Component - Ảnh/Video được chọn để xem trước */}
+      {previewMedia && (
+        <div
+          className={`fixed inset-0 bg-black bg-opacity-80 z-50 flex items-center justify-center`}
+          onClick={() => setPreviewMedia(null)} // Đóng khi click ra ngoài
+        >
+          <ImageVideoPreview
+            src={previewMedia.src}
+            type={previewMedia.type}
+            onClose={() => setPreviewMedia(null)}
+          />
+        </div>
+      )}
+
+      {/* Preview Media Modal */}
+      {previewMedia && (
+        <ImageVideoPreview
+          src={previewMedia.src}
+          type={previewMedia.type}
+          onClose={() => setPreviewMedia(null)}
+        />
+      )}
     </div>
   );
 }

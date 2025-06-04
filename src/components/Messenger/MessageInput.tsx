@@ -1,3 +1,4 @@
+import React from "react";
 import { SendHorizontal, Smile, Image as ImageIcon } from "lucide-react";
 import styles from "./Messenger.module.scss";
 import InputStory from "../Modal/Story/StoryInput";
@@ -23,6 +24,8 @@ export type MessageInputProps = {
   filePreview?: string | null;
   setFilePreview?: (url: string | null) => void;
   fileInputRef?: React.RefObject<HTMLInputElement | null>;
+  // Thêm prop để nhận mediaType của replyTo
+  replyToMediaType?: string;
 };
 
 export default function MessageInput({
@@ -41,6 +44,7 @@ export default function MessageInput({
   filePreview,
   setFilePreview,
   fileInputRef,
+  replyToMediaType,
 }: MessageInputProps) {
   if (inputStory) {
     // Giao diện tối giản cho story: input ở giữa, heart icon, send button
@@ -73,21 +77,56 @@ export default function MessageInput({
     >
       {/* Reply preview below input */}
       {replyTo && (
-        <div className="flex items-center mb-2 bg-[#232323] rounded-lg px-3 py-2 relative">
+        <div className="flex items-center mb-2 bg-[#232323] rounded-lg px-3 py-2 relative overflow-hidden justify-start">
           <div className="flex-1 min-w-0">
-            <ReplyMessageDisplayText
-              replyTo={replyTo}
-              availableUsers={availableUsers}
-              messages={messages}
-              userId={userId}
-              isPreview={true}
-              currentMessageSenderId={userId}
-            />
-            <ReplyMessageBubble
-              replyTo={replyTo}
-              messages={messages}
-              userId={""}
-            />
+            {replyToMediaType === "image" ? (
+              <>
+                <ReplyMessageDisplayText
+                  replyTo={replyTo}
+                  availableUsers={availableUsers}
+                  messages={messages}
+                  userId={userId}
+                  isPreview={true}
+                  currentMessageSenderId={userId}
+                />
+                <p className="text-[13px] text-gray-300 font-medium mb-0.5">
+                  Hình ảnh
+                </p>
+              </>
+            ) : replyToMediaType === "video" ? (
+              <>
+                <ReplyMessageDisplayText
+                  replyTo={replyTo}
+                  availableUsers={availableUsers}
+                  messages={messages}
+                  userId={userId}
+                  isPreview={true}
+                  currentMessageSenderId={userId}
+                />
+                <p className="text-[13px] text-gray-300 font-medium mb-0.5">
+                  Video
+                </p>
+              </>
+            ) : (
+              <>
+                <ReplyMessageDisplayText
+                  replyTo={replyTo}
+                  availableUsers={availableUsers}
+                  messages={messages}
+                  userId={userId}
+                  isPreview={true}
+                  currentMessageSenderId={userId}
+                />
+                {/* FIXED: Bọc ReplyMessageBubble trong div để luôn căn trái */}
+                <div style={{ display: "flex", justifyContent: "flex-start" }}>
+                  <ReplyMessageBubble
+                    replyTo={replyTo}
+                    messages={messages}
+                    userId={userId}
+                  />
+                </div>
+              </>
+            )}
           </div>
           <button
             className="ml-2 text-gray-400 hover:text-red-400 text-xs px-1"
