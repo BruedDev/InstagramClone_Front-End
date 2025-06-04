@@ -152,7 +152,7 @@ export default function MessengerComponent({
 
   // useEffect fetchMessages: chỉ fetch khi selectedUser._id thực sự thay đổi
   useEffect(() => {
-    if (selectedUser && userId) {
+    if (selectedUser?._id && userId) {
       dispatch(
         fetchMessages({
           userId: selectedUser._id,
@@ -161,8 +161,7 @@ export default function MessengerComponent({
         })
       );
     }
-    // Không reset messages về [] ở đây!
-  }, [selectedUser, userId, dispatch]);
+  }, [selectedUser?._id, userId, dispatch]);
 
   const replyTo = useAppSelector((state) => state.messenger.replyTo);
 
