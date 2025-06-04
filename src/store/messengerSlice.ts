@@ -80,8 +80,7 @@ export const checkOnline = createAsyncThunk(
 const initialState: MessengerState = {
  availableUsers: [],
  selectedUser: null,
- messagesByUser: {}, // Thay vì messages: []
- messages: [], // Thêm lại để tránh lỗi, sẽ loại bỏ sau khi refactor xong
+ messages: [],
  message: "",
  loading: false,
  loadingMore: false,
@@ -120,13 +119,7 @@ const messengerSlice = createSlice({
      state.message = action.payload;
    },
    addMessage: (state, action: PayloadAction<Message>) => {
-     const msg = action.payload;
-     const userId = msg.senderId === state.selectedUser?._id ? msg.senderId : msg.receiverId;
-     if (!state.messagesByUser[userId]) state.messagesByUser[userId] = [];
-     // Tránh trùng lặp tempId
-     if (!state.messagesByUser[userId].some(m => m._id === msg._id || (msg.tempId && m.tempId === msg.tempId))) {
-       state.messagesByUser[userId].push(msg);
-     }
+     state.messages.push(action.payload);
    },
    setShowMainChat: (state, action: PayloadAction<boolean>) => {
      state.showMainChat = action.payload;
@@ -165,12 +158,11 @@ const messengerSlice = createSlice({
    ) => {
      state.callHistory.push(action.payload);
    },
-   setMessages: (state, action: PayloadAction<{ userId: string; messages: Message[] }>) => {
-     const { userId, messages } = action.payload;
-     state.messagesByUser[userId] = messages;
+   setMessages: (state, action: PayloadAction<Message[]>) => {
+     state.messages = action.payload;
    },
    resetMessagesState: (state) => {
-     state.messagesByUser = {};
+     state.messages = [];
      state.before = undefined;
      state.hasMore = true;
    },
@@ -198,12 +190,10 @@ const messengerSlice = createSlice({
      })
      .addCase(fetchMessages.fulfilled, (state, action) => {
        const { messages, hasMore, oldestTimestamp, replace } = action.payload;
-       const userId = action.meta.arg.userId;
-       if (!state.messagesByUser[userId]) state.messagesByUser[userId] = [];
        if (replace) {
-         state.messagesByUser[userId] = messages;
+         state.messages = messages;
        } else {
-         state.messagesByUser[userId] = [...messages, ...state.messagesByUser[userId]];
+         state.messages = [...messages, ...state.messages];
        }
        state.before = oldestTimestamp === null ? undefined : oldestTimestamp;
        state.hasMore = hasMore;
@@ -217,7 +207,7 @@ const messengerSlice = createSlice({
      .addCase(fetchMessages.rejected, (state, action) => {
        const { replace } = action.meta.arg as { replace?: boolean };
        if (replace) {
-         if (state.selectedUser) state.messagesByUser[state.selectedUser._id] = [];
+         state.messages = [];
          state.loading = false;
        } else {
          state.loadingMore = false;
