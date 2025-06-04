@@ -37,7 +37,8 @@ export default function MessengerComponent({
   const {
     availableUsers,
     selectedUser,
-    messages,
+    messagesByUser,
+    messages, // Giữ lại để tránh lỗi, sẽ loại bỏ sau khi refactor xong
     message,
     loading,
     loadingMore,
@@ -152,15 +153,21 @@ export default function MessengerComponent({
 
   useEffect(() => {
     if (selectedUser && userId) {
-      dispatch(
-        fetchMessages({
-          userId: selectedUser._id,
-          before: undefined,
-          replace: true,
-        })
-      );
+      // Nếu đã có messages cho user này thì không fetch lại
+      if (
+        !messagesByUser[selectedUser._id] ||
+        messagesByUser[selectedUser._id].length === 0
+      ) {
+        dispatch(
+          fetchMessages({
+            userId: selectedUser._id,
+            before: undefined,
+            replace: true,
+          })
+        );
+      }
     }
-  }, [selectedUser, userId, dispatch]);
+  }, [selectedUser, userId, dispatch, messagesByUser]);
 
   const replyTo = useAppSelector((state) => state.messenger.replyTo);
 
@@ -312,7 +319,7 @@ export default function MessengerComponent({
         >
           <MainChat
             selectedUser={selectedUser}
-            messages={messages}
+            messages={messagesByUser[selectedUser._id] || []}
             message={message}
             setMessage={(msg) => dispatch(setMessage(msg))}
             handleSendMessage={handleSendMessage}
@@ -380,7 +387,7 @@ export default function MessengerComponent({
       />
       <MainChat
         selectedUser={selectedUser}
-        messages={messages}
+        messages={selectedUser ? messagesByUser[selectedUser._id] || [] : []}
         message={message}
         setMessage={(msg) => dispatch(setMessage(msg))}
         handleSendMessage={handleSendMessage}
