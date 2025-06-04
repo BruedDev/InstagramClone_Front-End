@@ -21,8 +21,14 @@ import {
   MessageSkeletonRightShort,
   TypingSkeleton,
 } from "@/Skeleton/messenger";
+import {
+  motion,
+  useAnimation,
+  useMotionValue,
+  useTransform,
+  PanInfo,
+} from "framer-motion";
 
-// Extend User type to allow hasStory for MainChat
 export type MainChatProps = {
   selectedUser: (User & { hasStory?: boolean }) | null;
   messages: Message[];
@@ -39,7 +45,6 @@ export type MainChatProps = {
   availableUsers: User[];
   showMainChat: boolean;
   setShowMainChat: (show: boolean) => void;
-  // Thêm các props cho file upload
   file?: File | null;
   setFile?: (f: File | null) => void;
   filePreview?: string | null;
@@ -76,8 +81,6 @@ export default function MainChat({
   const [shouldMaintainScrollPosition, setShouldMaintainScrollPosition] =
     useState(false);
   const [previousScrollHeight, setPreviousScrollHeight] = useState(0);
-
-  // State để theo dõi số lượng tin nhắn trước đó
   const [previousMessageCount, setPreviousMessageCount] = useState(0);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
 
@@ -96,13 +99,20 @@ export default function MainChat({
   const dispatch = useAppDispatch();
   const replyTo = useAppSelector((state) => state.messenger.replyTo);
 
-  // Simple scroll handler - only load more when at top
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkIsMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    checkIsMobile();
+    window.addEventListener("resize", checkIsMobile);
+    return () => window.removeEventListener("resize", checkIsMobile);
+  }, []);
+
   const handleScroll = useCallback(() => {
     if (!messagesContainerRef.current || loadingMore) return;
-
     const { scrollTop } = messagesContainerRef.current;
-
-    // Load more when scrolled to top and has more messages
     if (scrollTop === 0 && hasMore) {
       const { scrollHeight } = messagesContainerRef.current;
       setPreviousScrollHeight(scrollHeight);
@@ -111,7 +121,6 @@ export default function MainChat({
     }
   }, [hasMore, loadingMore, onLoadMore]);
 
-  // Maintain scroll position after loading more messages
   useEffect(() => {
     if (
       shouldMaintainScrollPosition &&
@@ -125,7 +134,6 @@ export default function MainChat({
     }
   }, [loadingMore, shouldMaintainScrollPosition, previousScrollHeight]);
 
-  // Auto scroll to bottom cho tin nhắn mới (không áp dụng cho lần đầu load)
   useEffect(() => {
     if (!messagesEndRef.current || !messagesContainerRef.current) return;
     if (loadingMore) return;
@@ -141,12 +149,9 @@ export default function MainChat({
     ) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
-
-    // Cập nhật số lượng tin nhắn trước đó
     setPreviousMessageCount(messages.length);
   }, [messages.length, loadingMore, isInitialLoad, previousMessageCount]);
 
-  // Scroll to bottom khi vào MainChat hoặc đổi user (chỉ cho lần đầu)
   const prevUserIdRef = useRef<string | null>(null);
   const prevLoadingRef = useRef<boolean>(true);
 
@@ -162,12 +167,10 @@ export default function MainChat({
       (prevUserId !== currentUserId || (prevLoading && !loading))
     ) {
       messagesEndRef.current.scrollIntoView({ behavior: "auto" });
-      // Đánh dấu đã load xong lần đầu
       setIsInitialLoad(false);
       setPreviousMessageCount(messages.length);
     }
 
-    // Reset trạng thái khi đổi user
     if (prevUserId !== currentUserId) {
       setIsInitialLoad(true);
       setPreviousMessageCount(0);
@@ -189,12 +192,24 @@ export default function MainChat({
     return `temp-${msg.senderId}-${Date.now()}-${index}`;
   };
 
-  // Hàm scroll đến tin nhắn gốc khi click reply - Highlight bubble tin nhắn
+  function getId(id: unknown): string {
+    if (!id) return "";
+    if (typeof id === "string") return id;
+    if (
+      typeof id === "object" &&
+      id !== null &&
+      "_id" in id &&
+      typeof (id as { _id: unknown })._id === "string"
+    ) {
+      return (id as { _id: string })._id;
+    }
+    return "";
+  }
+
   const handleReplyClick = (replyToId: string) => {
     const el = document.getElementById(`message-${replyToId}`);
     if (el) {
       el.scrollIntoView({ behavior: "smooth", block: "center" });
-      // Tìm bubble tin nhắn chính bên trong container
       const messageBubble = el.querySelector(".message-bubble");
       if (messageBubble) {
         messageBubble.classList.add("ring-2", "ring-white");
@@ -205,10 +220,341 @@ export default function MainChat({
     }
   };
 
-  // Hàm xử lý emoji reaction (tạm thời chỉ console.log)
   const handleEmojiReaction = (messageId: string) => {
     console.log("Emoji reaction for message:", messageId);
-    // TODO: Implement emoji reaction logic
+  };
+
+  const MessageItem = ({ msg, index }: { msg: Message; index: number }) => {
+    const msgSenderId = getId(msg.senderId);
+    const isCurrentUser = msgSenderId === userId;
+
+    const dragControls = useAnimation();
+    const x = useMotionValue(0);
+
+    const LTR_ICON_REVEAL_OFFSET = 80;
+    const RTL_ICON_REVEAL_OFFSET = -80;
+
+    const replyIconOpacityLTR = useTransform(
+      x,
+      [0, LTR_ICON_REVEAL_OFFSET / 2, LTR_ICON_REVEAL_OFFSET],
+      [0, 0.5, 1]
+    );
+    const replyIconOpacityRTL = useTransform(
+      x,
+      [RTL_ICON_REVEAL_OFFSET, RTL_ICON_REVEAL_OFFSET / 2, 0],
+      [1, 0.5, 0]
+    );
+
+    const handleDragEnd = (
+      event: MouseEvent | TouchEvent | PointerEvent,
+      info: PanInfo
+    ) => {
+      if (!isMobile) return;
+      const swipeThreshold = 40;
+      if (info.offset.x > swipeThreshold && !isCurrentUser) {
+        dispatch(setReplyTo(msg._id));
+      } else if (info.offset.x < -swipeThreshold && isCurrentUser) {
+        dispatch(setReplyTo(msg._id));
+      }
+      dragControls.start(
+        { x: 0 },
+        { type: "spring", stiffness: 300, damping: 30 }
+      );
+    };
+
+    const messageKeyVal = generateMessageKey(msg, index);
+
+    const msgReceiverId = getId(msg.receiverId);
+    const isOtherUserInChat =
+      selectedUser &&
+      (msgSenderId === selectedUser._id || msgReceiverId === selectedUser._id);
+
+    if (!isCurrentUser && !isOtherUserInChat) return null;
+
+    return (
+      <div
+        key={messageKeyVal}
+        id={`message-${msg._id}`}
+        className={`${styles.messageContainer} flex mb-4 relative ${
+          isCurrentUser ? "justify-end" : "justify-start"
+        }`}
+        style={{ overflow: isMobile ? "hidden" : "visible" }}
+      >
+        {isMobile && !isCurrentUser && (
+          <motion.div
+            className="absolute left-0 top-0 bottom-0 flex items-center justify-center bg-blue-500 text-white"
+            style={{
+              width: `${LTR_ICON_REVEAL_OFFSET}px`,
+              opacity: replyIconOpacityLTR,
+              zIndex: 0,
+            }}
+          >
+            <Reply strokeWidth={2} size={24} />
+          </motion.div>
+        )}
+
+        {isMobile && isCurrentUser && (
+          <motion.div
+            className="absolute right-0 top-0 bottom-0 flex items-center justify-center bg-green-500 text-white"
+            style={{
+              width: `${Math.abs(RTL_ICON_REVEAL_OFFSET)}px`,
+              opacity: replyIconOpacityRTL,
+              zIndex: 0,
+            }}
+          >
+            <Reply strokeWidth={2} size={24} />
+          </motion.div>
+        )}
+
+        <motion.div
+          className={`w-full flex ${
+            isCurrentUser ? "justify-end" : "justify-start"
+          }`}
+          drag={isMobile ? "x" : false}
+          dragConstraints={
+            isMobile
+              ? isCurrentUser
+                ? { left: RTL_ICON_REVEAL_OFFSET, right: 0 }
+                : { left: 0, right: LTR_ICON_REVEAL_OFFSET }
+              : { left: 0, right: 0 }
+          }
+          dragElastic={0.15}
+          style={{
+            x,
+            zIndex: 1,
+            backgroundColor: isMobile ? "#111" : "transparent",
+          }}
+          animate={dragControls}
+          onDragEnd={handleDragEnd}
+        >
+          <div className={`max-w-md relative flex`}>
+            {!isCurrentUser && selectedUser && (
+              <div
+                className={`w-8 h-8 rounded-full overflow-hidden mr-3 relative flex-shrink-0 self-end ${styles.avatarContainer}`}
+              >
+                {selectedUser.profilePicture ? (
+                  <Image
+                    src={selectedUser.profilePicture}
+                    alt={selectedUser.username}
+                    fill
+                    className="object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gray-600 flex items-center justify-center text-xs">
+                    {selectedUser.username.charAt(0).toUpperCase()}
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div className="flex-1">
+              <div
+                className={`${styles.messageActions} ${
+                  isCurrentUser ? styles.currentUser : styles.otherUser
+                }`}
+              >
+                <button
+                  className={`${styles.messageActionBtn} ${styles.emojiBtn}`}
+                  onClick={() => handleEmojiReaction(msg._id)}
+                  title="Thêm emoji"
+                  aria-label="Thêm emoji reaction"
+                >
+                  <Smile strokeWidth={2} />
+                </button>
+                <button
+                  className={`${styles.messageActionBtn} ${styles.replyBtn}`}
+                  onClick={() => dispatch(setReplyTo(msg._id))}
+                  title="Trả lời tin nhắn"
+                  aria-label="Trả lời tin nhắn này"
+                >
+                  <Reply strokeWidth={2} />
+                </button>
+              </div>
+
+              <div
+                className={`flex flex-col ${
+                  isCurrentUser ? "items-end" : "items-start"
+                } max-w-xs gap-1`}
+              >
+                {msg.replyTo && (
+                  <div
+                    className="w-full flex flex-col mb-1"
+                    style={{ marginTop: "20px" }}
+                  >
+                    <ReplyMessageDisplayText
+                      replyTo={msg.replyTo}
+                      availableUsers={availableUsers}
+                      messages={messages}
+                      userId={userId}
+                      currentMessageSenderId={msgSenderId}
+                    />
+                    <div
+                      className={`${styles.alo} ${
+                        isCurrentUser ? "bg-[#24233526]" : "bg-[#3a3b3c]"
+                      } rounded-xl py-2 cursor-pointer transition-opacity max-w-full`}
+                      style={{ marginBottom: "-22px" }}
+                      onClick={() => {
+                        const repliedMsgId =
+                          typeof msg.replyTo === "string"
+                            ? msg.replyTo
+                            : msg.replyTo &&
+                              typeof msg.replyTo === "object" &&
+                              "_id" in msg.replyTo
+                            ? (msg.replyTo as { _id: string })._id
+                            : undefined;
+                        if (repliedMsgId) handleReplyClick(repliedMsgId);
+                      }}
+                    >
+                      <ReplyMessageBubble
+                        replyTo={msg.replyTo}
+                        messages={messages}
+                        userId={userId}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex flex-col gap-0">
+                  <style jsx>{`
+                    .message-bubble-current {
+                      border-radius: 18px 18px 18px 18px;
+                    }
+                    .message-bubble-other {
+                      border-radius: 18px 18px 18px 18px;
+                    }
+                    .message-bubble-current.has-media {
+                      border-radius: 18px 18px 4px 18px;
+                    }
+                    .message-bubble-other.has-media {
+                      border-radius: 18px 18px 18px 4px;
+                    }
+                  `}</style>
+
+                  {msg.message && (
+                    <div
+                      className={`message-bubble px-4 py-3 break-words ${
+                        isCurrentUser ? "bg-blue-600" : "bg-[#242526]"
+                      } ${
+                        isCurrentUser
+                          ? `message-bubble-current ${
+                              msg.mediaUrl ? "has-media" : ""
+                            }`
+                          : `message-bubble-other ${
+                              msg.mediaUrl ? "has-media" : ""
+                            }`
+                      }`}
+                    >
+                      <p
+                        className={`${styles.text} text-white text-sm leading-relaxed`}
+                      >
+                        {msg.message}
+                      </p>
+                    </div>
+                  )}
+
+                  {msg.mediaUrl && (
+                    <div
+                      className="overflow-hidden max-w-[200px] relative group"
+                      style={{
+                        backgroundColor: "transparent",
+                        borderRadius: isCurrentUser
+                          ? msg.message
+                            ? msg.replyTo
+                              ? "4px 4px 7px 18px"
+                              : "4px 4px 7px 18px"
+                            : msg.replyTo
+                            ? "18px 18px 7px 18px"
+                            : "18px 18px 18px 18px"
+                          : msg.message
+                          ? msg.replyTo
+                            ? "4px 4px 18px 7px"
+                            : "4px 4px 18px 7px"
+                          : msg.replyTo
+                          ? "18px 18px 18px 7px"
+                          : "18px 18px 18px 18px",
+                        marginTop: msg.message
+                          ? msg.replyTo
+                            ? "-1px"
+                            : "-1px"
+                          : msg.replyTo
+                          ? "0"
+                          : "0",
+                      }}
+                    >
+                      <div
+                        className="absolute inset-0 pointer-events-none rounded-[inherit] opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                        style={{ background: "rgba(0,0,0,0.08)" }}
+                      />
+                      <div className="transition-transform duration-200 group-hover:scale-[1.03]">
+                        {msg.mediaType === "image" ? (
+                          <Image
+                            src={msg.mediaUrl}
+                            alt="Shared image"
+                            width={200}
+                            height={150}
+                            className="object-cover w-full h-auto cursor-pointer"
+                            style={{
+                              maxHeight: "200px",
+                              minHeight: "80px",
+                              display: "block",
+                              borderRadius: "inherit",
+                              background: "transparent",
+                            }}
+                            onClick={() => {
+                              window.open(msg.mediaUrl, "_blank");
+                            }}
+                            onError={() => {
+                              console.error(
+                                "Failed to load image:",
+                                msg.mediaUrl
+                              );
+                            }}
+                          />
+                        ) : msg.mediaType === "video" ? (
+                          <video
+                            src={msg.mediaUrl}
+                            controls
+                            className="w-full h-auto cursor-pointer object-cover"
+                            style={{
+                              maxHeight: "200px",
+                              minHeight: "80px",
+                              display: "block",
+                              borderRadius: "inherit",
+                              background: "transparent",
+                            }}
+                            preload="metadata"
+                            onError={() => {
+                              console.error(
+                                "Failed to load video:",
+                                msg.mediaUrl
+                              );
+                            }}
+                          >
+                            {" "}
+                            <source src={msg.mediaUrl} /> Trình duyệt không hỗ
+                            trợ phát video này.{" "}
+                          </video>
+                        ) : null}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <p className="text-xs text-gray-500 mt-1 px-1 self-start">
+                {formatTime(
+                  typeof msg.createdAt === "number"
+                    ? new Date(msg.createdAt)
+                    : !isNaN(Number(msg.createdAt))
+                    ? new Date(Number(msg.createdAt))
+                    : msg.createdAt,
+                  "HH:mm"
+                )}
+              </p>
+            </div>
+          </div>
+        </motion.div>
+      </div>
+    );
   };
 
   return (
@@ -227,7 +573,6 @@ export default function MainChat({
           : {}
       }
     >
-      {/* Chat Header */}
       <div
         className={`flex justify-between items-center p-4 border-b border-[#222] position-relative bg-[#0f0f0f] ${styles.chatHeader}`}
       >
@@ -238,10 +583,10 @@ export default function MainChat({
                 className={styles.backBtn}
                 onClick={() => {
                   if (preview) {
-                    setShowMainChat(false); // Quay lại SiderBar trong modal/preview
+                    setShowMainChat(false);
                   } else {
                     setShowMainChat(false);
-                    window.history.back(); // Chỉ dùng history.back() ở desktop nếu cần
+                    window.history.back();
                   }
                 }}
                 style={{
@@ -310,7 +655,6 @@ export default function MainChat({
         )}
       </div>
 
-      {/* Messages */}
       {selectedUser ? (
         <div
           className={`flex-1 overflow-y-auto p-4 bg-[#111] ${styles.messages}`}
@@ -321,14 +665,12 @@ export default function MainChat({
             position: "relative",
           }}
         >
-          {/* Loading indicator at top for loadingMore */}
           {loadingMore && (
             <div className="flex justify-center py-2 mb-4">
               <div className="w-4 h-4 border-2 border-gray-600 border-t-blue-400 rounded-full animate-spin"></div>
             </div>
           )}
 
-          {/* Skeleton loading khi đang load tin nhắn ban đầu */}
           {loading && messages.length === 0 ? (
             <div className="space-y-0">
               <MessageSkeleton />
@@ -343,278 +685,13 @@ export default function MainChat({
               <MessageSkeleton />
             </div>
           ) : messages.length > 0 ? (
-            messages.map((msg, index) => {
-              function getId(id: unknown): string {
-                if (!id) return "";
-                if (typeof id === "string") return id;
-                if (
-                  typeof id === "object" &&
-                  id !== null &&
-                  "_id" in id &&
-                  typeof (id as { _id: unknown })._id === "string"
-                ) {
-                  return (id as { _id: string })._id;
-                }
-                return "";
-              }
-              const msgSenderId = getId(msg.senderId);
-              const msgReceiverId = getId(msg.receiverId);
-              const isCurrentUser = msgSenderId === userId;
-              const isOtherUser =
-                selectedUser &&
-                (msgSenderId === selectedUser._id ||
-                  msgReceiverId === selectedUser._id);
-              const messageKey = generateMessageKey(msg, index);
-
-              // Chỉ render tin nhắn thuộc về cuộc hội thoại này
-              if (!isOtherUser && !isCurrentUser) return null;
-
-              return (
-                <div
-                  key={messageKey}
-                  id={`message-${msg._id}`}
-                  className={`${styles.messageContainer} flex mb-4 ${
-                    isCurrentUser ? "justify-end" : ""
-                  }`}
-                >
-                  <div className="max-w-md relative flex">
-                    {/* Avatar chỉ hiển thị cho tin nhắn của người khác */}
-                    {!isCurrentUser && (
-                      <div
-                        className={`w-8 h-8 rounded-full overflow-hidden mr-3 relative flex-shrink-0 self-end ${styles.avatarContainer}`}
-                      >
-                        {selectedUser.profilePicture ? (
-                          <Image
-                            src={selectedUser.profilePicture}
-                            alt={selectedUser.username}
-                            fill
-                            className="object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full bg-gray-600 flex items-center justify-center text-xs">
-                            {selectedUser.username.charAt(0).toUpperCase()}
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Container cho nội dung tin nhắn */}
-                    <div className="flex-1">
-                      {/* Message Actions */}
-                      <div
-                        className={`${styles.messageActions} ${
-                          isCurrentUser ? styles.currentUser : styles.otherUser
-                        }`}
-                      >
-                        <button
-                          className={`${styles.messageActionBtn} ${styles.emojiBtn}`}
-                          onClick={() => handleEmojiReaction(msg._id)}
-                          title="Thêm emoji"
-                          aria-label="Thêm emoji reaction"
-                        >
-                          <Smile strokeWidth={2} />
-                        </button>
-                        <button
-                          className={`${styles.messageActionBtn} ${styles.replyBtn}`}
-                          onClick={() => dispatch(setReplyTo(msg._id))}
-                          title="Trả lời tin nhắn"
-                          aria-label="Trả lời tin nhắn này"
-                        >
-                          <Reply strokeWidth={2} />
-                        </button>
-                      </div>
-                      {/* Container cho reply + tin nhắn chính */}
-                      <div
-                        className={`flex flex-col ${
-                          isCurrentUser ? "items-end" : "items-start"
-                        } max-w-xs gap-1`}
-                      >
-                        {/* Tin nhắn được reply (nếu có) */}
-                        {msg.replyTo && (
-                          <div
-                            className="w-full flex flex-col mb-1"
-                            style={{ marginTop: "20px" }}
-                          >
-                            <ReplyMessageDisplayText
-                              replyTo={msg.replyTo}
-                              availableUsers={availableUsers}
-                              messages={messages}
-                              userId={userId}
-                              currentMessageSenderId={msgSenderId}
-                            />
-                            <div
-                              className={`${styles.alo}${
-                                isCurrentUser
-                                  ? "bg-[#24233526]"
-                                  : "bg-[#242526]"
-                              } rounded-xl  py-2 cursor-pointer  transition-opacity max-w-full`}
-                              style={{
-                                marginBottom: "-22px",
-                              }}
-                              onClick={() => {
-                                const repliedMsgId =
-                                  typeof msg.replyTo === "string"
-                                    ? msg.replyTo
-                                    : msg.replyTo;
-                                if (repliedMsgId)
-                                  handleReplyClick(repliedMsgId);
-                              }}
-                            >
-                              <ReplyMessageBubble
-                                replyTo={msg.replyTo}
-                                // availableUsers={availableUsers}
-                                messages={messages}
-                                userId={userId}
-                              />
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Tin nhắn chính */}
-                        <div className="flex flex-col gap-0">
-                          {/* Text message bubble (nếu có) */}
-                          <style jsx>{`
-                            .message-bubble-current {
-                              border-radius: 18px 18px 18px 18px;
-                            }
-
-                            .message-bubble-other {
-                              border-radius: 18px 18px 18px 18px;
-                            }
-
-                            .message-bubble-current.has-media {
-                              border-radius: 18px 18px 4px 18px;
-                            }
-
-                            .message-bubble-other.has-media {
-                              border-radius: 18px 18px 18px 4px;
-                            }
-                          `}</style>
-
-                          {/* Sử dụng với CSS classes */}
-                          {msg.message && (
-                            <div
-                              className={`message-bubble px-4 py-3 ${
-                                isCurrentUser ? "bg-blue-600" : "bg-[#242526]"
-                              } ${
-                                isCurrentUser
-                                  ? `message-bubble-current ${
-                                      msg.mediaUrl ? "has-media" : ""
-                                    }`
-                                  : `message-bubble-other ${
-                                      msg.mediaUrl ? "has-media" : ""
-                                    }`
-                              }`}
-                            >
-                              <p
-                                className={`${styles.text} text-white text-sm leading-relaxed`}
-                              >
-                                {msg.message}
-                              </p>
-                            </div>
-                          )}
-
-                          {/* Media với border-radius kết nối */}
-                          {msg.mediaUrl && (
-                            <div
-                              className="overflow-hidden max-w-[200px] relative group"
-                              style={{
-                                backgroundColor: "transparent",
-                                borderRadius: isCurrentUser
-                                  ? msg.message
-                                    ? msg.replyTo
-                                      ? "4px 4px 7px 18px" // Có text và reply: góc trên = 4px, góc dưới phải = 18px
-                                      : "4px 4px 7px 18px" // Có text: góc trên = 4px, góc dưới phải = 18px
-                                    : msg.replyTo
-                                    ? "18px 18px 7px 18px" // Chỉ có media và reply: góc trên = 18px, góc dưới phải = 18px
-                                    : "18px 18px 18px 18px" // Chỉ có media: border-radius đều = 18px
-                                  : msg.message
-                                  ? msg.replyTo
-                                    ? "4px 4px 18px 7px" // Có text và reply: góc trên = 4px, góc dưới trái = 18px
-                                    : "4px 4px 18px 7px" // Có text: góc trên = 4px, góc dưới trái = 18px
-                                  : msg.replyTo
-                                  ? "18px 18px 18px 7px" // Chỉ có media và reply: góc trên = 18px, góc dưới trái = 7px
-                                  : "18px 18px 18px 18px", // Chỉ có media: border-radius đều = 18px
-                              }}
-                            >
-                              {/* Overlay hiệu ứng hover */}
-                              <div
-                                className="absolute inset-0 pointer-events-none rounded-[inherit] opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                                style={{
-                                  background: "rgba(0,0,0,0.08)",
-                                }}
-                              />
-                              {/* Hiệu ứng scale khi hover */}
-                              <div className="transition-transform duration-200 group-hover:scale-[1.03]">
-                                {msg.mediaType === "image" ? (
-                                  <Image
-                                    src={msg.mediaUrl}
-                                    alt="Shared image"
-                                    width={200}
-                                    height={150}
-                                    className="object-cover w-full h-auto cursor-pointer"
-                                    style={{
-                                      maxHeight: "200px",
-                                      minHeight: "80px",
-                                      display: "block",
-                                      borderRadius: "inherit",
-                                      background: "transparent",
-                                    }}
-                                    onClick={() => {
-                                      window.open(msg.mediaUrl, "_blank");
-                                    }}
-                                    onError={() => {
-                                      console.error(
-                                        "Failed to load image:",
-                                        msg.mediaUrl
-                                      );
-                                    }}
-                                  />
-                                ) : msg.mediaType === "video" ? (
-                                  <video
-                                    src={msg.mediaUrl}
-                                    controls
-                                    className="w-full h-auto cursor-pointer object-cover"
-                                    style={{
-                                      maxHeight: "200px",
-                                      minHeight: "80px",
-                                      display: "block",
-                                      borderRadius: "inherit",
-                                      background: "transparent",
-                                    }}
-                                    preload="metadata"
-                                    onError={() => {
-                                      console.error(
-                                        "Failed to load video:",
-                                        msg.mediaUrl
-                                      );
-                                    }}
-                                  >
-                                    <source src={msg.mediaUrl} />
-                                    Trình duyệt không hỗ trợ phát video này.
-                                  </video>
-                                ) : null}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      {/* Thời gian tin nhắn */}
-                      <p className="text-xs text-gray-500 mt-4 px-1">
-                        {formatTime(
-                          typeof msg.createdAt === "number"
-                            ? new Date(msg.createdAt)
-                            : !isNaN(Number(msg.createdAt))
-                            ? new Date(Number(msg.createdAt))
-                            : msg.createdAt,
-                          "HH:mm"
-                        )}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              );
-            })
+            messages.map((msgObject, idx) => (
+              <MessageItem
+                msg={msgObject}
+                index={idx}
+                key={generateMessageKey(msgObject, idx)}
+              />
+            ))
           ) : (
             <div className="flex justify-center items-center h-full">
               <p
@@ -633,7 +710,6 @@ export default function MainChat({
         </div>
       )}
 
-      {/* Message Input */}
       <MessageInput
         message={message}
         setMessage={setMessage}
