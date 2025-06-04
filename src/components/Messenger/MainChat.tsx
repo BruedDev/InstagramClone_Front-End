@@ -282,9 +282,8 @@ export default function MainChat({
       >
         {isMobile && !isCurrentUser && (
           <motion.div
-            className="absolute left-0 top-0 bottom-0 flex items-center justify-center bg-blue-500 text-white"
+            className="absolute left-0 top-0 bottom-0 flex items-center justify-start pl-3"
             style={{
-              width: `${LTR_ICON_REVEAL_OFFSET}px`,
               opacity: replyIconOpacityLTR,
               zIndex: 0,
             }}
@@ -295,9 +294,8 @@ export default function MainChat({
 
         {isMobile && isCurrentUser && (
           <motion.div
-            className="absolute right-0 top-0 bottom-0 flex items-center justify-center bg-green-500 text-white"
+            className="absolute right-0 top-0 bottom-0 flex items-center justify-end pr-3"
             style={{
-              width: `${Math.abs(RTL_ICON_REVEAL_OFFSET)}px`,
               opacity: replyIconOpacityRTL,
               zIndex: 0,
             }}
