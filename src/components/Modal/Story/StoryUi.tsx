@@ -121,7 +121,9 @@ const StoryUi: React.FC<StoryUiProps> = ({
 
   return (
     <div
-      className={`fixed inset-0 z-[1000] flex flex-col items-center justify-center bg-black bg-opacity-90 w-screen h-[100dvh] overflow-hidden ${styles.container}`}
+      className={`fixed inset-0 z-[1000] flex flex-col items-center justify-center bg-black bg-opacity-90 w-screen h-[100dvh] overflow-hidden ${
+        isOwner ? styles.container : styles.containerStory
+      }`}
       {...(!isOwner
         ? { style: { padding: "55px 0 50px 0", gap: "10px" } }
         : {})}
