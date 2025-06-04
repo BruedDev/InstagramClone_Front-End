@@ -271,7 +271,7 @@ export default function MessengerComponent({
     }
   };
 
-  // Reset selectedUser và messages state khi rời khỏi trang Messenger (unmount toàn bộ Messenger)
+  // Reset selectedUser và messages state khi rời khỏi trang Messenger (unmount toàn bộ Messenger) alo
   useEffect(() => {
     return () => {
       dispatch(setSelectedUser(null));
