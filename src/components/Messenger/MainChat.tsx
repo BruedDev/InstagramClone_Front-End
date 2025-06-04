@@ -21,13 +21,6 @@ import {
   MessageSkeletonRightShort,
   TypingSkeleton,
 } from "@/Skeleton/messenger";
-import {
-  motion,
-  useAnimation,
-  useMotionValue,
-  useTransform,
-  PanInfo,
-} from "framer-motion";
 
 export type MainChatProps = {
   selectedUser: (User & { hasStory?: boolean }) | null;
@@ -99,16 +92,7 @@ export default function MainChat({
   const dispatch = useAppDispatch();
   const replyTo = useAppSelector((state) => state.messenger.replyTo);
 
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    const checkIsMobile = () => {
-      setIsMobile(window.innerWidth <= 768);
-    };
-    checkIsMobile();
-    window.addEventListener("resize", checkIsMobile);
-    return () => window.removeEventListener("resize", checkIsMobile);
-  }, []);
+  // Removed unused isMobile state and effect
 
   const handleScroll = useCallback(() => {
     if (!messagesContainerRef.current || loadingMore) return;
@@ -197,20 +181,6 @@ export default function MainChat({
     return `temp-${msg.senderId}-${Date.now()}-${index}`;
   };
 
-  function getId(id: unknown): string {
-    if (!id) return "";
-    if (typeof id === "string") return id;
-    if (
-      typeof id === "object" &&
-      id !== null &&
-      "_id" in id &&
-      typeof (id as { _id: unknown })._id === "string"
-    ) {
-      return (id as { _id: string })._id;
-    }
-    return "";
-  }
-
   const handleReplyClick = (replyToId: string) => {
     const el = document.getElementById(`message-${replyToId}`);
     if (el) {
@@ -227,337 +197,6 @@ export default function MainChat({
 
   const handleEmojiReaction = (messageId: string) => {
     console.log("Emoji reaction for message:", messageId);
-  };
-
-  const MessageItem = ({ msg, index }: { msg: Message; index: number }) => {
-    const msgSenderId = getId(msg.senderId);
-    const isCurrentUser = msgSenderId === userId;
-
-    const dragControls = useAnimation();
-    const x = useMotionValue(0);
-
-    const LTR_ICON_REVEAL_OFFSET = 80;
-    const RTL_ICON_REVEAL_OFFSET = -80;
-
-    const replyIconOpacityLTR = useTransform(
-      x,
-      [0, LTR_ICON_REVEAL_OFFSET / 2, LTR_ICON_REVEAL_OFFSET],
-      [0, 0.5, 1]
-    );
-    const replyIconOpacityRTL = useTransform(
-      x,
-      [RTL_ICON_REVEAL_OFFSET, RTL_ICON_REVEAL_OFFSET / 2, 0],
-      [1, 0.5, 0]
-    );
-
-    const handleDragEnd = (
-      event: MouseEvent | TouchEvent | PointerEvent,
-      info: PanInfo
-    ) => {
-      if (!isMobile) return;
-      const swipeThreshold = 40;
-      if (info.offset.x > swipeThreshold && !isCurrentUser) {
-        dispatch(setReplyTo(msg._id));
-      } else if (info.offset.x < -swipeThreshold && isCurrentUser) {
-        dispatch(setReplyTo(msg._id));
-      }
-      dragControls.start(
-        { x: 0 },
-        { type: "spring", stiffness: 300, damping: 30 }
-      );
-    };
-
-    const messageKeyVal = generateMessageKey(msg, index);
-
-    const msgReceiverId = getId(msg.receiverId);
-    const isOtherUserInChat =
-      selectedUser &&
-      (msgSenderId === selectedUser._id || msgReceiverId === selectedUser._id);
-
-    if (!isCurrentUser && !isOtherUserInChat) return null;
-
-    return (
-      <div
-        key={messageKeyVal}
-        id={`message-${msg._id}`}
-        className={`${styles.messageContainer} flex mb-4 relative ${
-          isCurrentUser ? "justify-end" : "justify-start"
-        }`}
-        style={{ overflow: isMobile ? "hidden" : "visible" }}
-      >
-        {isMobile && !isCurrentUser && (
-          <motion.div
-            className="absolute left-0 top-0 bottom-0 flex items-center justify-start pl-3"
-            style={{
-              opacity: replyIconOpacityLTR,
-              zIndex: 0,
-            }}
-          >
-            <Reply strokeWidth={2} size={24} />
-          </motion.div>
-        )}
-
-        {isMobile && isCurrentUser && (
-          <motion.div
-            className="absolute right-0 top-0 bottom-0 flex items-center justify-end pr-3"
-            style={{
-              opacity: replyIconOpacityRTL,
-              zIndex: 0,
-            }}
-          >
-            <Reply strokeWidth={2} size={24} />
-          </motion.div>
-        )}
-
-        <motion.div
-          className={`w-full flex ${
-            isCurrentUser ? "justify-end" : "justify-start"
-          }`}
-          drag={isMobile ? "x" : false}
-          dragConstraints={
-            isMobile
-              ? isCurrentUser
-                ? { left: RTL_ICON_REVEAL_OFFSET, right: 0 }
-                : { left: 0, right: LTR_ICON_REVEAL_OFFSET }
-              : { left: 0, right: 0 }
-          }
-          dragElastic={0.15}
-          style={{
-            x,
-            zIndex: 1,
-            backgroundColor: isMobile ? "#111" : "transparent",
-          }}
-          animate={dragControls}
-          onDragEnd={handleDragEnd}
-        >
-          <div className={`max-w-md relative flex`}>
-            {!isCurrentUser && selectedUser && (
-              <div
-                className={`w-8 h-8 rounded-full overflow-hidden mr-3 relative flex-shrink-0 self-end ${styles.avatarContainer}`}
-              >
-                {selectedUser.profilePicture ? (
-                  <Image
-                    src={selectedUser.profilePicture}
-                    alt={selectedUser.username}
-                    fill
-                    className="object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-gray-600 flex items-center justify-center text-xs">
-                    {selectedUser.username.charAt(0).toUpperCase()}
-                  </div>
-                )}
-              </div>
-            )}
-
-            <div className="flex-1">
-              <div
-                className={`${styles.messageActions} ${
-                  isCurrentUser ? styles.currentUser : styles.otherUser
-                }`}
-              >
-                <button
-                  className={`${styles.messageActionBtn} ${styles.emojiBtn}`}
-                  onClick={() => handleEmojiReaction(msg._id)}
-                  title="Thêm emoji"
-                  aria-label="Thêm emoji reaction"
-                >
-                  <Smile strokeWidth={2} />
-                </button>
-                <button
-                  className={`${styles.messageActionBtn} ${styles.replyBtn}`}
-                  onClick={() => dispatch(setReplyTo(msg._id))}
-                  title="Trả lời tin nhắn"
-                  aria-label="Trả lời tin nhắn này"
-                >
-                  <Reply strokeWidth={2} />
-                </button>
-              </div>
-
-              <div
-                className={`flex flex-col ${
-                  isCurrentUser ? "items-end" : "items-start"
-                } max-w-xs gap-1`}
-              >
-                {msg.replyTo && (
-                  <div
-                    className="w-full flex flex-col mb-1"
-                    style={{ marginTop: "20px" }}
-                  >
-                    <ReplyMessageDisplayText
-                      replyTo={msg.replyTo}
-                      availableUsers={availableUsers}
-                      messages={messages}
-                      userId={userId}
-                      currentMessageSenderId={msgSenderId}
-                    />
-                    <div
-                      className={`${styles.alo} ${
-                        isCurrentUser ? "bg-[#24233526]" : "bg-[#3a3b3c]"
-                      } rounded-xl py-2 cursor-pointer transition-opacity max-w-full`}
-                      style={{ marginBottom: "-22px" }}
-                      onClick={() => {
-                        const repliedMsgId =
-                          typeof msg.replyTo === "string"
-                            ? msg.replyTo
-                            : msg.replyTo &&
-                              typeof msg.replyTo === "object" &&
-                              "_id" in msg.replyTo
-                            ? (msg.replyTo as { _id: string })._id
-                            : undefined;
-                        if (repliedMsgId) handleReplyClick(repliedMsgId);
-                      }}
-                    >
-                      <ReplyMessageBubble
-                        replyTo={msg.replyTo}
-                        messages={messages}
-                        userId={userId}
-                      />
-                    </div>
-                  </div>
-                )}
-
-                <div className="flex flex-col gap-0">
-                  <style jsx>{`
-                    .message-bubble-current {
-                      border-radius: 18px 18px 18px 18px;
-                    }
-                    .message-bubble-other {
-                      border-radius: 18px 18px 18px 18px;
-                    }
-                    .message-bubble-current.has-media {
-                      border-radius: 18px 18px 4px 18px;
-                    }
-                    .message-bubble-other.has-media {
-                      border-radius: 18px 18px 18px 4px;
-                    }
-                  `}</style>
-
-                  {msg.message && (
-                    <div
-                      className={`message-bubble px-4 py-3 break-words ${
-                        isCurrentUser ? "bg-blue-600" : "bg-[#242526]"
-                      } ${
-                        isCurrentUser
-                          ? `message-bubble-current ${
-                              msg.mediaUrl ? "has-media" : ""
-                            }`
-                          : `message-bubble-other ${
-                              msg.mediaUrl ? "has-media" : ""
-                            }`
-                      }`}
-                    >
-                      <p
-                        className={`${styles.text} text-white text-sm leading-relaxed`}
-                      >
-                        {msg.message}
-                      </p>
-                    </div>
-                  )}
-
-                  {msg.mediaUrl && (
-                    <div
-                      className="overflow-hidden max-w-[200px] relative group"
-                      style={{
-                        backgroundColor: "transparent",
-                        borderRadius: isCurrentUser
-                          ? msg.message
-                            ? msg.replyTo
-                              ? "4px 4px 7px 18px"
-                              : "4px 4px 7px 18px"
-                            : msg.replyTo
-                            ? "18px 18px 7px 18px"
-                            : "18px 18px 18px 18px"
-                          : msg.message
-                          ? msg.replyTo
-                            ? "4px 4px 18px 7px"
-                            : "4px 4px 18px 7px"
-                          : msg.replyTo
-                          ? "18px 18px 18px 7px"
-                          : "18px 18px 18px 18px",
-                        marginTop: msg.message
-                          ? msg.replyTo
-                            ? "-1px"
-                            : "-1px"
-                          : msg.replyTo
-                          ? "0"
-                          : "0",
-                      }}
-                    >
-                      <div
-                        className="absolute inset-0 pointer-events-none rounded-[inherit] opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                        style={{ background: "rgba(0,0,0,0.08)" }}
-                      />
-                      <div className="transition-transform duration-200 group-hover:scale-[1.03]">
-                        {msg.mediaType === "image" ? (
-                          <Image
-                            src={msg.mediaUrl}
-                            alt="Shared image"
-                            width={200}
-                            height={150}
-                            className="object-cover w-full h-auto cursor-pointer"
-                            style={{
-                              maxHeight: "200px",
-                              minHeight: "80px",
-                              display: "block",
-                              borderRadius: "inherit",
-                              background: "transparent",
-                            }}
-                            onClick={() => {
-                              window.open(msg.mediaUrl, "_blank");
-                            }}
-                            onError={() => {
-                              console.error(
-                                "Failed to load image:",
-                                msg.mediaUrl
-                              );
-                            }}
-                          />
-                        ) : msg.mediaType === "video" ? (
-                          <video
-                            src={msg.mediaUrl}
-                            controls
-                            className="w-full h-auto cursor-pointer object-cover"
-                            style={{
-                              maxHeight: "200px",
-                              minHeight: "80px",
-                              display: "block",
-                              borderRadius: "inherit",
-                              background: "transparent",
-                            }}
-                            preload="metadata"
-                            onError={() => {
-                              console.error(
-                                "Failed to load video:",
-                                msg.mediaUrl
-                              );
-                            }}
-                          >
-                            {" "}
-                            <source src={msg.mediaUrl} /> Trình duyệt không hỗ
-                            trợ phát video này.{" "}
-                          </video>
-                        ) : null}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-              <p className="text-xs text-gray-500 mt-1 px-1 self-start">
-                {formatTime(
-                  typeof msg.createdAt === "number"
-                    ? new Date(msg.createdAt)
-                    : !isNaN(Number(msg.createdAt))
-                    ? new Date(Number(msg.createdAt))
-                    : msg.createdAt,
-                  "HH:mm"
-                )}
-              </p>
-            </div>
-          </div>
-        </motion.div>
-      </div>
-    );
   };
 
   return (
@@ -658,6 +297,7 @@ export default function MainChat({
         )}
       </div>
 
+      {/* Messages */}
       {selectedUser ? (
         <div
           className={`flex-1 overflow-y-auto p-4 bg-[#111] ${styles.messages}`}
@@ -668,12 +308,14 @@ export default function MainChat({
             position: "relative",
           }}
         >
+          {/* Loading indicator at top for loadingMore */}
           {loadingMore && (
             <div className="flex justify-center py-2 mb-4">
               <div className="w-4 h-4 border-2 border-gray-600 border-t-blue-400 rounded-full animate-spin"></div>
             </div>
           )}
 
+          {/* Skeleton loading khi đang load tin nhắn ban đầu */}
           {loading && messages.length === 0 ? (
             <div className="space-y-0">
               <MessageSkeleton />
@@ -688,19 +330,274 @@ export default function MainChat({
               <MessageSkeleton />
             </div>
           ) : messages.length > 0 ? (
-            messages.map((msgObject, idx) => (
-              <MessageItem
-                msg={msgObject}
-                index={idx}
-                key={generateMessageKey(msgObject, idx)}
-              />
-            ))
+            messages.map((msg, index) => {
+              function getId(id: unknown): string {
+                if (!id) return "";
+                if (typeof id === "string") return id;
+                if (
+                  typeof id === "object" &&
+                  id !== null &&
+                  "_id" in id &&
+                  typeof (id as { _id: unknown })._id === "string"
+                ) {
+                  return (id as { _id: string })._id;
+                }
+                return "";
+              }
+              const msgSenderId = getId(msg.senderId);
+              const msgReceiverId = getId(msg.receiverId);
+              const isCurrentUser = msgSenderId === userId;
+              const isOtherUser =
+                selectedUser &&
+                (msgSenderId === selectedUser._id ||
+                  msgReceiverId === selectedUser._id);
+              const messageKey = generateMessageKey(msg, index);
+
+              // Chỉ render tin nhắn thuộc về cuộc hội thoại này
+              if (!isOtherUser && !isCurrentUser) return null;
+
+              return (
+                <div
+                  key={messageKey}
+                  id={`message-${msg._id}`}
+                  className={`${styles.messageContainer} flex mb-4 ${
+                    isCurrentUser ? "justify-end" : ""
+                  }`}
+                >
+                  <div className="max-w-md relative flex">
+                    {/* Avatar chỉ hiển thị cho tin nhắn của người khác */}
+                    {!isCurrentUser && (
+                      <div
+                        className={`w-8 h-8 rounded-full overflow-hidden mr-3 relative flex-shrink-0 self-end ${styles.avatarContainer}`}
+                      >
+                        {selectedUser.profilePicture ? (
+                          <Image
+                            src={selectedUser.profilePicture}
+                            alt={selectedUser.username}
+                            fill
+                            className="object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-gray-600 flex items-center justify-center text-xs">
+                            {selectedUser.username.charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Container cho nội dung tin nhắn */}
+                    <div className="flex-1">
+                      {/* Message Actions */}
+                      <div
+                        className={`${styles.messageActions} ${
+                          isCurrentUser ? styles.currentUser : styles.otherUser
+                        }`}
+                      >
+                        <button
+                          className={`${styles.messageActionBtn} ${styles.emojiBtn}`}
+                          onClick={() => handleEmojiReaction(msg._id)}
+                          title="Thêm emoji"
+                          aria-label="Thêm emoji reaction"
+                        >
+                          <Smile strokeWidth={2} />
+                        </button>
+                        <button
+                          className={`${styles.messageActionBtn} ${styles.replyBtn}`}
+                          onClick={() => dispatch(setReplyTo(msg._id))}
+                          title="Trả lời tin nhắn"
+                          aria-label="Trả lời tin nhắn này"
+                        >
+                          <Reply strokeWidth={2} />
+                        </button>
+                      </div>
+
+                      <div
+                        className={`flex flex-col ${
+                          isCurrentUser ? "items-end" : "items-start"
+                        }`}
+                      >
+                        {/* Container cho reply + tin nhắn chính */}
+                        <div
+                          className={`flex flex-col ${
+                            isCurrentUser ? "items-end" : "items-start"
+                          } max-w-xs gap-1`}
+                        >
+                          {/* Tin nhắn được reply (nếu có) */}
+                          {msg.replyTo && (
+                            <div
+                              className="w-full flex flex-col mb-1"
+                              style={{ marginTop: "20px" }}
+                            >
+                              <ReplyMessageDisplayText
+                                replyTo={msg.replyTo}
+                                availableUsers={availableUsers}
+                                messages={messages}
+                                userId={userId}
+                                currentMessageSenderId={msgSenderId}
+                              />
+                              <div
+                                className={`${styles.alo} ${
+                                  isCurrentUser
+                                    ? "bg-[#24233526]"
+                                    : "bg-[#3a3b3c]"
+                                } rounded-xl py-2 cursor-pointer transition-opacity max-w-full`}
+                                style={{ marginBottom: "-22px" }}
+                                onClick={() => {
+                                  const repliedMsgId =
+                                    typeof msg.replyTo === "string"
+                                      ? msg.replyTo
+                                      : msg.replyTo &&
+                                        typeof msg.replyTo === "object" &&
+                                        "_id" in msg.replyTo
+                                      ? (msg.replyTo as { _id: string })._id
+                                      : undefined;
+                                  if (repliedMsgId)
+                                    handleReplyClick(repliedMsgId);
+                                }}
+                              >
+                                <ReplyMessageBubble
+                                  replyTo={msg.replyTo}
+                                  messages={messages}
+                                  userId={userId}
+                                />
+                              </div>
+                            </div>
+                          )}
+                          {/* Tin nhắn chính */}
+                          <div className="flex flex-col gap-2">
+                            {/* Text message bubble với border-radius đã sửa */}
+                            {msg.message && (
+                              <div
+                                className={`message-bubble ${
+                                  isCurrentUser ? "bg-blue-600" : "bg-[#333]"
+                                } px-4 py-3`}
+                                style={{
+                                  borderRadius: isCurrentUser
+                                    ? msg.replyTo
+                                      ? "24px 8px 8px 24px"
+                                      : "24px 24px 8px 24px"
+                                    : msg.replyTo
+                                    ? "8px 24px 24px 8px"
+                                    : "24px 24px 24px 8px",
+                                }}
+                              >
+                                <p
+                                  className={`${styles.text} text-white text-sm leading-relaxed`}
+                                >
+                                  {msg.message}
+                                </p>
+                              </div>
+                            )}
+
+                            {/* Media với border-radius đã sửa */}
+                            {msg.mediaUrl && (
+                              <div
+                                className="overflow-hidden max-w-[200px] relative group"
+                                style={{
+                                  backgroundColor: "transparent",
+                                  borderRadius: isCurrentUser
+                                    ? msg.message
+                                      ? msg.replyTo
+                                        ? "4px 4px 7px 18px"
+                                        : "4px 4px 7px 18px"
+                                      : msg.replyTo
+                                      ? "18px 18px 7px 18px"
+                                      : "18px 18px 18px 18px"
+                                    : msg.message
+                                    ? msg.replyTo
+                                      ? "4px 4px 18px 7px"
+                                      : "4px 4px 18px 7px"
+                                    : msg.replyTo
+                                    ? "18px 18px 18px 7px"
+                                    : "18px 18px 18px 18px",
+                                  marginTop: msg.message
+                                    ? msg.replyTo
+                                      ? "-1px"
+                                      : "-1px"
+                                    : msg.replyTo
+                                    ? "0"
+                                    : "0",
+                                }}
+                              >
+                                <div
+                                  className="absolute inset-0 pointer-events-none rounded-[inherit] opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                                  style={{ background: "rgba(0,0,0,0.08)" }}
+                                />
+                                <div className="transition-transform duration-200 group-hover:scale-[1.03]">
+                                  {msg.mediaType === "image" ? (
+                                    <Image
+                                      src={msg.mediaUrl}
+                                      alt="Shared image"
+                                      width={200}
+                                      height={150}
+                                      className="object-cover w-full h-auto cursor-pointer"
+                                      style={{
+                                        maxHeight: "200px",
+                                        minHeight: "80px",
+                                        display: "block",
+                                        borderRadius: "inherit",
+                                        background: "transparent",
+                                      }}
+                                      onClick={() => {
+                                        window.open(msg.mediaUrl, "_blank");
+                                      }}
+                                      onError={() => {
+                                        console.error(
+                                          "Failed to load image:",
+                                          msg.mediaUrl
+                                        );
+                                      }}
+                                    />
+                                  ) : msg.mediaType === "video" ? (
+                                    <video
+                                      src={msg.mediaUrl}
+                                      controls
+                                      className="w-full h-auto cursor-pointer object-cover"
+                                      style={{
+                                        maxHeight: "200px",
+                                        minHeight: "80px",
+                                        display: "block",
+                                        borderRadius: "inherit",
+                                        background: "transparent",
+                                      }}
+                                      preload="metadata"
+                                      onError={() => {
+                                        console.error(
+                                          "Failed to load video:",
+                                          msg.mediaUrl
+                                        );
+                                      }}
+                                    >
+                                      <source src={msg.mediaUrl} /> Trình duyệt
+                                      không hỗ trợ phát video này.{" "}
+                                    </video>
+                                  ) : null}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Thời gian tin nhắn */}
+                        <p className="text-xs text-gray-500 mt-1 px-1">
+                          {formatTime(
+                            typeof msg.createdAt === "number"
+                              ? new Date(msg.createdAt)
+                              : !isNaN(Number(msg.createdAt))
+                              ? new Date(Number(msg.createdAt))
+                              : msg.createdAt,
+                            "HH:mm"
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })
           ) : (
             <div className="flex justify-center items-center h-full">
-              <p
-                className="text-gray-400 w-full"
-                style={{ textAlign: "center" }}
-              >
+              <p className="text-gray-400">
                 Chưa có tin nhắn nào. Hãy bắt đầu cuộc trò chuyện!
               </p>
             </div>
