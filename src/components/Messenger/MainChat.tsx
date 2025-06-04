@@ -149,8 +149,15 @@ export default function MainChat({
     ) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
-    setPreviousMessageCount(messages.length);
-  }, [messages.length, loadingMore, isInitialLoad, previousMessageCount]);
+    // Đừng setPreviousMessageCount ở đây nếu đang loading
+    if (!loading) setPreviousMessageCount(messages.length);
+  }, [
+    messages.length,
+    loadingMore,
+    isInitialLoad,
+    previousMessageCount,
+    loading,
+  ]);
 
   const prevUserIdRef = useRef<string | null>(null);
   const prevLoadingRef = useRef<boolean>(true);
@@ -170,12 +177,10 @@ export default function MainChat({
       setIsInitialLoad(false);
       setPreviousMessageCount(messages.length);
     }
-
     if (prevUserId !== currentUserId) {
       setIsInitialLoad(true);
       setPreviousMessageCount(0);
     }
-
     prevUserIdRef.current = currentUserId;
     prevLoadingRef.current = loading;
   }, [selectedUser?._id, loading, messages.length]);
