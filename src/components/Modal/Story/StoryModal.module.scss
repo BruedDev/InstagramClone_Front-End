@@ -8,6 +8,8 @@
 .container {
   @media (max-width: 768px) {
     gap: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 40px !important;
   }
 }
 
