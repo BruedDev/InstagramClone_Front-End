@@ -1,7 +1,9 @@
 export default function ViewStory({
   uniqueViewerCount,
+  onClick,
 }: {
   uniqueViewerCount: number;
+  onClick?: () => void;
 }) {
   return (
     <div
@@ -14,17 +16,18 @@ export default function ViewStory({
         fontSize: 15,
         fontWeight: 500,
         textShadow: "0 1px 4px #000,0 0 2px #000",
-        pointerEvents: "none",
+        pointerEvents: "auto",
       }}
     >
-      <button
-        className="text-white font-semibold text-base"
-        style={{
-          cursor: "pointer",
-        }}
-      >
-        {uniqueViewerCount} lượt xem
-      </button>
+      <div>
+        <button
+          className="text-white font-semibold text-base"
+          style={{ cursor: "pointer" }}
+          onClick={onClick}
+        >
+          {uniqueViewerCount} lượt xem
+        </button>
+      </div>
     </div>
   );
 }

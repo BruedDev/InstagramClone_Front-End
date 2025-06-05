@@ -19,6 +19,8 @@ import IsProfile from "@/components/isProfile";
 import MessageInput from "@/components/Messenger/MessageInput";
 import { sendMessage as sendMessageApi } from "@/server/messenger";
 import { socketService } from "@/server/socket";
+import ViewStoryUi from "@/app/ui/ViewStoryUi/index";
+import { USERNAME_ADMIN } from "@/admin/user";
 
 interface Author {
   _id: string;
@@ -87,10 +89,33 @@ const StoryUi: React.FC<StoryUiProps> = ({
   const { getSlideBackground } = useAdaptiveBackground(stories, current);
   const [message, setMessage] = React.useState("");
   const [sending, setSending] = React.useState(false);
-  // Lấy userId hiện tại từ localStorage hoặc redux nếu có
+  const [showViewers, setShowViewers] = React.useState(false);
+  const [isMobile, setIsMobile] = React.useState(false);
+
+  React.useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth <= 767);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
+  React.useEffect(() => {
+    if (showViewers) {
+      setIsPlaying(false); // Tạm dừng story khi mở danh sách người xem
+    }
+  }, [showViewers, setIsPlaying]);
+
+  const prevShowViewersRef = React.useRef(showViewers);
+  React.useEffect(() => {
+    // Nếu showViewers vừa chuyển từ true (đang mở) sang false (vừa đóng)
+    if (prevShowViewersRef.current && !showViewers) {
+      setIsPlaying(true); // Phát tiếp story, bất kể loại story là gì
+    }
+    prevShowViewersRef.current = showViewers; // Cập nhật trạng thái trước đó của showViewers
+  }, [showViewers, setIsPlaying]); // Bỏ stories, current khỏi dependencies ở đây
+
   const userId =
     typeof window !== "undefined" ? localStorage.getItem("id") : null;
-  // Lấy authorId (người nhận) từ story
   const receiverId = author._id;
 
   const handleSendMessage = async () => {
@@ -98,7 +123,6 @@ const StoryUi: React.FC<StoryUiProps> = ({
     setSending(true);
     try {
       await sendMessageApi(receiverId, message);
-      // Sử dụng socketService.sendMessage để gửi realtime đúng chuẩn
       socketService.sendMessage({
         senderId: userId,
         receiverId,
@@ -106,11 +130,12 @@ const StoryUi: React.FC<StoryUiProps> = ({
       });
       setMessage("");
     } catch {
-      // Có thể show toast lỗi ở đây nếu muốn
+      // Handle error
     } finally {
       setSending(false);
     }
   };
+
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") handleSendMessage();
   };
@@ -121,14 +146,24 @@ const StoryUi: React.FC<StoryUiProps> = ({
 
   return (
     <div
-      className={`fixed inset-0 z-[1000] flex flex-col items-center justify-center bg-black bg-opacity-90 w-screen h-[100dvh] overflow-hidden ${
+      className={`fixed inset-0 z-[1000] flex flex-col items-center justify-center ${
+        isMobile && showViewers
+          ? "bg-gradient-to-br from-purple-600 to-blue-600"
+          : "bg-black bg-opacity-90"
+      } w-screen h-[100dvh] overflow-hidden ${
         isOwner ? styles.container : styles.containerStory
       }`}
       {...(!isOwner
         ? { style: { padding: "55px 0 50px 0", gap: "10px" } }
         : {})}
     >
-      <div className="flex items-center justify-center w-full h-full relative">
+      <div
+        className={`flex items-center justify-center w-full h-full relative transition-all duration-400 ease-in-out ${
+          isMobile && showViewers
+            ? "transform blur-[2px] scale-90 opacity-75"
+            : "transform blur-0 scale-100 opacity-100"
+        }`}
+      >
         <div className="hidden min-[481px]:flex absolute left-4 top-1/2 transform -translate-y-1/2 z-30">
           <button
             onClick={prevStory}
@@ -143,7 +178,6 @@ const StoryUi: React.FC<StoryUiProps> = ({
             <ChevronLeft className="w-6 h-6 text-white" />
           </button>
         </div>
-
         <div className="hidden min-[481px]:flex absolute right-4 top-1/2 transform -translate-y-1/2 z-30">
           <button
             onClick={nextStory}
@@ -158,7 +192,6 @@ const StoryUi: React.FC<StoryUiProps> = ({
             <ChevronRight className="w-6 h-6 text-white" />
           </button>
         </div>
-
         <div className="hidden min-[481px]:flex absolute top-4 right-4 z-30">
           <button
             onClick={onClose}
@@ -167,8 +200,7 @@ const StoryUi: React.FC<StoryUiProps> = ({
             <X className="w-6 h-6 text-white" />
           </button>
         </div>
-
-        <div className="relative flex flex-col items-center justify-center bg-black rounded-2xl shadow-2xl aspect-[9/16] w-[min(420px,95vw)] h-[min(700px,95vh)] max-w-full max-h-full max-[480px]:w-full max-[480px]:h-[100dvh] max-[480px]:rounded-none max-[480px]:aspect-auto">
+        <div className="relative flex flex-col items-center justify-center rounded-2xl shadow-2xl aspect-[9/16] w-[min(420px,95vw)] h-[min(700px,95vh)] max-w-full max-h-full max-[480px]:w-full max-[480px]:h-[100dvh] max-[480px]:rounded-none max-[480px]:aspect-auto overflow-hidden">
           <div
             className={`absolute top-0 left-0 w-full z-20 rounded-t-2xl overflow-hidden px-2 pt-2 pb-1 flex gap-1 max-[480px]:rounded-none max-[480px] ${styles.progressBar}`}
           >
@@ -192,15 +224,7 @@ const StoryUi: React.FC<StoryUiProps> = ({
               </div>
             ))}
           </div>
-
           <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-black/60 via-black/40 to-transparent z-10 rounded-t-2xl max-[480px]:rounded-none pointer-events-none"></div>
-
-          <IsProfile profileId={author.username} fallback={null}>
-            <div className="absolute bottom-0 left-0 w-full h-32 bg-gradient-to-t from-black/60 via-black/30 to-transparent z-10 rounded-b-2xl max-[480px]:rounded-none pointer-events-none">
-              <ViewStory uniqueViewerCount={uniqueViewerCount} />
-            </div>
-          </IsProfile>
-
           <div
             className={`absolute top-0 left-0 w-full flex items-center justify-between px-4 pt-4 pb-2 z-20 ${styles.header}`}
           >
@@ -212,7 +236,6 @@ const StoryUi: React.FC<StoryUiProps> = ({
                 height={36}
                 className="rounded-full object-cover border border-zinc-700"
               />
-
               <div className="flex flex-col">
                 <span className="text-white font-semibold text-base flex gap-1 items-center">
                   {author.username}
@@ -225,20 +248,24 @@ const StoryUi: React.FC<StoryUiProps> = ({
                       viewBox="0 0 40 40"
                       width="12"
                     >
-                      <title>Đã xác minh</title>
+                      {" "}
+                      <title>Đã xác minh</title>{" "}
                       <path
                         d="M19.998 3.094 14.638 0l-2.972 5.15H5.432v6.354L0 14.64 3.094 20 0 25.359l5.432 3.137v5.905h5.975L14.638 40l5.36-3.094L25.358 40l3.232-5.6h6.162v-6.01L40 25.359 36.905 20 40 14.641l-5.248-3.03v-6.46h-6.419L25.358 0l-5.36 3.094Zm7.415 11.225 2.254 2.287-11.43 11.5-6.835-6.93 2.244-2.258 4.587 4.581 9.18-9.18Z"
-                        fill-rule="evenodd"
-                      ></path>
+                        fillRule="evenodd"
+                      ></path>{" "}
                     </svg>
                   )}
                 </span>
                 <span className="text-xs text-zinc-300">
-                  {story?.createdAt ? timeStory(story.createdAt) : ""}
+                  {author.username === USERNAME_ADMIN
+                    ? "vĩnh viễn"
+                    : story?.createdAt
+                    ? timeStory(story.createdAt)
+                    : ""}
                 </span>
               </div>
             </div>
-
             <div className={`flex items-center gap-2 ${styles.controls}`}>
               <button
                 onClick={() => setIsMuted((m) => !m)}
@@ -268,7 +295,6 @@ const StoryUi: React.FC<StoryUiProps> = ({
               </button>
             </div>
           </div>
-
           <div className="flex-1 w-full h-full flex items-center justify-center rounded-2xl overflow-hidden max-[480px]:rounded-none">
             <Swiper
               onSwiper={(swiper) => (swiperRef.current = swiper)}
@@ -285,7 +311,6 @@ const StoryUi: React.FC<StoryUiProps> = ({
                   s._id,
                   s.mediaType
                 );
-
                 return (
                   <SwiperSlide
                     key={`${s._id}-slide-${idx}`}
@@ -368,8 +393,19 @@ const StoryUi: React.FC<StoryUiProps> = ({
               })}
             </Swiper>
           </div>
+          <IsProfile profileId={author.username} fallback={null}>
+            <div className="absolute bottom-0 left-0 w-full h-32 bg-gradient-to-t from-black/60 via-black/30 to-transparent z-10 rounded-b-2xl max-[480px]:rounded-none pointer-events-none">
+              <ViewStory
+                uniqueViewerCount={uniqueViewerCount}
+                onClick={() => setShowViewers(true)}
+              />
+            </div>
+          </IsProfile>
         </div>
       </div>
+      {showViewers && (
+        <ViewStoryUi onClose={() => setShowViewers(false)} viewers={[]} />
+      )}
       <IsProfile
         profileId={author.username}
         fallback={

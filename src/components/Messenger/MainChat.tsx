@@ -522,12 +522,12 @@ export default function MainChat({
                                       if (isCurrentUser) {
                                         // Người dùng hiện tại - làm tròn góc trái dưới ít hơn
                                         return `${borderRadius}px ${borderRadius}px ${
-                                          borderRadius - 17
+                                          borderRadius - 12
                                         }px ${borderRadius}px`;
                                       } else {
                                         // Người khác - làm tròn góc phải dưới ít hơn
                                         return `${borderRadius}px ${borderRadius}px ${borderRadius}px ${
-                                          borderRadius - 17
+                                          borderRadius - 12
                                         }px`;
                                       }
                                     }
