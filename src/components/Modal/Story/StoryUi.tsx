@@ -324,6 +324,10 @@ const StoryUi: React.FC<StoryUiProps> = ({
                           src={s.mediaUrl}
                           controls={false}
                           muted={!!s.audioUrl}
+                          autoPlay
+                          loop
+                          playsInline
+                          webkit-playsinline="true"
                           onLoadedMetadata={(e) => {
                             const video = e.currentTarget;
                             const determinedFit =
@@ -344,6 +348,7 @@ const StoryUi: React.FC<StoryUiProps> = ({
                             }
                           }}
                         />
+
                         {s.audioUrl && (
                           <audio
                             ref={

@@ -92,7 +92,7 @@ export default function ViewStoryUi({
             isMobile
               ? `fixed left-1/2 bottom-0 w-full max-w-[420px] bg-zinc-900 shadow-2xl z-40
                 transform -translate-x-1/2 transition-all duration-400 ease-in-out
-                rounded-t-3xl h-[85vh] max-h-[800px]
+                rounded-t-3xl h-[85dvh]
                 ${
                   visible
                     ? "translate-y-0 opacity-100 scale-100"
