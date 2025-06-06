@@ -36,7 +36,6 @@ export default function ViewStoryUi({
 
   const handleClose = () => {
     setVisible(false);
-    // Tăng thời gian delay để animation hoàn thành mượt mà hơn
     setTimeout(onClose, 400);
   };
 
@@ -67,6 +66,36 @@ export default function ViewStoryUi({
               "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face",
             name: "Phạm Văn Đức",
             lastActive: "15 phút trước",
+          },
+          {
+            avatar:
+              "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&h=150&fit=crop&crop=face",
+            name: "Hoàng Thị Mai",
+            lastActive: "20 phút trước",
+          },
+          {
+            avatar:
+              "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&h=150&fit=crop&crop=face",
+            name: "Hoàng Thị Mai",
+            lastActive: "20 phút trước",
+          },
+          {
+            avatar:
+              "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&h=150&fit=crop&crop=face",
+            name: "Hoàng Thị Mai",
+            lastActive: "20 phút trước",
+          },
+          {
+            avatar:
+              "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&h=150&fit=crop&crop=face",
+            name: "Hoàng Thị Mai",
+            lastActive: "20 phút trước",
+          },
+          {
+            avatar:
+              "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&h=150&fit=crop&crop=face",
+            name: "Hoàng Thị Mai",
+            lastActive: "20 phút trước",
           },
           {
             avatar:
@@ -110,10 +139,11 @@ export default function ViewStoryUi({
           transformOrigin: isMobile ? "center bottom" : "center bottom",
         }}
       >
+        {/* Header - Fixed */}
         <div
           className={`flex items-center justify-between px-6 py-3 border-b border-zinc-800 transition-all duration-350 ease-out ${
             visible ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
-          }`}
+          } ${isMobile ? "sticky top-0 bg-zinc-900 z-10" : ""}`}
         >
           <span className="text-lg font-semibold text-white">
             Chi tiết về tin
@@ -125,68 +155,90 @@ export default function ViewStoryUi({
             <span aria-label="Đóng">×</span>
           </button>
         </div>
+
+        {/* Content Container */}
         <div
-          className={`px-6 py-4 transition-all duration-400 ease-out ${
+          className={`transition-all duration-400 ease-out ${
             visible ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"
           } ${
             isMobile
-              ? "overflow-y-auto h-[calc(85vh-69px)]"
-              : "h-[calc(100%-69px)]"
+              ? "overflow-y-auto h-[calc(85dvh-69px)] px-6"
+              : "px-6 py-4 h-[calc(100%-69px)]"
           }`}
-          style={{ transitionDelay: visible ? "100ms" : "0ms" }}
+          style={{
+            transitionDelay: visible ? "100ms" : "0ms",
+            ...(isMobile && {
+              scrollBehavior: "smooth",
+            }),
+          }}
         >
-          <div
-            className={`flex gap-4 mb-4 transition-all duration-350 ease-out ${
-              visible ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
-            }`}
-            style={{ transitionDelay: visible ? "150ms" : "0ms" }}
-          >
-            <div className="w-20 h-28 bg-zinc-800 rounded-lg flex-shrink-0 overflow-hidden transition-all duration-300 ease-out hover:scale-105 hover:rotate-1">
-              <div className="w-full h-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center">
-                <span className="text-white text-2xl">📖</span>
+          {/* Story Preview Section */}
+          <div className={isMobile ? "py-4" : ""}>
+            <div
+              className={`flex gap-4 mb-4 transition-all duration-350 ease-out ${
+                visible
+                  ? "translate-y-0 opacity-100"
+                  : "translate-y-4 opacity-0"
+              }`}
+              style={{ transitionDelay: visible ? "150ms" : "0ms" }}
+            >
+              <div className="w-20 h-28 bg-zinc-800 rounded-lg flex-shrink-0 overflow-hidden transition-all duration-300 ease-out hover:scale-105 hover:rotate-1">
+                <div className="w-full h-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center">
+                  <span className="text-white text-2xl">📖</span>
+                </div>
+              </div>
+              <div className="w-20 h-28 bg-zinc-800 rounded-lg flex-shrink-0 flex items-center justify-center text-blue-500 font-bold text-2xl hover:bg-zinc-700 transition-all duration-300 ease-out cursor-pointer hover:scale-105 hover:rotate-1">
+                +
               </div>
             </div>
-            <div className="w-20 h-28 bg-zinc-800 rounded-lg flex-shrink-0 flex items-center justify-center text-blue-500 font-bold text-2xl hover:bg-zinc-700 transition-all duration-300 ease-out cursor-pointer hover:scale-105 hover:rotate-1">
-              +
+
+            <hr
+              className={`border-zinc-700 mb-4 transition-all duration-350 ease-out ${
+                visible ? "opacity-100 scale-x-100" : "opacity-0 scale-x-0"
+              }`}
+              style={{
+                transitionDelay: visible ? "200ms" : "0ms",
+                transformOrigin: "left",
+              }}
+            />
+
+            <div
+              className={`flex items-center gap-2 text-zinc-300 mb-4 transition-all duration-350 ease-out ${
+                visible
+                  ? "translate-y-0 opacity-100"
+                  : "translate-y-4 opacity-0"
+              }`}
+              style={{ transitionDelay: visible ? "250ms" : "0ms" }}
+            >
+              <svg
+                width="20"
+                height="20"
+                fill="none"
+                viewBox="0 0 24 24"
+                className="transition-transform duration-200 hover:scale-110"
+              >
+                <path
+                  fill="currentColor"
+                  d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10Zm0-2a8 8 0 1 1 0-16 8 8 0 0 1 0 16Zm0-7a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm0 2c-2.33 0-7 1.17-7 3.5V20h14v-1.5c0-2.33-4.67-3.5-7-3.5Z"
+                />
+              </svg>
+              <span className="font-semibold">
+                {sampleViewers.length} người xem
+              </span>
             </div>
           </div>
-          <hr
-            className={`border-zinc-700 mb-4 transition-all duration-350 ease-out ${
-              visible ? "opacity-100 scale-x-100" : "opacity-0 scale-x-0"
-            }`}
+
+          {/* Viewers List */}
+          <div
+            className={`space-y-3 ${styles.viewList} ${isMobile ? "pb-6" : ""}`}
             style={{
-              transitionDelay: visible ? "200ms" : "0ms",
-              transformOrigin: "left",
+              ...(!isMobile && {
+                maxHeight: "calc(60dvh - 150px)",
+                overflowY: "auto",
+                overflowX: "hidden",
+                paddingRight: "4px",
+              }),
             }}
-          />
-          <div
-            className={`flex items-center gap-2 text-zinc-300 mb-4 transition-all duration-350 ease-out ${
-              visible ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
-            }`}
-            style={{ transitionDelay: visible ? "250ms" : "0ms" }}
-          >
-            <svg
-              width="20"
-              height="20"
-              fill="none"
-              viewBox="0 0 24 24"
-              className="transition-transform duration-200 hover:scale-110"
-            >
-              <path
-                fill="currentColor"
-                d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10Zm0-2a8 8 0 1 1 0-16 8 8 0 0 1 0 16Zm0-7a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm0 2c-2.33 0-7 1.17-7 3.5V20h14v-1.5c0-2.33-4.67-3.5-7-3.5Z"
-              />
-            </svg>
-            <span className="font-semibold">
-              {sampleViewers.length} người xem
-            </span>
-          </div>
-          <div
-            className={`space-y-3 ${styles.viewList} ${
-              !isMobile
-                ? "max-h-[calc(100%-180px)] overflow-y-auto overflow-x-hidden"
-                : ""
-            }`}
           >
             {sampleViewers.map((v, i) => (
               <div
@@ -205,15 +257,15 @@ export default function ViewStoryUi({
                   alt={v.name}
                   className={`${
                     isMobile ? "w-12 h-12" : "w-10 h-10"
-                  } rounded-full object-cover border-2 border-zinc-700 transition-all duration-200 hover:border-zinc-500 hover:scale-110`}
+                  } rounded-full object-cover border-2 border-zinc-700 transition-all duration-200 hover:border-zinc-500 hover:scale-110 flex-shrink-0`}
                   width={isMobile ? 48 : 40}
                   height={isMobile ? 48 : 40}
                 />
-                <div className={isMobile ? "flex-1" : ""}>
-                  <div className="text-white font-medium transition-colors duration-200">
+                <div className="flex-1 min-w-0">
+                  <div className="text-white font-medium transition-colors duration-200 truncate">
                     {v.name}
                   </div>
-                  <div className="text-xs text-zinc-400 transition-colors duration-200">
+                  <div className="text-xs text-zinc-400 transition-colors duration-200 truncate">
                     Hoạt động {v.lastActive}
                   </div>
                 </div>
