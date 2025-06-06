@@ -53,7 +53,7 @@ export default function Comment({
     const seen = new Set();
     return rawComments.filter((comment) => {
       if (seen.has(comment._id)) {
-        console.warn(`Duplicate comment found with id: ${comment._id}`);
+        // console.warn(`Duplicate comment found with id: ${comment._id}`);
         return false;
       }
       seen.add(comment._id);
@@ -106,7 +106,6 @@ export default function Comment({
     // Lấy itemType động từ post.type
     const itemType = post.type as "post" | "reel" | "image";
     dispatch(setActiveItem({ id: post._id, type: itemType }));
-    console.log("FE join room post_", post._id); // LOG khi join room
 
     // Initial fetch with limit (API only ONCE)
     dispatch(

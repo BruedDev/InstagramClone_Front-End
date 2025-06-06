@@ -550,6 +550,7 @@ export const socketService = {
     itemId: string;
     itemType: "post" | "reel";
     limit?: number;
+    skip?: number; // <-- thêm skip để hỗ trợ phân trang
     userId?: string;
   }) => {
     const currentSocket = socketService.getSocket();

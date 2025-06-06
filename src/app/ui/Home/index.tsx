@@ -17,6 +17,7 @@ import StoryAvatar from "@/components/Story/StoryAvatar";
 import { usePostContext } from "@/contexts/PostContext";
 import { socketService } from "@/server/socket";
 import { useHandleUserClick } from "@/utils/useHandleUserClick";
+import VideoPlayer from "@/components/VideoPlayer";
 
 type AuthorType = Post["author"];
 
@@ -82,15 +83,22 @@ export default function HomeUi({ loading }: HomeUiProps) {
           if (!videoElement) return;
 
           if (entry.isIntersecting) {
-            videoElement
-              .play()
-              .catch((err) => console.log("Autoplay prevented:", err));
+            // Chỉ tự động phát nếu video không bị pause thủ công
+            if (videoElement.paused && !videoElement.dataset.userPaused) {
+              videoElement
+                .play()
+                .catch((err) => console.log("Autoplay prevented:", err));
+            }
           } else {
-            videoElement.pause();
+            // Nếu người dùng pause thủ công thì đánh dấu
+            if (!videoElement.paused) {
+              videoElement.pause();
+              videoElement.dataset.userPaused = "true";
+            }
           }
         });
       },
-      { threshold: 0.7 }
+      { threshold: 0.5 }
     );
 
     Object.keys(postRefs.current).forEach((postId) => {
@@ -103,6 +111,26 @@ export default function HomeUi({ loading }: HomeUiProps) {
     return () => {
       observer.disconnect();
     };
+  }, [posts]);
+
+  // Đảm bảo lắng nghe sự kiện pause/play để đánh dấu userPaused
+  useEffect(() => {
+    Object.values(videoRefs.current).forEach((video) => {
+      if (video) {
+        video.onpause = () => {
+          // Đánh dấu là user pause nếu video đang trong vùng nhìn thấy
+          if (
+            document.body.contains(video) &&
+            video.closest("[data-post-id]")
+          ) {
+            video.dataset.userPaused = "true";
+          }
+        };
+        video.onplay = () => {
+          delete video.dataset.userPaused;
+        };
+      }
+    });
   }, [posts]);
 
   // Join socket room cho tất cả postId trên Home để nhận realtime like
@@ -419,16 +447,31 @@ export default function HomeUi({ loading }: HomeUiProps) {
                 style={{ borderRadius: "8px" }}
               />
             ) : post.type === "video" ? (
-              <video
+              <VideoPlayer
                 ref={(el) => {
                   videoRefs.current[post._id] = el;
                   return undefined;
                 }}
                 src={post.fileUrl}
-                controls
+                className="w-full h-full object-cover"
+                autoPlay={true}
                 muted={false}
                 playsInline
-                className="w-full h-full object-cover"
+                initialTime={currentVideoTime}
+                isPlaying={
+                  !!videoRefs.current[post._id] &&
+                  !videoRefs.current[post._id]?.paused
+                }
+                onPlayPauseClick={() => {
+                  const video = videoRefs.current[post._id];
+                  if (video) {
+                    if (video.paused) {
+                      video.play();
+                    } else {
+                      video.pause();
+                    }
+                  }
+                }}
                 onClick={(e) => {
                   e.stopPropagation();
                 }}

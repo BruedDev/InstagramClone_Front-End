@@ -99,6 +99,12 @@ export default function MainChat({
     selectedUser?.lastOnline !== null && selectedUser?.lastOnline !== undefined
       ? String(selectedUser.lastOnline)
       : null,
+    selectedUser?.lastActive !== null && selectedUser?.lastActive !== undefined
+      ? String(selectedUser.lastActive)
+      : null,
+    selectedUser?.lastOnline !== null && selectedUser?.lastOnline !== undefined
+      ? String(selectedUser.lastOnline)
+      : null,
     isUserOnline(selectedUser?._id || "") ? "online" : "offline"
   );
   const dispatch = useAppDispatch();

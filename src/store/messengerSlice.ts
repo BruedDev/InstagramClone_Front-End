@@ -119,7 +119,7 @@ const messengerSlice = createSlice({
      state.message = action.payload;
    },
    addMessage: (state, action: PayloadAction<Message>) => {
-     state.messages.push(action.payload);
+     state.messages.unshift(action.payload); // Thêm tin nhắn mới vào đầu danh sách
    },
    setShowMainChat: (state, action: PayloadAction<boolean>) => {
      state.showMainChat = action.payload;

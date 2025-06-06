@@ -107,7 +107,7 @@
 
 .postHeader {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   padding: 14px 16px;
   border-bottom: 1px solid #262626;
@@ -115,7 +115,8 @@
 
 .userInfo {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
+  flex: 1;
 }
 
 .avatarContainer {
@@ -124,6 +125,8 @@
   border-radius: 50%;
   overflow: hidden;
   margin-right: 12px;
+  flex-shrink: 0;
+  margin-top: 5px;
 }
 
 .avatar {
@@ -140,10 +143,27 @@
   border-radius: 50%;
 }
 
+.userDetails {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
 .username {
   font-weight: 600;
   color: white;
   font-size: 14px;
+  margin-bottom: 2px;
+}
+
+.caption {
+  color: white;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.3;
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 .moreButton {
@@ -152,6 +172,8 @@
   color: white;
   cursor: pointer;
   font-weight: bold;
+  flex-shrink: 0;
+  margin-left: 12px;
 }
 
 .commentsSection {
@@ -291,11 +313,13 @@
     cursor: default;
   }
 }
+
 .text {
   word-break: break-word;
   overflow-wrap: anywhere;
   white-space: normal;
 }
+
 .count {
   display: none;
 

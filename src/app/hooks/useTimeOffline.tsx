@@ -6,6 +6,8 @@ interface TimeOfflineResult {
 }
 
 export const useTimeOffline = (
+  p0: string | number | null,
+  p1: string | number | null,
   lastActive: string | null,
   lastOnline: string | null,
   status: "online" | "offline"

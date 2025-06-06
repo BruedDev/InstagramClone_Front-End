@@ -1,4 +1,4 @@
-import { useState, useRef, useLayoutEffect } from "react";
+import { useState, useRef, useLayoutEffect, useEffect } from "react";
 
 interface ShortenCaptionProps {
   text: string;
@@ -6,6 +6,10 @@ interface ShortenCaptionProps {
   maxLines?: number;
   showMoreText?: string;
   showLessText?: string;
+  renderOverlay?: (
+    content: React.ReactNode,
+    isExpanded: boolean
+  ) => React.ReactNode;
 }
 
 export default function ShortenCaption({
@@ -14,6 +18,7 @@ export default function ShortenCaption({
   maxLines = 2,
   showMoreText = "Xem thêm",
   showLessText = "Ẩn xem thêm",
+  renderOverlay,
 }: ShortenCaptionProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [shouldShowButton, setShouldShowButton] = useState(false);
@@ -64,6 +69,13 @@ export default function ShortenCaption({
     return () => clearTimeout(timer);
   }, [text, maxLines]);
 
+  useEffect(() => {
+    // Lắng nghe sự kiện đóng overlay từ bên ngoài (nút Ẩn xem thêm)
+    const handler = () => setIsExpanded(false);
+    window.addEventListener("shorten-caption-close", handler);
+    return () => window.removeEventListener("shorten-caption-close", handler);
+  }, []);
+
   const toggleExpanded = (e: React.MouseEvent) => {
     e.stopPropagation();
     setIsExpanded(!isExpanded);
@@ -92,10 +104,34 @@ export default function ShortenCaption({
     );
   }
 
+  // Nếu có renderOverlay và đang mở rộng, dùng overlay
+  if (renderOverlay && isExpanded) {
+    return (
+      <>
+        {renderOverlay(
+          <>
+            <span
+              style={{
+                color: "#fafafa",
+                fontSize: 16,
+                lineHeight: 1.6,
+                wordBreak: "break-word",
+                width: "100%",
+              }}
+            >
+              {text}
+            </span>
+          </>,
+          isExpanded
+        )}
+      </>
+    );
+  }
+
+  // Không dùng overlay, chỉ mở rộng tự nhiên
   return (
     <span ref={containerRef} className={className}>
       {!isExpanded && shouldShowButton ? (
-        // Khi bị rút gọn, cắt text và thêm nút CÙNG HÀNG
         <span className="flex flex-row">
           <span
             style={{
@@ -123,10 +159,9 @@ export default function ShortenCaption({
           </button>
         </span>
       ) : (
-        // Khi mở rộng hoặc không cần rút gọn
         <span>
           {text}
-          {shouldShowButton && isExpanded && (
+          {shouldShowButton && isExpanded && !renderOverlay && (
             <>
               <br />
               <button

@@ -40,6 +40,14 @@ interface Story {
   hasAudio?: boolean;
 }
 
+interface Viewer {
+  _id: string;
+  username: string;
+  fullName: string;
+  profilePicture?: string;
+  viewedAt: string;
+}
+
 interface StoryUiProps {
   author: Author;
   stories: Story[];
@@ -91,6 +99,7 @@ const StoryUi: React.FC<StoryUiProps> = ({
   const [sending, setSending] = React.useState(false);
   const [showViewers, setShowViewers] = React.useState(false);
   const [isMobile, setIsMobile] = React.useState(false);
+  const [viewers, setViewers] = React.useState<Viewer[]>([]);
 
   React.useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth <= 767);
@@ -143,6 +152,24 @@ const StoryUi: React.FC<StoryUiProps> = ({
   const isOwner =
     typeof window !== "undefined" &&
     localStorage.getItem("username") === author.username;
+
+  React.useEffect(() => {
+    if (!showViewers) return;
+    // Lắng nghe sự kiện viewers từ socket
+    const handleViewed = (data: { storyId: string; viewers: Viewer[] }) => {
+      if (data && data.storyId === story._id && Array.isArray(data.viewers)) {
+        setViewers(data.viewers);
+      }
+    };
+    socketService.onStoryViewed(handleViewed);
+    // Khi mở modal, emit lại để lấy viewers mới nhất
+    if (userId && typeof userId === "string") {
+      socketService.emitStoryView({ storyId: story._id, userId });
+    }
+    return () => {
+      socketService.offStoryViewed(handleViewed);
+    };
+  }, [showViewers, story._id, userId]);
 
   return (
     <div
@@ -311,87 +338,90 @@ const StoryUi: React.FC<StoryUiProps> = ({
                   s._id,
                   s.mediaType
                 );
+                // Sửa lỗi: thêm return vào function body
                 return (
                   <SwiperSlide
                     key={`${s._id}-slide-${idx}`}
                     className={`flex items-center justify-center relative ${styles.slide}`}
                     style={{ backgroundColor: slideBackgroundColor }}
                   >
-                    {s.mediaType.startsWith("video") ? (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <video
-                          ref={idx === current ? (el) => setVideoRef(el) : null}
-                          src={s.mediaUrl}
-                          controls={false}
-                          muted={!!s.audioUrl}
-                          autoPlay
-                          loop
-                          playsInline
-                          webkit-playsinline="true"
-                          onLoadedMetadata={(e) => {
-                            const video = e.currentTarget;
-                            const determinedFit =
-                              video.videoWidth > video.videoHeight
-                                ? "object-contain"
-                                : "object-cover";
-                            setStoryFitStyles((prevStyles) => ({
-                              ...prevStyles,
-                              [s._id]: determinedFit,
-                            }));
-                          }}
-                          className={`w-full h-full ${fitClassForThisSlide} rounded-2xl max-[480px]:rounded-none`}
-                          onEnded={() => {
-                            if (swiperRef.current && idx < stories.length - 1) {
-                              swiperRef.current.slideNext();
-                            } else {
-                              onClose();
-                            }
-                          }}
-                        />
-
-                        {s.audioUrl && (
-                          <audio
-                            ref={
-                              idx === current ? (el) => setAudioRef(el) : null
-                            }
+                    {idx === current ? (
+                      s.mediaType.startsWith("video") ? (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <video
+                            ref={(el) => setVideoRef(el)}
+                            src={s.mediaUrl}
                             controls={false}
-                            className="hidden"
-                            src={s.audioUrl}
+                            muted={!!s.audioUrl}
+                            autoPlay
+                            loop
+                            playsInline
+                            webkit-playsinline="true"
+                            onLoadedMetadata={(e) => {
+                              const video = e.currentTarget;
+                              const determinedFit =
+                                video.videoWidth > video.videoHeight
+                                  ? "object-contain"
+                                  : "object-cover";
+                              setStoryFitStyles((prevStyles) => ({
+                                ...prevStyles,
+                                [s._id]: determinedFit,
+                              }));
+                            }}
+                            className={`w-full h-full ${fitClassForThisSlide} rounded-2xl max-[480px]:rounded-none`}
+                            onEnded={() => {
+                              if (
+                                swiperRef.current &&
+                                idx < stories.length - 1
+                              ) {
+                                swiperRef.current.slideNext();
+                              } else {
+                                onClose();
+                              }
+                            }}
                           />
-                        )}
-                      </div>
+                          {s.audioUrl && (
+                            <audio
+                              ref={(el) => setAudioRef(el)}
+                              controls={false}
+                              className="hidden"
+                              src={s.audioUrl}
+                            />
+                          )}
+                        </div>
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <Image
+                            src={s.mediaUrl}
+                            alt="story"
+                            fill
+                            onLoadingComplete={({
+                              naturalWidth,
+                              naturalHeight,
+                            }) => {
+                              const determinedFit =
+                                naturalWidth > naturalHeight
+                                  ? "object-contain"
+                                  : "object-cover";
+                              setStoryFitStyles((prevStyles) => ({
+                                ...prevStyles,
+                                [s._id]: determinedFit,
+                              }));
+                            }}
+                            className={`${fitClassForThisSlide} rounded-2xl max-[480px]:rounded-none`}
+                          />
+                          {s.audioUrl && (
+                            <audio
+                              ref={(el) => setAudioRef(el)}
+                              controls={false}
+                              className="hidden"
+                              src={s.audioUrl}
+                            />
+                          )}
+                        </div>
+                      )
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <Image
-                          src={s.mediaUrl}
-                          alt="story"
-                          fill
-                          onLoadingComplete={({
-                            naturalWidth,
-                            naturalHeight,
-                          }) => {
-                            const determinedFit =
-                              naturalWidth > naturalHeight
-                                ? "object-contain"
-                                : "object-cover";
-                            setStoryFitStyles((prevStyles) => ({
-                              ...prevStyles,
-                              [s._id]: determinedFit,
-                            }));
-                          }}
-                          className={`${fitClassForThisSlide} rounded-2xl max-[480px]:rounded-none`}
-                        />
-                        {s.audioUrl && (
-                          <audio
-                            ref={
-                              idx === current ? (el) => setAudioRef(el) : null
-                            }
-                            controls={false}
-                            className="hidden"
-                            src={s.audioUrl}
-                          />
-                        )}
-                      </div>
+                      <div className="w-full h-full" />
                     )}
                   </SwiperSlide>
                 );
@@ -409,7 +439,7 @@ const StoryUi: React.FC<StoryUiProps> = ({
         </div>
       </div>
       {showViewers && (
-        <ViewStoryUi onClose={() => setShowViewers(false)} viewers={[]} />
+        <ViewStoryUi onClose={() => setShowViewers(false)} viewers={viewers} />
       )}
       <IsProfile
         profileId={author.username}
