@@ -143,14 +143,14 @@ export default function ViewStoryUi({
         <div
           className={`flex items-center justify-between px-6 py-3 border-b border-zinc-800 transition-all duration-350 ease-out ${
             visible ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
-          } ${isMobile ? "sticky top-0 bg-zinc-900 z-10" : ""}`}
+          } ${isMobile ? "sticky top-0 bg-zinc-900 z-10 rounded-t-2xl" : ""}`}
         >
           <span className="text-lg font-semibold text-white">
             Chi tiết về tin
           </span>
           <button
             onClick={handleClose}
-            className="text-zinc-400 hover:text-white text-xl w-8 h-8 flex items-center justify-center rounded-full hover:bg-zinc-800 transition-all duration-200 hover:scale-110"
+            className="text-zinc-400 hover:text-white text-xl w-8 h-8 flex items-center justify-center rounded-full hover:bg-zinc-800 transition-all duration-150 hover:scale-110"
           >
             <span aria-label="Đóng">×</span>
           </button>
@@ -182,12 +182,12 @@ export default function ViewStoryUi({
               }`}
               style={{ transitionDelay: visible ? "150ms" : "0ms" }}
             >
-              <div className="w-20 h-28 bg-zinc-800 rounded-lg flex-shrink-0 overflow-hidden transition-all duration-300 ease-out hover:scale-105 hover:rotate-1">
+              <div className="w-20 h-28 bg-zinc-800 rounded-lg flex-shrink-0 overflow-hidden transition-all duration-200 ease-out hover:scale-105 hover:rotate-1">
                 <div className="w-full h-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center">
                   <span className="text-white text-2xl">📖</span>
                 </div>
               </div>
-              <div className="w-20 h-28 bg-zinc-800 rounded-lg flex-shrink-0 flex items-center justify-center text-blue-500 font-bold text-2xl hover:bg-zinc-700 transition-all duration-300 ease-out cursor-pointer hover:scale-105 hover:rotate-1">
+              <div className="w-20 h-28 bg-zinc-800 rounded-lg flex-shrink-0 flex items-center justify-center text-blue-500 font-bold text-2xl hover:bg-zinc-700 transition-all duration-200 ease-out cursor-pointer hover:scale-105 hover:rotate-1">
                 +
               </div>
             </div>
@@ -215,7 +215,7 @@ export default function ViewStoryUi({
                 height="20"
                 fill="none"
                 viewBox="0 0 24 24"
-                className="transition-transform duration-200 hover:scale-110"
+                className="transition-transform duration-150 hover:scale-110"
               >
                 <path
                   fill="currentColor"
@@ -243,13 +243,20 @@ export default function ViewStoryUi({
             {sampleViewers.map((v, i) => (
               <div
                 key={i}
-                className={`flex items-center gap-3 p-2 rounded-lg hover:bg-zinc-800/50 transition-all duration-300 ease-out cursor-pointer hover:scale-[1.02] hover:translate-x-1 ${
+                className={`flex items-center gap-3 p-2 rounded-lg hover:bg-zinc-800/50 cursor-pointer ${
                   visible
                     ? "translate-y-0 opacity-100"
                     : "translate-y-6 opacity-0"
                 }`}
                 style={{
-                  transitionDelay: visible ? `${300 + i * 80}ms` : "0ms",
+                  // CHỈ GIỮ LẠI ANIMATION CHO VIỆC XUẤT HIỆN BAN ĐẦU
+                  ...(visible
+                    ? {}
+                    : {
+                        transition:
+                          "transform 0.35s ease-out, opacity 0.35s ease-out",
+                        transitionDelay: `${300 + i * 80}ms`,
+                      }),
                 }}
               >
                 <Image
@@ -257,15 +264,15 @@ export default function ViewStoryUi({
                   alt={v.name}
                   className={`${
                     isMobile ? "w-12 h-12" : "w-10 h-10"
-                  } rounded-full object-cover border-2 border-zinc-700 transition-all duration-200 hover:border-zinc-500 hover:scale-110 flex-shrink-0`}
+                  } rounded-full object-cover border-2 border-zinc-700 hover:border-zinc-500 flex-shrink-0`}
                   width={isMobile ? 48 : 40}
                   height={isMobile ? 48 : 40}
                 />
                 <div className="flex-1 min-w-0">
-                  <div className="text-white font-medium transition-colors duration-200 truncate">
+                  <div className="text-white font-medium truncate">
                     {v.name}
                   </div>
-                  <div className="text-xs text-zinc-400 transition-colors duration-200 truncate">
+                  <div className="text-xs text-zinc-400 truncate">
                     Hoạt động {v.lastActive}
                   </div>
                 </div>
