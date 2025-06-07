@@ -213,31 +213,67 @@ const VideoPlayer = forwardRef<HTMLVideoElement, VideoPlayerProps>(
               </div>
             )}
         {caption && <div className={styles.caption}>{caption}</div>}
-        {showControls && (
-          <div className={styles.controls}>
-            <button onClick={onPlayPauseClick} type="button">
-              {localRef.current && !localRef.current.paused ? (
-                <BsPause />
-              ) : (
-                <HiMiniPlay />
-              )}
-            </button>
-            <span className={styles.time}>
-              {formatTime(currentTime)} / {formatTime(duration)}
-            </span>
-            <input
-              type="range"
-              min={0}
-              max={duration || 0}
-              value={currentTime}
-              step={0.1}
-              onChange={handleSeek}
-              className={styles.progress}
-            />
-            <button onClick={handleFullscreen}>
-              <FaExpand />
-            </button>
-          </div>
+        {/* Controls cho mobile: fade out khi play, luôn hiện khi pause */}
+        {isMobile ? (
+          showMobileOverlay && (
+            <div
+              className={
+                fadeOut
+                  ? `${styles.controls} ${styles.mobileControlsFadeOut}`
+                  : `${styles.controls} ${styles.mobileControlsVisible}`
+              }
+            >
+              <button onClick={onPlayPauseClick} type="button">
+                {localRef.current && !localRef.current.paused ? (
+                  <BsPause />
+                ) : (
+                  <HiMiniPlay />
+                )}
+              </button>
+              <span className={styles.time}>
+                {formatTime(currentTime)} / {formatTime(duration)}
+              </span>
+              <input
+                type="range"
+                min={0}
+                max={duration || 0}
+                value={currentTime}
+                step={0.1}
+                onChange={handleSeek}
+                className={styles.progress}
+              />
+              <button onClick={handleFullscreen}>
+                <FaExpand />
+              </button>
+            </div>
+          )
+        ) : (
+          showControls && (
+            <div className={styles.controls}>
+              <button onClick={onPlayPauseClick} type="button">
+                {localRef.current && !localRef.current.paused ? (
+                  <BsPause />
+                ) : (
+                  <HiMiniPlay />
+                )}
+              </button>
+              <span className={styles.time}>
+                {formatTime(currentTime)} / {formatTime(duration)}
+              </span>
+              <input
+                type="range"
+                min={0}
+                max={duration || 0}
+                value={currentTime}
+                step={0.1}
+                onChange={handleSeek}
+                className={styles.progress}
+              />
+              <button onClick={handleFullscreen}>
+                <FaExpand />
+              </button>
+            </div>
+          )
         )}
       </div>
     );

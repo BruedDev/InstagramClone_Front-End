@@ -89,11 +89,6 @@
   pointer-events: none;
   z-index: 2;
   opacity: 1;
-  transition: opacity 1s;
-
-  .fadeOut {
-    opacity: 0;
-  }
 }
 
 .centerIcon {
@@ -101,4 +96,15 @@
   font-size: 4rem;
   filter: drop-shadow(0 2px 8px #000) drop-shadow(0 0 2px #000);
   opacity: 0.85;
+}
+
+// Hiệu ứng fade cho controls
+.mobileControlsFadeOut {
+  opacity: 0;
+  transition: opacity 1s;
+  pointer-events: none;
+}
+.mobileControlsVisible {
+  opacity: 1;
+  transition: opacity 1s;
 }
