@@ -104,10 +104,22 @@ const VideoPlayer = forwardRef<HTMLVideoElement, VideoPlayerProps>(
       return `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
     };
 
+    // Hàm play/pause dùng cho overlay icon (mobile và PC)
+    const handlePlayPause = (e?: React.MouseEvent) => {
+      if (e) e.stopPropagation(); // Ngăn lan truyền sự kiện lên div cha
+      if (localRef.current) {
+        if (localRef.current.paused) {
+          localRef.current.play();
+        } else {
+          localRef.current.pause();
+        }
+      }
+    };
+
     return (
       <div
         className={styles.videoContainer}
-        onClick={onClick} // Trả lại logic cũ, không xử lý play/pause toàn vùng cho mobile
+        onClick={onClick}
         onMouseEnter={() => setShowControls(true)}
         onMouseLeave={() => setShowControls(false)}
       >
@@ -134,19 +146,15 @@ const VideoPlayer = forwardRef<HTMLVideoElement, VideoPlayerProps>(
           loop={loop}
           playsInline={playsInline}
           style={{ borderRadius: 8, ...style }}
-          onClick={() => {
-            if (localRef.current) {
-              if (localRef.current.paused) {
-                localRef.current.play();
-              } else {
-                localRef.current.pause();
-              }
-            }
-          }}
+          // Không xử lý play/pause ở đây nữa, chỉ dùng overlay icon
         />
         {/* Center play/pause icon overlay */}
         {(showControls || (localRef.current && localRef.current.paused)) && (
-          <div className={styles.centerIconOverlay}>
+          <div
+            className={styles.centerIconOverlay}
+            style={{ pointerEvents: "auto", cursor: "pointer" }}
+            onClick={handlePlayPause}
+          >
             {localRef.current && localRef.current.paused ? (
               <HiMiniPlay className={styles.centerIcon} />
             ) : (
@@ -157,7 +165,7 @@ const VideoPlayer = forwardRef<HTMLVideoElement, VideoPlayerProps>(
         {caption && <div className={styles.caption}>{caption}</div>}
         {showControls && (
           <div className={styles.controls}>
-            <button onClick={onPlayPauseClick} type="button">
+            <button onClick={onPlayPauseClick || handlePlayPause} type="button">
               {localRef.current && !localRef.current.paused ? (
                 <BsPause />
               ) : (
