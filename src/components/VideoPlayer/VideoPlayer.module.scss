@@ -88,6 +88,12 @@
   justify-content: center;
   pointer-events: none;
   z-index: 2;
+  opacity: 1;
+  transition: opacity 1s;
+
+  .fadeOut {
+    opacity: 0;
+  }
 }
 
 .centerIcon {

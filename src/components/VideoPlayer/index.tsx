@@ -12,6 +12,14 @@ import { BsPause } from "react-icons/bs";
 import { HiMiniPlay } from "react-icons/hi2";
 import styles from "./VideoPlayer.module.scss";
 
+// Thêm hook để nhận biết mobile
+const isMobileDevice = () => {
+  if (typeof window === "undefined") return false;
+  return /Mobi|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+    navigator.userAgent
+  );
+};
+
 interface VideoPlayerProps {
   src: string;
   caption?: string;
@@ -55,7 +63,10 @@ const VideoPlayer = forwardRef<HTMLVideoElement, VideoPlayerProps>(
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
     const [showControls, setShowControls] = useState(false);
-    // Removed unused isMobile state and effect
+    // State cho mobile overlay
+    const [showMobileOverlay, setShowMobileOverlay] = useState(false);
+    const [fadeOut, setFadeOut] = useState(false);
+    const isMobile = isMobileDevice();
 
     useImperativeHandle(ref, () => localRef.current as HTMLVideoElement, []);
 
@@ -104,17 +115,32 @@ const VideoPlayer = forwardRef<HTMLVideoElement, VideoPlayerProps>(
       return `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
     };
 
-    // Hàm play/pause dùng cho overlay icon (mobile và PC)
-    const handlePlayPause = (e?: React.MouseEvent) => {
-      if (e) e.stopPropagation(); // Ngăn lan truyền sự kiện lên div cha
-      if (localRef.current) {
-        if (localRef.current.paused) {
-          localRef.current.play();
-        } else {
-          localRef.current.pause();
-        }
+    // Xử lý click video cho mobile
+    const handleMobileVideoClick = () => {
+      if (!localRef.current) return;
+      if (localRef.current.paused) {
+        localRef.current.play();
+        setShowMobileOverlay(true);
+        setFadeOut(false);
+        setTimeout(() => {
+          setFadeOut(true);
+          setTimeout(() => setShowMobileOverlay(false), 1000); // 1s sau khi fadeOut
+        }, 1000); // 1s hiện rõ trước khi fade
+      } else {
+        localRef.current.pause();
+        setShowMobileOverlay(true);
+        setFadeOut(false);
       }
     };
+
+    // Khi pause trên mobile thì luôn hiện overlay
+    useEffect(() => {
+      if (!isMobile) return;
+      if (localRef.current && localRef.current.paused) {
+        setShowMobileOverlay(true);
+        setFadeOut(false);
+      }
+    }, [isMobile, localRef.current?.paused]);
 
     return (
       <div
@@ -146,26 +172,50 @@ const VideoPlayer = forwardRef<HTMLVideoElement, VideoPlayerProps>(
           loop={loop}
           playsInline={playsInline}
           style={{ borderRadius: 8, ...style }}
-          // Không xử lý play/pause ở đây nữa, chỉ dùng overlay icon
+          onClick={
+            isMobile
+              ? handleMobileVideoClick
+              : () => {
+                  if (localRef.current) {
+                    if (localRef.current.paused) {
+                      localRef.current.play();
+                    } else {
+                      localRef.current.pause();
+                    }
+                  }
+                }
+          }
         />
         {/* Center play/pause icon overlay */}
-        {(showControls || (localRef.current && localRef.current.paused)) && (
-          <div
-            className={styles.centerIconOverlay}
-            style={{ pointerEvents: "auto", cursor: "pointer" }}
-            onClick={handlePlayPause}
-          >
-            {localRef.current && localRef.current.paused ? (
-              <HiMiniPlay className={styles.centerIcon} />
-            ) : (
-              <BsPause className={styles.centerIcon} />
+        {isMobile
+          ? showMobileOverlay && (
+              <div
+                className={
+                  fadeOut
+                    ? `${styles.centerIconOverlay} ${styles.fadeOut}`
+                    : styles.centerIconOverlay
+                }
+              >
+                {localRef.current && localRef.current.paused ? (
+                  <HiMiniPlay className={styles.centerIcon} />
+                ) : (
+                  <BsPause className={styles.centerIcon} />
+                )}
+              </div>
+            )
+          : (showControls || (localRef.current && localRef.current.paused)) && (
+              <div className={styles.centerIconOverlay}>
+                {localRef.current && localRef.current.paused ? (
+                  <HiMiniPlay className={styles.centerIcon} />
+                ) : (
+                  <BsPause className={styles.centerIcon} />
+                )}
+              </div>
             )}
-          </div>
-        )}
         {caption && <div className={styles.caption}>{caption}</div>}
         {showControls && (
           <div className={styles.controls}>
-            <button onClick={onPlayPauseClick || handlePlayPause} type="button">
+            <button onClick={onPlayPauseClick} type="button">
               {localRef.current && !localRef.current.paused ? (
                 <BsPause />
               ) : (
