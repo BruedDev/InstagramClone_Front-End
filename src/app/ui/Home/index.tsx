@@ -42,6 +42,7 @@ export default function HomeUi({ loading }: HomeUiProps) {
   const [showPostSettings, setShowPostSettings] = useState(false);
   const [selectedPostForSettings, setSelectedPostForSettings] =
     useState<Post | null>(null);
+  const [visiblePosts, setVisiblePosts] = useState<string[]>([]);
 
   const { fromNow } = useTime();
   const { format } = useCount();
@@ -75,22 +76,38 @@ export default function HomeUi({ loading }: HomeUiProps) {
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
+        setVisiblePosts((prev) => {
+          let changed = false;
+          let newVisible = [...prev];
+          entries.forEach((entry) => {
+            const postId = entry.target.getAttribute("data-post-id");
+            if (!postId) return;
+            if (entry.isIntersecting) {
+              if (!newVisible.includes(postId)) {
+                newVisible.push(postId);
+                changed = true;
+              }
+            } else {
+              if (newVisible.includes(postId)) {
+                newVisible = newVisible.filter((id) => id !== postId);
+                changed = true;
+              }
+            }
+          });
+          return changed ? newVisible : prev;
+        });
         entries.forEach((entry) => {
           const postId = entry.target.getAttribute("data-post-id");
           if (!postId) return;
-
           const videoElement = videoRefs.current[postId];
           if (!videoElement) return;
-
           if (entry.isIntersecting) {
-            // Chỉ tự động phát nếu video không bị pause thủ công
             if (videoElement.paused && !videoElement.dataset.userPaused) {
               videoElement
                 .play()
                 .catch((err) => console.log("Autoplay prevented:", err));
             }
           } else {
-            // Nếu người dùng pause thủ công thì đánh dấu
             if (!videoElement.paused) {
               videoElement.pause();
               videoElement.dataset.userPaused = "true";
@@ -100,14 +117,12 @@ export default function HomeUi({ loading }: HomeUiProps) {
       },
       { threshold: 0.5 }
     );
-
     Object.keys(postRefs.current).forEach((postId) => {
       const postElement = postRefs.current[postId];
       if (postElement) {
         observer.observe(postElement);
       }
     });
-
     return () => {
       observer.disconnect();
     };
@@ -454,7 +469,7 @@ export default function HomeUi({ loading }: HomeUiProps) {
                 }}
                 src={post.fileUrl}
                 className="w-full h-full object-cover"
-                autoPlay={true}
+                autoPlay={visiblePosts.includes(post._id)}
                 muted={false}
                 playsInline
                 initialTime={currentVideoTime}

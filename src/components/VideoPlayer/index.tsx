@@ -55,6 +55,7 @@ const VideoPlayer = forwardRef<HTMLVideoElement, VideoPlayerProps>(
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
     const [showControls, setShowControls] = useState(false);
+    // Removed unused isMobile state and effect
 
     useImperativeHandle(ref, () => localRef.current as HTMLVideoElement, []);
 
@@ -106,7 +107,7 @@ const VideoPlayer = forwardRef<HTMLVideoElement, VideoPlayerProps>(
     return (
       <div
         className={styles.videoContainer}
-        onClick={onClick}
+        onClick={onClick} // Trả lại logic cũ, không xử lý play/pause toàn vùng cho mobile
         onMouseEnter={() => setShowControls(true)}
         onMouseLeave={() => setShowControls(false)}
       >

@@ -85,6 +85,17 @@ const StoryModal: React.FC<
   const userId =
     typeof window !== "undefined" ? localStorage.getItem("id") : null;
 
+  // Helper function để xử lý đóng modal
+  const handleClose = useCallback(() => {
+    if (deltail) {
+      onClose();
+    } else {
+      // Xử lý URL cho trường hợp open thông thường
+      window.history.replaceState({}, "", prevPathRef.current || "/");
+      onClose();
+    }
+  }, [deltail, onClose]);
+
   const resetProgress = useCallback(() => {
     if (rafRef.current !== null) {
       cancelAnimationFrame(rafRef.current);
@@ -145,13 +156,16 @@ const StoryModal: React.FC<
       }
       const newProgress = Math.min(100, (totalElapsed / actualDuration) * 100);
       setProgress(newProgress);
-      if (totalElapsed >= actualDuration) {
+
+      // Chỉ tự động chuyển story khi không phải deltail
+      if (!deltail && totalElapsed >= actualDuration) {
         setProgress(100);
         if (swiperRef.current) {
           if (current < stories.length - 1) {
             swiperRef.current.slideNext();
           } else {
-            onClose();
+            // Sử dụng handleClose để xử lý URL đúng cách
+            handleClose();
           }
         }
       } else {
@@ -174,12 +188,13 @@ const StoryModal: React.FC<
     duration,
     current,
     stories.length,
-    onClose,
+    handleClose,
     elapsed,
     story,
     videoRef,
     videoRef?.duration,
     videoRef?.readyState,
+    deltail, // Thêm deltail vào dependency
   ]);
 
   useEffect(() => {
@@ -227,6 +242,9 @@ const StoryModal: React.FC<
   }, [audioRef, videoRef, isPlaying, isMuted, story]);
 
   useEffect(() => {
+    // Chỉ xử lý URL khi không phải deltail
+    if (deltail) return;
+
     if (open && !wasOpenRef.current) {
       // Lưu lại pathname gốc khi mở modal lần đầu
       prevPathRef.current = window.location.pathname;
@@ -236,24 +254,30 @@ const StoryModal: React.FC<
       // Khi chuyển story, chỉ pushState, không ghi đè prevPathRef
       window.history.pushState({}, "", `/story/${stories[current]._id}`);
     }
-  }, [open, current, stories]);
+  }, [open, current, stories, deltail]);
 
   useEffect(() => {
+    // Chỉ xử lý URL khi không phải deltail
+    if (deltail) return;
+
     if (!open && wasOpenRef.current) {
       window.history.replaceState({}, "", prevPathRef.current || "/");
       wasOpenRef.current = false;
     }
-  }, [open]);
+  }, [open, deltail]);
 
   const nextStory = useCallback(() => {
     if (swiperRef.current) {
       if (current < stories.length - 1) {
         swiperRef.current.slideNext();
       } else {
-        onClose();
+        // Chỉ tự động đóng modal khi không phải deltail
+        if (!deltail) {
+          handleClose();
+        }
       }
     }
-  }, [current, stories.length, onClose]);
+  }, [current, stories.length, handleClose, deltail]);
 
   const prevStory = useCallback(() => {
     if (swiperRef.current) {
@@ -266,13 +290,13 @@ const StoryModal: React.FC<
   useEffect(() => {
     if (!open) return;
     const handleKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") handleClose();
       if (e.key === "ArrowLeft") prevStory();
       if (e.key === "ArrowRight") nextStory();
     };
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
-  }, [open, onClose, prevStory, nextStory]);
+  }, [open, handleClose, prevStory, nextStory]);
 
   useEffect(() => {
     let d = 7000;
@@ -421,7 +445,7 @@ const StoryModal: React.FC<
               Không có story nào để hiển thị
             </span>
             <button
-              onClick={onClose}
+              onClick={handleClose}
               className="p-2 rounded-full hover:bg-zinc-800 transition-colors"
             >
               <X className="w-6 h-6 text-white" />
@@ -440,14 +464,7 @@ const StoryModal: React.FC<
       progress={progress}
       isMuted={isMuted}
       isPlaying={isPlaying}
-      onClose={() => {
-        if (deltail) {
-          onClose();
-        } else {
-          window.history.replaceState({}, "", prevPathRef.current || "/");
-          onClose();
-        }
-      }}
+      onClose={handleClose}
       prevStory={prevStory}
       nextStory={nextStory}
       setIsMuted={setIsMuted}
