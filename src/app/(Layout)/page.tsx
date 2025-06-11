@@ -236,7 +236,12 @@ export default function Home() {
 
       {/* Virtualized Posts */}
       {loading ? (
-        <HomeUi loading={true} posts={[]} onLikeRealtime={handleLikeRealtime} />
+        <HomeUi
+          loading={true}
+          posts={[]}
+          onLikeRealtime={handleLikeRealtime}
+          isMobileView={isMobileView}
+        />
       ) : (
         <VirtualizedPostList
           posts={memoizedPosts}
