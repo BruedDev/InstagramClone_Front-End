@@ -2,23 +2,25 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 
-interface VirtualizedPostListProps {
-  posts: any[];
-  renderPost: (post: any, index: number) => React.ReactNode;
+interface VirtualizedPostListProps<T extends { _id?: string | number }> {
+  posts: T[];
+  renderPost: (post: T, index: number) => React.ReactNode;
   itemHeight?: number;
   overscan?: number;
   onLoadMore?: () => void;
   loading?: boolean;
 }
 
-export default function VirtualizedPostList({
+export default function VirtualizedPostList<
+  T extends { _id?: string | number }
+>({
   posts,
   renderPost,
   itemHeight = 600,
   overscan = 3,
   onLoadMore,
   loading = false,
-}: VirtualizedPostListProps) {
+}: VirtualizedPostListProps<T>) {
   const [scrollTop, setScrollTop] = useState(0);
   const [containerHeight, setContainerHeight] = useState(0);
   const [itemHeights, setItemHeights] = useState<Map<number, number>>(
@@ -167,7 +169,7 @@ export default function VirtualizedPostList({
           const actualIndex = startIndex + i;
           return (
             <div
-              key={post._id || actualIndex}
+              key={post._id ?? actualIndex}
               ref={(el) => measureItem(actualIndex, el)}
               style={{
                 minHeight: itemHeight,
