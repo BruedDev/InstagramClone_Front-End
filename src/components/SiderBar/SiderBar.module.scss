@@ -20,7 +20,7 @@
 
   @media (max-width: 768px) {
     width: 100% !important;
-    height: 70px;
+    height: 60px;
     position: fixed;
     top: auto;
     bottom: 0;
@@ -30,6 +30,8 @@
     padding: 7px;
     border-right: none;
     background-color: #0d1015;
+    overflow-x: hidden;
+    overflow-y: hidden;
   }
 }
 
@@ -64,7 +66,8 @@
     margin: 0;
     padding: 0;
     gap: 0;
-    margin-left: 10px;
+    overflow-x: hidden;
+    overflow-y: hidden;
   }
 }
 
@@ -81,6 +84,10 @@
 
   &:hover {
     background-color: #1a1a1a;
+
+    @media (max-width: 768px) {
+      background-color: transparent;
+    }
   }
 
   @media (max-width: 1264px) {
@@ -100,15 +107,27 @@
 
 .active {
   background-color: #1a1a1a;
+
+  @media (max-width: 768px) {
+    background-color: transparent;
+  }
 }
 
 .avatar {
   img {
-    width: 24px;
-    height: 24px;
+    border: none; // Không có border mặc định
+    width: 30px;
+    height: 30px;
     border-radius: 50%;
-    background-color: #888;
+    padding: 3px;
+    transition: border 0.2s ease;
   }
+}
+
+// Khi avatar item được active
+.navItem.avatar.active img {
+  border: 2px solid #fff;
+  padding: 2px;
 }
 
 .bottomItem {
@@ -118,22 +137,27 @@
     margin-top: 0;
   }
 }
+
 @media (max-width: 768px) {
   .item2,
-  .item3,
   .item4,
-  .item8 {
+  .item8,
+  .item6 {
     display: none;
   }
 }
 
 .sidebar.collapsed {
   width: 70px;
+  height: 100dvh;
+  overflow-x: hidden !important;
 
   .logo {
     display: flex;
     justify-content: center;
     align-items: center;
+    margin-right: 10px;
+    // margin-bottom: 20px;
   }
 
   .navItem {
@@ -144,6 +168,9 @@
       display: none;
     }
   }
+  @media (max-width: 768px) {
+    height: auto;
+  }
 }
 
 @media (max-width: 768px) {
@@ -152,11 +179,33 @@
   }
 
   .item1,
-  .item5,
-  .item6 {
-    svg {
-      width: 26px;
-      height: 26px;
+  .item3,
+  .avatar {
+    img {
+      width: 25.5px;
+      height: 25.5px;
+    }
+  }
+
+  .item3 {
+    order: 5;
+  }
+
+  .item5 {
+    order: 3;
+  }
+
+  .avatar {
+    order: 6;
+    img {
+      width: 32px;
+      height: 32px;
+    }
+
+    // Mobile active state - border dày hơn khi active
+    &.active img {
+      border: 2px solid #fff;
+      padding: 1.5px;
     }
   }
 }

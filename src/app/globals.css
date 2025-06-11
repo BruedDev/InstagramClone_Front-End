@@ -25,6 +25,7 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
   scrollbar-color: #808080 transparent;
+  overflow-x: hidden !important;
 }
 
 @media(max-width: 768px) {
@@ -34,5 +35,22 @@ body {
 
   body::-webkit-scrollbar {
     display: none;
+  }
+}
+
+main {
+  margin-left: 240px;
+  overflow-x: hidden !important;
+}
+
+@media(max-width: 1264px) {
+  main {
+    margin-left: 70px;
+  }
+}
+
+@media(max-width: 768px) {
+  main {
+    margin-left: 0;
   }
 }
