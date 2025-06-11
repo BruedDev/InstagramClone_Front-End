@@ -202,7 +202,10 @@ export default function Home() {
   if (error) return <div>Lỗi: {error}</div>;
 
   return (
-    <div className={styles.container}>
+    <div
+      className={styles.container}
+      style={isMobileView ? { marginBottom: 120 } : {}}
+    >
       <div className={`${styles.header} ${!showHeader ? styles.hidden : ""}`}>
         <div className={styles.headerContent}>
           <div className={styles.logo}>
@@ -235,28 +238,36 @@ export default function Home() {
       <StoryUserHome />
 
       {/* Virtualized Posts */}
-      <VirtualizedPostList
-        posts={memoizedPosts}
-        renderPost={(post: Post) => (
-          <HomeUi
-            posts={[post]}
-            loading={false}
-            onLikeRealtime={handleLikeRealtime}
-            onOpenPostModal={handleOpenPostModal}
-            isMobileView={isMobileView}
-            onOpenMobileComment={handleOpenMobileComment}
-          />
-        )}
-        itemHeight={450}
-        overscan={2}
-        onLoadMore={loadMorePosts}
-        loading={loadingMore}
-      />
+      {loading ? (
+        <HomeUi
+          loading={true}
+          posts={[]}
+          onLikeRealtime={handleLikeRealtime}
+          isMobileView={isMobileView}
+        />
+      ) : (
+        <VirtualizedPostList
+          posts={memoizedPosts}
+          renderPost={(post: Post) => (
+            <HomeUi
+              posts={[post]}
+              loading={false}
+              onLikeRealtime={handleLikeRealtime}
+              onOpenPostModal={handleOpenPostModal}
+              isMobileView={isMobileView}
+              onOpenMobileComment={handleOpenMobileComment}
+            />
+          )}
+          // itemHeight={600}
+          overscan={2}
+          onLoadMore={loadMorePosts}
+          loading={loadingMore}
+        />
+      )}
 
-      {/* Loading more indicator */}
       {loadingMore && (
-        <div style={{ textAlign: "center", padding: "20px" }}>
-          <div className={styles.loadingSpinner}>Đang tải thêm...</div>
+        <div className="flex justify-center items-center py-6">
+          <div className="w-6 h-6 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin"></div>
         </div>
       )}
 
