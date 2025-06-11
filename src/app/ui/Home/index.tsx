@@ -9,13 +9,11 @@ import Comment from "../Comment";
 import { useTime } from "@/app/hooks/useTime";
 import { useCount } from "@/app/hooks/useCount";
 import { BiDotsHorizontalRounded } from "react-icons/bi";
-import { deletePostById } from "@/server/posts";
 import { useStory } from "@/contexts/StoryContext";
 import StoryAvatar from "@/components/Story/StoryAvatar";
 import { usePostContext } from "@/contexts/PostContext";
 import { socketService } from "@/server/socket";
 import { useHandleUserClick } from "@/utils/useHandleUserClick";
-import PostSetting from "@/components/Modal/Post/PostSetting";
 
 type AuthorType = Post["author"];
 
@@ -307,9 +305,11 @@ export default function HomeUi({
   onOpenPostModal,
   isMobileView, // nhận từ cha
   onOpenMobileComment, // callback từ cha
+  onOpenPostSettings, // thêm prop này
 }: HomeUiProps & {
   isMobileView?: boolean;
   onOpenMobileComment?: (post: Post, videoTime?: number) => void;
+  onOpenPostSettings?: (post: Post, e: React.MouseEvent) => void;
 }) {
   const { setPosts } = usePostContext();
   // Restore local state for mobile comment modal logic
@@ -319,9 +319,6 @@ export default function HomeUi({
   const [overlayAnimationClass, setOverlayAnimationClass] = useState("");
   const videoRefs = useRef<{ [key: string]: HTMLVideoElement | null }>({});
   const postRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
-  const [showPostSettings, setShowPostSettings] = useState(false);
-  const [selectedPostForSettings, setSelectedPostForSettings] =
-    useState<Post | null>(null);
   const [visiblePosts, setVisiblePosts] = useState<string[]>([]);
   const { fromNow } = useTime();
   const { format } = useCount();
@@ -522,31 +519,9 @@ export default function HomeUi({
     }
   };
 
-  const handleOpenPostSettings = (post: Post, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setSelectedPostForSettings(post);
-    setShowPostSettings(true);
-  };
-
-  const handleClosePostSettings = () => {
-    setShowPostSettings(false);
-    setSelectedPostForSettings(null);
-  };
-
   const handleOverlayClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     handleCloseComments();
-  };
-
-  const handlePostSettingAction = async (action: string) => {
-    if (action === "delete" && selectedPostForSettings) {
-      try {
-        await deletePostById(selectedPostForSettings._id);
-        window.location.reload();
-      } catch (error) {
-        console.error("Xóa bài viết thất bại:", error);
-      }
-    }
   };
 
   // Hiển thị skeleton khi đang loading
@@ -573,7 +548,9 @@ export default function HomeUi({
           <PostItem
             post={post}
             onOpenComments={handleOpenComments}
-            onOpenPostSettings={handleOpenPostSettings}
+            onOpenPostSettings={
+              onOpenPostSettings ? (p, e) => onOpenPostSettings(p, e) : () => {}
+            }
             onAvatarClick={handleAvatarClick}
             onUserClick={handleUserClick}
             visiblePosts={visiblePosts}
@@ -599,15 +576,6 @@ export default function HomeUi({
             animationClass={commentsAnimationClass}
           />
         </>
-      )}
-
-      {/* PostSetting Modal */}
-      {showPostSettings && selectedPostForSettings && (
-        <PostSetting
-          onClose={handleClosePostSettings}
-          onAction={handlePostSettingAction}
-          profileId={selectedPostForSettings.author.username}
-        />
       )}
     </div>
   );

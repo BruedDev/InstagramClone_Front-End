@@ -16,6 +16,7 @@ import { Post } from "@/types/home.type";
 import PostModal from "@/components/Modal/Post/PostModal";
 import { createPortal } from "react-dom";
 import Comment from "../ui/Comment";
+import { usePostSettingModal } from "../hooks/usePostSettingModal";
 
 export default function Home() {
   const { posts, setPosts, handleLikeRealtime } = usePostContext();
@@ -199,8 +200,11 @@ export default function Home() {
     handleCloseMobileComment();
   };
 
+  const postSettingModal = usePostSettingModal();
+
   if (error) return <div>Lỗi: {error}</div>;
 
+  // Sửa renderPost để truyền callback mở PostSetting
   return (
     <div
       className={styles.container}
@@ -256,6 +260,7 @@ export default function Home() {
               onOpenPostModal={handleOpenPostModal}
               isMobileView={isMobileView}
               onOpenMobileComment={handleOpenMobileComment}
+              onOpenPostSettings={postSettingModal.handleOpenPostSettings}
             />
           )}
           // itemHeight={600}
@@ -341,6 +346,9 @@ export default function Home() {
           </>,
           document.body
         )}
+
+      {/* PostSetting Modal (hiển thị ở cha, cùng cấp với các modal khác) */}
+      {postSettingModal.renderModal()}
     </div>
   );
 }
