@@ -1,7 +1,10 @@
 .homeContainerResponsiveBg {
   background-color: #000;
+
   @media (max-width: 768px) {
     background-color: #0d1015;
+    margin: 0 !important;
+    padding: 0 !important;
   }
 }
 
@@ -10,6 +13,7 @@
   @media (max-width: 768px) {
     background-color: #0d1015;
   }
+
   @media (max-width: 480px) {
     padding-bottom: 20px;
     border: none;

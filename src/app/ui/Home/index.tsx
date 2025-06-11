@@ -49,7 +49,7 @@ const SkeletonPost = memo(() => (
     >
       <div
         className="w-full h-full bg-gray-700 animate-pulse"
-        style={{ borderRadius: "8px", margin: "2px" }}
+        style={{ borderRadius: "8px" }}
       ></div>
     </div>
 
