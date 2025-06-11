@@ -9,6 +9,7 @@ interface VirtualizedPostListProps<T extends { _id?: string | number }> {
   overscan?: number;
   onLoadMore?: () => void;
   loading?: boolean;
+  renderSkeleton?: (index: number) => React.ReactNode;
 }
 
 export default function VirtualizedPostList<
@@ -20,6 +21,7 @@ export default function VirtualizedPostList<
   overscan = 3,
   onLoadMore,
   loading = false,
+  renderSkeleton,
 }: VirtualizedPostListProps<T>) {
   const [scrollTop, setScrollTop] = useState(0);
   const [containerHeight, setContainerHeight] = useState(0);
@@ -146,6 +148,30 @@ export default function VirtualizedPostList<
 
   const { startIndex, endIndex, offsetY, totalHeight } = getLayoutInfo();
   const visibleItems = posts.slice(startIndex, endIndex + 1);
+
+  if (loading) {
+    // Render 5 skeletons by default
+    return (
+      <div style={{ width: "100%" }}>
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} style={{ minHeight: itemHeight, width: "100%" }}>
+            {renderSkeleton ? (
+              renderSkeleton(i)
+            ) : (
+              <div
+                style={{
+                  background: "#eee",
+                  height: "100%",
+                  borderRadius: 8,
+                  margin: 8,
+                }}
+              />
+            )}
+          </div>
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div
