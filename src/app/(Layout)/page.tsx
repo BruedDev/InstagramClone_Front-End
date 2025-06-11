@@ -235,32 +235,23 @@ export default function Home() {
       <StoryUserHome />
 
       {/* Virtualized Posts */}
-      {loading ? (
-        <HomeUi
-          loading={true}
-          posts={[]}
-          onLikeRealtime={handleLikeRealtime}
-          isMobileView={isMobileView}
-        />
-      ) : (
-        <VirtualizedPostList
-          posts={memoizedPosts}
-          renderPost={(post: Post) => (
-            <HomeUi
-              posts={[post]}
-              loading={false}
-              onLikeRealtime={handleLikeRealtime}
-              onOpenPostModal={handleOpenPostModal}
-              isMobileView={isMobileView}
-              onOpenMobileComment={handleOpenMobileComment}
-            />
-          )}
-          itemHeight={450}
-          overscan={2}
-          onLoadMore={loadMorePosts}
-          loading={loadingMore}
-        />
-      )}
+      <VirtualizedPostList
+        posts={memoizedPosts}
+        renderPost={(post: Post) => (
+          <HomeUi
+            posts={[post]}
+            loading={false}
+            onLikeRealtime={handleLikeRealtime}
+            onOpenPostModal={handleOpenPostModal}
+            isMobileView={isMobileView}
+            onOpenMobileComment={handleOpenMobileComment}
+          />
+        )}
+        itemHeight={450}
+        overscan={2}
+        onLoadMore={loadMorePosts}
+        loading={loadingMore}
+      />
 
       {/* Loading more indicator */}
       {loadingMore && (
