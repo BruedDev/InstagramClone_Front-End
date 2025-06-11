@@ -40,9 +40,7 @@
 }
 
 .sidebar {
-  width: 300px;
-  // overflow-y: auto;
-  // background-color: #0d1015;
+  flex: 1;
   background-color: #0f0f0f;
 
   @media (max-width: 622px) {
@@ -55,9 +53,10 @@
 }
 
 .mainChat {
-  flex: 1;
+  flex: 3.2;
   background-color: #242526;
   transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s;
+  overflow-x: hidden !important;
 
   @media (max-width: 622px) {
     position: fixed;
@@ -95,8 +94,7 @@
     }
 
     .messages {
-      flex: 1;
-      overflow-y: auto;
+      flex: 2;
       min-height: 0;
 
       &::-webkit-scrollbar {
@@ -255,59 +253,6 @@
   svg {
     width: 20px;
     height: 20px;
-  }
-}
-
-// Mobile responsive
-@media (max-width: 768px) {
-  .messageActions {
-    gap: 6px;
-
-    &.currentUser {
-      right: calc(100% + 8px);
-    }
-
-    &.otherUser {
-      left: calc(100% + 8px);
-    }
-  }
-
-  .chatList::-webkit-scrollbar {
-    display: none;
-  }
-
-  .messageActionBtn {
-    width: 28px;
-    height: 28px;
-
-    svg {
-      width: 14px;
-      height: 14px;
-    }
-  }
-}
-
-@media (max-width: 480px) {
-  .messageActions {
-    gap: 4px;
-
-    &.currentUser {
-      right: calc(100% + 6px);
-    }
-
-    &.otherUser {
-      left: calc(100% + 6px);
-    }
-  }
-
-  .messageActionBtn {
-    width: 26px;
-    height: 26px;
-
-    svg {
-      width: 12px;
-      height: 12px;
-    }
   }
 }
 

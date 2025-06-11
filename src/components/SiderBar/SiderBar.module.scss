@@ -9,6 +9,9 @@
   position: relative;
   z-index: 900;
   transition: width 0.2s ease-in;
+  position: fixed;
+  top: 0;
+  left: 0;
 
   @media (max-width: 1264px) {
     width: 70px;
@@ -17,8 +20,9 @@
 
   @media (max-width: 768px) {
     width: 100% !important;
-    height: auto;
+    height: 70px;
     position: fixed;
+    top: auto;
     bottom: 0;
     left: 0;
     flex-direction: row;

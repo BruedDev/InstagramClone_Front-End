@@ -4,7 +4,6 @@ import "../globals.css";
 import SiderBar from "@/components/SiderBar";
 import Footer from "@/components/Footer";
 import ClientProviders from "@/components/ClientProviders";
-import ScrollableArea from "@/components/ScrollableArea";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,17 +29,15 @@ export default function RootLayout({
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-        style={{ margin: 0, padding: 0, height: "100dvh", overflow: "hidden" }}
+        style={{ margin: 0, padding: 0 }}
       >
         <ClientProviders>
-          <div
-            style={{ display: "flex", height: "100dvh", overflow: "hidden" }}
-          >
+          <div style={{ display: "flex", minHeight: "100vh" }}>
             <SiderBar />
-            <ScrollableArea>
+            <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
               <main style={{ flex: 1 }}>{children}</main>
               <Footer type="home" />
-            </ScrollableArea>
+            </div>
           </div>
         </ClientProviders>
       </body>

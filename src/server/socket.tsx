@@ -71,10 +71,15 @@ export const socketService = {
     }
     if (!socket) {
       socket = io(API_URL, { transports: ["websocket"] });
-      // Optional: Add listeners for connect, disconnect, connect_error for debugging
-      // socket.on("connect", () => console.log("Socket connected:", socket?.id));
-      // socket.on("disconnect", (reason) => console.log("Socket disconnected:", reason));
-      // socket.on("connect_error", (error) => console.error("Socket connection error:", error));
+      socket.on("connect", () =>
+        console.log("[Socket] Connected:", socket?.id)
+      );
+      socket.on("disconnect", (reason) =>
+        console.log("[Socket] Disconnected:", reason)
+      );
+      socket.on("connect_error", (error) =>
+        console.error("[Socket] Connection error:", error)
+      );
     }
     return socket;
   },
@@ -104,6 +109,7 @@ export const socketService = {
   // --- User and Message Methods ---
   registerUser: (userId: string) => {
     const currentSocket = socketService.getSocket(); // Returns Socket or throws
+    console.log("[Socket] Register user:", userId);
     currentSocket.emit("userOnline", userId);
     currentSocket.emit("joinUserRoom", userId);
   },
@@ -118,12 +124,16 @@ export const socketService = {
     mediaType?: "image" | "video";
   }) => {
     const currentSocket = socketService.getSocket();
+    console.log("[Socket] Send message:", data);
     currentSocket.emit("sendMessage", data);
   },
 
   onReceiveMessage: (callback: (msg: GenericMessagePayload) => void) => {
     const currentSocket = socketService.getSocket();
-    currentSocket.on("receiveMessage", callback);
+    currentSocket.on("receiveMessage", (msg) => {
+      console.log("[Socket] Received message:", msg);
+      callback(msg);
+    });
   },
 
   offReceiveMessage: (callback: (msg: GenericMessagePayload) => void) => {
@@ -133,7 +143,10 @@ export const socketService = {
 
   onReceiveMessageSiderBar: (callback: (data: MessageData) => void) => {
     const currentSocket = socketService.getSocket();
-    currentSocket.on("receiveMessage", callback as (data: MessageData) => void);
+    currentSocket.on("receiveMessage", (data) => {
+      console.log("[Socket] Received message (sidebar):", data);
+      (callback as (data: MessageData) => void)(data);
+    });
   },
 
   offReceiveMessageSiderBar: (callback: (data: MessageData) => void) => {

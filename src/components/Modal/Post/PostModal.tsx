@@ -12,7 +12,6 @@ import InteractionButton from "@/app/ui/InteractionButton";
 import { BiDotsHorizontalRounded } from "react-icons/bi";
 import { useCount } from "@/app/hooks/useCount";
 import { usePostContext } from "@/contexts/PostContext";
-import VideoPlayer from "@/components/VideoPlayer";
 import ShortenCaption from "@/components/ShortenCaption";
 
 type PostModalProps = {
@@ -180,7 +179,7 @@ export default function PostModal({
             onLoad={handleImageLoad}
           />
         ) : post.type === "video" ? (
-          <VideoPlayer
+          <video
             ref={videoRef}
             className={styles.postVideo}
             src={post.fileUrl}
@@ -188,24 +187,13 @@ export default function PostModal({
             loop={false}
             muted={false}
             playsInline
-            initialTime={initialVideoTime}
-            isPlaying={!!videoRef.current && !videoRef.current.paused}
-            onPlayPauseClick={() => {
-              const video = videoRef.current;
-              if (video) {
-                if (video.paused) {
-                  video.play();
-                } else {
-                  video.pause();
-                }
-              }
-            }}
-            onLoadedMetadata={handleVideoLoadedMetadata}
+            controls
             style={{
               width: "100%",
               height: "100%",
               objectFit: objectFit,
             }}
+            onLoadedMetadata={handleVideoLoadedMetadata}
           />
         ) : null}
       </div>

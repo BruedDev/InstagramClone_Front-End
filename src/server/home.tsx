@@ -4,7 +4,7 @@ import { SuggestUsersResponse } from "@/types/user.type";
 
 const BASE_URL = `${process.env.NEXT_PUBLIC_API_URL}/api/home`;
 
-export const getHomePosts = async () => {
+export const getHomePosts = async (page = 1, limit = 10) => {
   try {
     const token = getAuthToken();
 
@@ -16,11 +16,14 @@ export const getHomePosts = async () => {
       headers["Authorization"] = `Bearer ${token}`;
     }
 
-    const response = await fetch(`${BASE_URL}/getPostHome`, {
-      method: "GET",
-      headers,
-      credentials: "include", // đảm bảo cookie (nếu có) được gửi kèm
-    });
+    const response = await fetch(
+      `${BASE_URL}/getPostHome?page=${page}&limit=${limit}`,
+      {
+        method: "GET",
+        headers,
+        credentials: "include",
+      }
+    );
 
     if (!response.ok) {
       const errorData = await response.json();
@@ -28,7 +31,7 @@ export const getHomePosts = async () => {
     }
 
     const data = await response.json();
-    return data.posts; // vì trong controller bạn trả về { success, posts }
+    return data; // Trả về { posts, total, hasMore, page, limit }
   } catch (error) {
     console.error("Lỗi khi lấy bài viết trang chủ:", error);
     throw error;

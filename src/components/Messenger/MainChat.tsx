@@ -318,7 +318,7 @@ export default function MainChat({
       {/* Messages */}
       {selectedUser ? (
         <div
-          className={`flex-1 overflow-y-auto p-4 bg-[#111] ${styles.messages}`}
+          className={`flex-1 overflow-y-auto overflow-x-hidden p-4 bg-[#111] ${styles.messages}`}
           ref={messagesContainerRef}
           onScroll={handleScroll}
           style={{
@@ -404,7 +404,7 @@ export default function MainChat({
                     )}
 
                     {/* Container cho nội dung tin nhắn */}
-                    <div className="flex-1">
+                    <div className={`flex-1 ${styles.action}`}>
                       {/* Message Actions */}
                       <div
                         className={`${styles.messageActions} ${
@@ -446,7 +446,7 @@ export default function MainChat({
                       >
                         {/* Container cho reply + tin nhắn chính */}
                         <div
-                          className={`flex flex-col ${
+                          className={`flex flex-col ${styles.alo} ${
                             isCurrentUser ? "items-end" : "items-start"
                           } max-w-xs gap-1`}
                         >

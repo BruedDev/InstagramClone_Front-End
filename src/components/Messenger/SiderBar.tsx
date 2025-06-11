@@ -435,7 +435,7 @@ export default function SiderBar({
   return (
     <div
       className={`bg-[#0f0f0f] border-r border-[#222] flex flex-col ${
-        preview ? "w-full" : "w-80"
+        preview ? "w-full" : "w-full"
       } ${styles.sidebar}`}
       style={
         preview
