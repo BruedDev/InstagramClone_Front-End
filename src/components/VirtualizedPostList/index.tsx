@@ -10,6 +10,7 @@ interface VirtualizedPostListProps<T extends { _id?: string | number }> {
   onLoadMore?: () => void;
   loading?: boolean;
   renderSkeleton?: (index: number) => React.ReactNode;
+  className?: string; // Thêm prop className cho container ngoài cùng
 }
 
 export default function VirtualizedPostList<
@@ -22,6 +23,7 @@ export default function VirtualizedPostList<
   onLoadMore,
   loading = false,
   renderSkeleton,
+  className,
 }: VirtualizedPostListProps<T>) {
   const [scrollTop, setScrollTop] = useState(0);
   const [containerHeight, setContainerHeight] = useState(0);
@@ -152,9 +154,16 @@ export default function VirtualizedPostList<
   if (loading) {
     // Render 5 skeletons by default
     return (
-      <div style={{ width: "100%" }}>
+      <div className={className} style={{ width: "100%" }}>
         {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} style={{ minHeight: itemHeight, width: "100%" }}>
+          <div
+            key={i}
+            style={{
+              minHeight: itemHeight,
+              width: "100%",
+              boxSizing: "border-box",
+            }}
+          >
             {renderSkeleton ? (
               renderSkeleton(i)
             ) : (
