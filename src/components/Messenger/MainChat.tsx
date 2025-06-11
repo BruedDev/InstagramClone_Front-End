@@ -597,6 +597,7 @@ export default function MainChat({
                                         borderRadius: "inherit",
                                         background: "transparent",
                                       }}
+                                      loading="lazy"
                                       onClick={() => {
                                         setPreviewMedia({
                                           src: msg.mediaUrl || "",

@@ -5,9 +5,8 @@ import { Message, User } from "@/types/user.type";
 import { MessengerState } from "@/types/messenger.types";
 import { createRef } from "react";
 
-const PAGE_SIZE = 20; // Đổi về 20 cho đồng bộ API mới
+const PAGE_SIZE = 20;
 
-// Define the type for the API response
 interface AvailableUser {
   _id: string;
   username: string;
@@ -18,7 +17,6 @@ interface AvailableUser {
   isOnline?: boolean;
 }
 
-// Async Thunks
 export const fetchAvailableUsers = createAsyncThunk(
   "messenger/fetchAvailableUsers",
   async () => {
@@ -28,15 +26,15 @@ export const fetchAvailableUsers = createAsyncThunk(
           id: user._id,
           _id: user._id,
           username: user.username,
-          fullName: user.username, // Using username as fullName if not provided
-          email: "", // Default empty string
-          phoneNumber: 0, // Default number
+          fullName: user.username,
+          email: "",
+          phoneNumber: 0,
           profilePicture: user.profilePicture || "",
-          bio: "", // Default empty string
-          followers: [], // Default empty array
-          following: [], // Default empty array
-          isPrivate: false, // Default false
-          authType: "local", // Default local
+          bio: "",
+          followers: [],
+          following: [],
+          isPrivate: false,
+          authType: "local",
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
           checkMark: user.checkMark || false,
@@ -45,14 +43,13 @@ export const fetchAvailableUsers = createAsyncThunk(
           isFollowing: false,
           followersCount: 0,
           followingCount: 0,
-          hasStory: user.hasStory || false, // Add hasStory from backend
+          hasStory: user.hasStory || false,
         }))
       : [];
     return users;
   }
 );
 
-// Fetch messages dùng API mới (infinite scroll)
 export const fetchMessages = createAsyncThunk(
   "messenger/fetchMessages",
   async ({
@@ -78,169 +75,168 @@ export const checkOnline = createAsyncThunk(
 );
 
 const initialState: MessengerState = {
- availableUsers: [],
- selectedUser: null,
- messages: [],
- message: "",
- loading: false,
- loadingMore: false,
- hasMore: true,
- before: undefined, // Thay offset bằng before (timestamp)
- showMainChat: false,
- ringtoneRef: createRef<HTMLAudioElement>(),
- // Call states
- inCall: false,
- incoming: null,
- callHistory: [], // Thêm trường mới để lưu lịch sử cuộc gọi nếu cần
- // Online status
- userStatus: null,
- checkingStatus: false,
- // Add missing MessengerState properties
- timestamp: 0,
- status: "missed",
- // Thêm biến này để lưu userId đã fetch gần nhất
- lastFetchedUserId: undefined,
- // --- Add replyTo ---
- replyTo: null,
+  availableUsers: [],
+  selectedUser: null,
+  messages: [],
+  message: "",
+  loading: false,
+  loadingMore: false,
+  hasMore: true,
+  before: undefined,
+  showMainChat: false,
+  ringtoneRef: createRef<HTMLAudioElement>(),
+  inCall: false,
+  incoming: null,
+  callHistory: [],
+  userStatus: null,
+  checkingStatus: false,
+  timestamp: 0,
+  status: "missed",
+  lastFetchedUserId: undefined,
+  replyTo: null,
 };
 
 const messengerSlice = createSlice({
- name: "messenger",
- initialState,
- reducers: {
-   setSelectedUser: (state, action: PayloadAction<User | null>) => {
-     state.selectedUser = action.payload;
-     state.before = undefined;
-     state.hasMore = true;
-     state.showMainChat = !!action.payload;
-     state.replyTo = null; // Clear reply when switching user
-   },
-   setMessage: (state, action: PayloadAction<string>) => {
-     state.message = action.payload;
-   },
-   addMessage: (state, action: PayloadAction<Message>) => {
-     state.messages.unshift(action.payload); // Thêm tin nhắn mới vào đầu danh sách
-   },
-   setShowMainChat: (state, action: PayloadAction<boolean>) => {
-     state.showMainChat = action.payload;
-   },
-   // --- Add replyTo actions ---
-   setReplyTo: (state, action: PayloadAction<string | null>) => {
-     state.replyTo = action.payload;
-   },
-   clearReplyTo: (state) => {
-     state.replyTo = null;
-   },
-   // Call actions
-   setInCall: (state, action: PayloadAction<boolean>) => {
-     state.inCall = action.payload;
-   },
-
-   setIncoming: (
-     state,
-     action: PayloadAction<{
-       callerId: string;
-       callType: "audio" | "video";
-     } | null>
-   ) => {
-     state.incoming = action.payload;
-   },
-   // Thêm action để lưu lịch sử cuộc gọi nếu cần
-   addCallHistory: (
-     state,
-     action: PayloadAction<{
-       userId: string;
-       callType: "audio" | "video";
-       timestamp: number;
-       duration?: number;
-       status: "missed" | "answered" | "outgoing";
-     }>
-   ) => {
-     state.callHistory.push(action.payload);
-   },
-   setMessages: (state, action: PayloadAction<Message[]>) => {
-     state.messages = action.payload;
-   },
-   resetMessagesState: (state) => {
-     state.messages = [];
-     state.before = undefined;
-     state.hasMore = true;
-   },
-   resetUserStatus: (state) => {
-     state.userStatus = null;
-     state.checkingStatus = false;
-   },
- },
- extraReducers: (builder) => {
-   builder
-     .addCase(fetchAvailableUsers.fulfilled, (state, action) => {
-       state.availableUsers = action.payload;
-     })
-     .addCase(fetchAvailableUsers.rejected, (state) => {
-       state.availableUsers = [];
-     })
-     // Xử lý fetchMessages với API mới
-     .addCase(fetchMessages.pending, (state, action) => {
-       const { replace } = action.meta.arg as { replace?: boolean };
-       if (replace) {
-         state.loading = true;
-       } else {
-         state.loadingMore = true;
-       }
-     })
-     .addCase(fetchMessages.fulfilled, (state, action) => {
-       const { messages, hasMore, oldestTimestamp, replace } = action.payload;
-       if (replace) {
-         state.messages = messages;
-       } else {
-         state.messages = [...messages, ...state.messages];
-       }
-       state.before = oldestTimestamp === null ? undefined : oldestTimestamp;
-       state.hasMore = hasMore;
-       state.loading = false;
-       state.loadingMore = false;
-       // Lấy userId từ selectedUser để cập nhật lastFetchedUserId
-       if (state.selectedUser) {
-         state.lastFetchedUserId = state.selectedUser._id;
-       }
-     })
-     .addCase(fetchMessages.rejected, (state, action) => {
-       const { replace } = action.meta.arg as { replace?: boolean };
-       if (replace) {
-         state.messages = [];
-         state.loading = false;
-       } else {
-         state.loadingMore = false;
-       }
-     })
-     // Xử lý checkOnline
-     .addCase(checkOnline.pending, (state) => {
-       state.checkingStatus = true;
-     })
-     .addCase(checkOnline.fulfilled, (state, action) => {
-       state.userStatus = action.payload;
-       state.checkingStatus = false;
-     })
-     .addCase(checkOnline.rejected, (state) => {
-       state.userStatus = null;
-       state.checkingStatus = false;
-     });
- },
+  name: "messenger",
+  initialState,
+  reducers: {
+    setSelectedUser: (state, action: PayloadAction<User | null>) => {
+      // Khi chọn người dùng mới, phải reset hoàn toàn trạng thái tin nhắn cũ
+      if (state.selectedUser?._id !== action.payload?._id) {
+        state.messages = [];
+        state.before = undefined;
+        state.hasMore = true;
+        state.loading = false;
+        state.loadingMore = false;
+        state.replyTo = null;
+      }
+      state.selectedUser = action.payload;
+      state.showMainChat = !!action.payload;
+    },
+    setMessage: (state, action: PayloadAction<string>) => {
+      state.message = action.payload;
+    },
+    addMessage: (state, action: PayloadAction<Message>) => {
+      const newMsg = action.payload;
+      const exists = state.messages.some(
+        (msg) =>
+          (msg._id && newMsg._id && msg._id === newMsg._id) ||
+          (msg.id && newMsg.id && msg.id === newMsg.id)
+      );
+      if (!exists) {
+        state.messages.push(newMsg);
+      }
+    },
+    setShowMainChat: (state, action: PayloadAction<boolean>) => {
+      state.showMainChat = action.payload;
+    },
+    setReplyTo: (state, action: PayloadAction<string | null>) => {
+      state.replyTo = action.payload;
+    },
+    clearReplyTo: (state) => {
+      state.replyTo = null;
+    },
+    setInCall: (state, action: PayloadAction<boolean>) => {
+      state.inCall = action.payload;
+    },
+    setIncoming: (
+      state,
+      action: PayloadAction<{
+        callerId: string;
+        callType: "audio" | "video";
+      } | null>
+    ) => {
+      state.incoming = action.payload;
+    },
+    addCallHistory: (
+      state,
+      action: PayloadAction<{
+        userId: string;
+        callType: "audio" | "video";
+        timestamp: number;
+        duration?: number;
+        status: "missed" | "answered" | "outgoing";
+      }>
+    ) => {
+      state.callHistory.push(action.payload);
+    },
+    setMessages: (state, action: PayloadAction<Message[]>) => {
+      state.messages = action.payload;
+    },
+    resetMessagesState: (state) => {
+      state.messages = [];
+      state.before = undefined;
+      state.hasMore = true;
+      state.loading = false;
+      state.loadingMore = false;
+    },
+    resetUserStatus: (state) => {
+      state.userStatus = null;
+      state.checkingStatus = false;
+    },
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchAvailableUsers.fulfilled, (state, action) => {
+        state.availableUsers = action.payload;
+      })
+      .addCase(fetchAvailableUsers.rejected, (state) => {
+        state.availableUsers = [];
+      })
+      .addCase(fetchMessages.pending, (state, action) => {
+        const { replace } = action.meta.arg as { replace?: boolean };
+        if (replace) {
+          state.loading = true;
+        } else {
+          state.loadingMore = true;
+        }
+      })
+      .addCase(fetchMessages.fulfilled, (state, action) => {
+        const { messages, hasMore, oldestTimestamp, replace } = action.payload;
+        if (replace) {
+          state.messages = messages;
+        } else {
+          state.messages = [...messages, ...state.messages];
+        }
+        state.before = oldestTimestamp === null ? undefined : oldestTimestamp;
+        state.hasMore = hasMore;
+        state.loading = false;
+        state.loadingMore = false;
+        if (state.selectedUser) {
+          state.lastFetchedUserId = state.selectedUser._id;
+        }
+      })
+      .addCase(fetchMessages.rejected, (state) => {
+        state.loading = false;
+        state.loadingMore = false;
+      })
+      .addCase(checkOnline.pending, (state) => {
+        state.checkingStatus = true;
+      })
+      .addCase(checkOnline.fulfilled, (state, action) => {
+        state.userStatus = action.payload;
+        state.checkingStatus = false;
+      })
+      .addCase(checkOnline.rejected, (state) => {
+        state.userStatus = null;
+        state.checkingStatus = false;
+      });
+  },
 });
 
 export const {
- setSelectedUser,
- setMessage,
- addMessage,
- setShowMainChat,
- setInCall,
- setIncoming,
- addCallHistory,
- resetMessagesState,
- resetUserStatus,
- setReplyTo,
- clearReplyTo,
- setMessages,
+  setSelectedUser,
+  setMessage,
+  addMessage,
+  setShowMainChat,
+  setInCall,
+  setIncoming,
+  addCallHistory,
+  resetMessagesState,
+  resetUserStatus,
+  setReplyTo,
+  clearReplyTo,
+  setMessages,
 } = messengerSlice.actions;
 
 export default messengerSlice.reducer;

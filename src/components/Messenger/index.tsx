@@ -126,7 +126,8 @@ export default function MessengerComponent({
     return () => {
       socketService.offReceiveMessage(handleReceiveMessage);
     };
-  }, [selectedUser, userId, dispatch, messages]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedUser, userId, dispatch]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {

@@ -109,7 +109,6 @@ export const socketService = {
   // --- User and Message Methods ---
   registerUser: (userId: string) => {
     const currentSocket = socketService.getSocket(); // Returns Socket or throws
-    console.log("[Socket] Register user:", userId);
     currentSocket.emit("userOnline", userId);
     currentSocket.emit("joinUserRoom", userId);
   },
