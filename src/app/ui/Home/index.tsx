@@ -553,7 +553,7 @@ export default function HomeUi({
   if (loading) {
     return (
       <div
-        className={`${styles.homeContainerResponsiveBg} max-w-xl mx-auto space-y-8 font-sans`}
+        className={`${styles.homeContainerResponsiveBg} max-w-xl space-y-8 font-sans`}
         style={{ color: "#fff" }}
       >
         {[...Array(5)].map((_, index) => (
