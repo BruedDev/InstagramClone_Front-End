@@ -30,6 +30,70 @@ const ImageVideoPreview = dynamic(
   { ssr: false }
 );
 
+// Component con chỉ mount gesture khi cần
+function MessageWithGesture({
+  children,
+  onReply,
+  isActive,
+}: {
+  children: React.ReactNode;
+  onReply: () => void;
+  isActive: boolean;
+}) {
+  const [gestureMod, setGestureMod] = useState<unknown>(null);
+  const [springMod, setSpringMod] = useState<unknown>(null);
+  // Chỉ khi đã import module mới ép kiểu
+  const springApi = springMod as
+    | undefined
+    | {
+        useSpring: typeof import("@react-spring/web").useSpring;
+        animated: typeof import("@react-spring/web").animated;
+      };
+  const gestureApi = gestureMod as
+    | undefined
+    | { useGesture: typeof import("@use-gesture/react").useGesture };
+  const [springProps, setSpring] =
+    springApi && springApi.useSpring
+      ? springApi.useSpring(() => ({ x: 0 }))
+      : [{ x: 0 }, () => {}];
+  useEffect(() => {
+    if (isActive && !gestureMod && !springMod) {
+      import("@use-gesture/react").then((mod) => setGestureMod(mod));
+      import("@react-spring/web").then((mod) => setSpringMod(mod));
+    }
+  }, [isActive, gestureMod, springMod]);
+  const bind =
+    gestureApi && gestureApi.useGesture
+      ? gestureApi.useGesture({
+          onDrag: ({
+            down,
+            movement: [mx],
+            cancel,
+          }: {
+            down: boolean;
+            movement: [number, number];
+            cancel?: () => void;
+          }) => {
+            if (!down && Math.abs(mx) > 60) {
+              onReply();
+              setSpring({ x: 0 });
+              if (cancel) cancel();
+            } else {
+              setSpring({ x: down ? mx : 0 });
+            }
+          },
+        })
+      : () => ({});
+  const AnimatedDiv =
+    springApi && springApi.animated ? springApi.animated.div : "div";
+  if (!isActive) return <>{children}</>;
+  return (
+    <AnimatedDiv {...bind()} style={{ x: springProps.x, touchAction: "pan-y" }}>
+      {children}
+    </AnimatedDiv>
+  );
+}
+
 export type MainChatProps = {
   selectedUser: (User & { hasStory?: boolean }) | null;
   messages: Message[];
@@ -217,6 +281,17 @@ export default function MainChat({
     console.log("Emoji reaction for message:", messageId);
   };
 
+  // Thêm state để kiểm soát gesture mount cho từng message
+  const [activeGestureMsgId, setActiveGestureMsgId] = useState<string | null>(
+    null
+  );
+
+  // Kiểm tra thiết bị mobile và touch
+  const isMobileTouch =
+    typeof window !== "undefined" &&
+    window.innerWidth <= 622 &&
+    navigator.maxTouchPoints > 0;
+
   return (
     <div
       className={`flex-1 flex flex-col bg-[#111] ${styles.mainChat} ${
@@ -368,7 +443,8 @@ export default function MainChat({
 
               // Chỉ render tin nhắn thuộc về cuộc hội thoại này
               if (!isOtherUser && !isCurrentUser) return null;
-
+              const shouldMountGesture =
+                isMobileTouch && activeGestureMsgId === msg._id;
               return (
                 <div
                   key={messageKey}
@@ -489,173 +565,186 @@ export default function MainChat({
                           )}
 
                           {/* Tin nhắn chính */}
-                          <div
-                            className={`flex flex-col gap-2 ${
-                              isCurrentUser ? "items-end" : "items-start"
-                            }`}
+                          <MessageWithGesture
+                            isActive={shouldMountGesture}
+                            onReply={() => dispatch(setReplyTo(msg._id))}
                           >
-                            {/* Text message bubble với width tự nhiên */}
-                            {msg.message && (
-                              <div
-                                className={`message-bubble ${
-                                  isCurrentUser ? "bg-blue-600" : "bg-[#333]"
-                                } px-3 py-2 inline-block max-w-[280px] w-fit`}
-                                style={{
-                                  zIndex: 2,
-                                  borderRadius: (() => {
-                                    // Tính toán border-radius dựa trên độ dài tin nhắn
-                                    const messageLength =
-                                      msg.message?.length || 0;
-                                    let borderRadius;
-
-                                    if (messageLength <= 10) {
-                                      borderRadius = 20;
-                                    } else if (messageLength <= 30) {
-                                      borderRadius = 18;
-                                    } else if (messageLength <= 80) {
-                                      borderRadius = 16;
-                                    } else {
-                                      borderRadius = 14;
-                                    }
-
-                                    // Nếu có media, điều chỉnh border-radius để tạo hiệu ứng nối
-                                    if (msg.mediaUrl) {
-                                      if (isCurrentUser) {
-                                        // Người dùng hiện tại - làm tròn góc trái dưới ít hơn
-                                        return `${borderRadius}px ${borderRadius}px ${
-                                          borderRadius - 12
-                                        }px ${borderRadius}px`;
-                                      } else {
-                                        // Người khác - làm tròn góc phải dưới ít hơn
-                                        return `${borderRadius}px ${borderRadius}px ${borderRadius}px ${
-                                          borderRadius - 12
-                                        }px`;
-                                      }
-                                    }
-
-                                    // Không có media - tất cả góc đều tròn như cũ
-                                    return `${borderRadius}px`;
-                                  })(),
-                                }}
-                              >
-                                <p
-                                  className={`${styles.text} text-white text-sm leading-relaxed`}
-                                >
-                                  {msg.message}
-                                </p>
-                              </div>
-                            )}
-
-                            {/* Media với width riêng biệt */}
-                            {msg.mediaUrl && (
-                              <div
-                                className="overflow-hidden w-fit relative group"
-                                style={{
-                                  backgroundColor: "transparent",
-                                  zIndex: 1,
-                                  borderRadius: (() => {
-                                    // Điều chỉnh border-radius của media để nối với text
-                                    if (msg.message) {
-                                      if (isCurrentUser) {
-                                        // Người dùng hiện tại (bên phải) - giảm borderRadius góc phải
-                                        return "16px 5px 16px 16px";
-                                      } else {
-                                        // Người khác (bên trái) - giảm borderRadius góc trái
-                                        return "5px 16px 16px 16px";
-                                      }
-                                    }
-                                    // Không có text - tất cả góc đều tròn
-                                    return "16px";
-                                  })(),
-                                  marginTop: msg.message ? "-8px" : "0",
-                                }}
-                              >
+                            <div
+                              className={`flex flex-col gap-2 ${
+                                isCurrentUser ? "items-end" : "items-start"
+                              }`}
+                              onTouchStart={() => {
+                                if (isMobileTouch)
+                                  setActiveGestureMsgId(msg._id);
+                              }}
+                              onPointerDown={() => {
+                                if (isMobileTouch)
+                                  setActiveGestureMsgId(msg._id);
+                              }}
+                            >
+                              {/* Text message bubble với width tự nhiên */}
+                              {msg.message && (
                                 <div
-                                  className="absolute inset-0 pointer-events-none rounded-[inherit] opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                                  style={{ background: "rgba(0,0,0,0.08)" }}
-                                />
-                                <div className="transition-transform duration-200 group-hover:scale-[1.03]">
-                                  {msg.mediaType === "image" ? (
-                                    <Image
-                                      src={msg.mediaUrl}
-                                      alt="Shared image"
-                                      width={200}
-                                      height={150}
-                                      className="object-cover cursor-pointer"
-                                      style={{
-                                        maxHeight: "200px",
-                                        minHeight: "80px",
-                                        maxWidth: "200px",
-                                        width: "auto",
-                                        height: "auto",
-                                        display: "block",
-                                        borderRadius: "inherit",
-                                        background: "transparent",
-                                      }}
-                                      loading="lazy"
-                                      onClick={() => {
-                                        setPreviewMedia({
-                                          src: msg.mediaUrl || "",
-                                          type: "image",
-                                        });
-                                      }}
-                                      onError={() => {
-                                        console.error(
-                                          "Failed to load image:",
-                                          msg.mediaUrl
-                                        );
-                                      }}
-                                    />
-                                  ) : msg.mediaType === "video" ? (
-                                    <video
-                                      src={msg.mediaUrl}
-                                      controls
-                                      className="cursor-pointer object-cover"
-                                      style={{
-                                        maxHeight: "200px",
-                                        minHeight: "80px",
-                                        maxWidth: "200px",
-                                        width: "auto",
-                                        height: "auto",
-                                        display: "block",
-                                        borderRadius: "inherit",
-                                        background: "transparent",
-                                      }}
-                                      preload="metadata"
-                                      onClick={() => {
-                                        setPreviewMedia({
-                                          src: msg.mediaUrl || "",
-                                          type: "video",
-                                        });
-                                      }}
-                                      onError={() => {
-                                        console.error(
-                                          "Failed to load video:",
-                                          msg.mediaUrl
-                                        );
-                                      }}
-                                    >
-                                      <source src={msg.mediaUrl} />
-                                      Trình duyệt không hỗ trợ phát video này.
-                                    </video>
-                                  ) : null}
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        </div>
+                                  className={`message-bubble ${
+                                    isCurrentUser ? "bg-blue-600" : "bg-[#333]"
+                                  } px-3 py-2 inline-block max-w-[280px] w-fit`}
+                                  style={{
+                                    zIndex: 2,
+                                    borderRadius: (() => {
+                                      // Tính toán border-radius dựa trên độ dài tin nhắn
+                                      const messageLength =
+                                        msg.message?.length || 0;
+                                      let borderRadius;
 
-                        {/* Thời gian tin nhắn */}
-                        <p className="text-xs text-gray-500 mt-4 px-1">
-                          {formatTime(
-                            typeof msg.createdAt === "number"
-                              ? new Date(msg.createdAt)
-                              : !isNaN(Number(msg.createdAt))
-                              ? new Date(Number(msg.createdAt))
-                              : msg.createdAt,
-                            "HH:mm"
-                          )}
-                        </p>
+                                      if (messageLength <= 10) {
+                                        borderRadius = 20;
+                                      } else if (messageLength <= 30) {
+                                        borderRadius = 18;
+                                      } else if (messageLength <= 80) {
+                                        borderRadius = 16;
+                                      } else {
+                                        borderRadius = 14;
+                                      }
+
+                                      // Nếu có media, điều chỉnh border-radius để tạo hiệu ứng nối
+                                      if (msg.mediaUrl) {
+                                        if (isCurrentUser) {
+                                          // Người dùng hiện tại - làm tròn góc trái dưới ít hơn
+                                          return `${borderRadius}px ${borderRadius}px ${
+                                            borderRadius - 12
+                                          }px ${borderRadius}px`;
+                                        } else {
+                                          // Người khác - làm tròn góc phải dưới ít hơn
+                                          return `${borderRadius}px ${borderRadius}px ${borderRadius}px ${
+                                            borderRadius - 12
+                                          }px`;
+                                        }
+                                      }
+
+                                      // Không có media - tất cả góc đều tròn như cũ
+                                      return `${borderRadius}px`;
+                                    })(),
+                                  }}
+                                >
+                                  <p
+                                    className={`${styles.text} text-white text-sm leading-relaxed`}
+                                  >
+                                    {msg.message}
+                                  </p>
+                                </div>
+                              )}
+
+                              {/* Media với width riêng biệt */}
+                              {msg.mediaUrl && (
+                                <div
+                                  className="overflow-hidden w-fit relative group"
+                                  style={{
+                                    backgroundColor: "transparent",
+                                    zIndex: 1,
+                                    borderRadius: (() => {
+                                      // Điều chỉnh border-radius của media để nối với text
+                                      if (msg.message) {
+                                        if (isCurrentUser) {
+                                          // Người dùng hiện tại (bên phải) - giảm borderRadius góc phải
+                                          return "16px 5px 16px 16px";
+                                        } else {
+                                          // Người khác (bên trái) - giảm borderRadius góc trái
+                                          return "5px 16px 16px 16px";
+                                        }
+                                      }
+                                      // Không có text - tất cả góc đều tròn
+                                      return "16px";
+                                    })(),
+                                    marginTop: msg.message ? "-8px" : "0",
+                                  }}
+                                >
+                                  <div
+                                    className="absolute inset-0 pointer-events-none rounded-[inherit] opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                                    style={{ background: "rgba(0,0,0,0.08)" }}
+                                  />
+                                  <div className="transition-transform duration-200 group-hover:scale-[1.03]">
+                                    {msg.mediaType === "image" ? (
+                                      <Image
+                                        src={msg.mediaUrl}
+                                        alt="Shared image"
+                                        width={200}
+                                        height={150}
+                                        className="object-cover cursor-pointer"
+                                        style={{
+                                          maxHeight: "200px",
+                                          minHeight: "80px",
+                                          maxWidth: "200px",
+                                          width: "auto",
+                                          height: "auto",
+                                          display: "block",
+                                          borderRadius: "inherit",
+                                          background: "transparent",
+                                        }}
+                                        loading="lazy"
+                                        onClick={() => {
+                                          setPreviewMedia({
+                                            src: msg.mediaUrl || "",
+                                            type: "image",
+                                          });
+                                        }}
+                                        onError={() => {
+                                          console.error(
+                                            "Failed to load image:",
+                                            msg.mediaUrl
+                                          );
+                                        }}
+                                      />
+                                    ) : msg.mediaType === "video" ? (
+                                      <video
+                                        src={msg.mediaUrl}
+                                        controls
+                                        className="cursor-pointer object-cover"
+                                        style={{
+                                          maxHeight: "200px",
+                                          minHeight: "80px",
+                                          maxWidth: "200px",
+                                          width: "auto",
+                                          height: "auto",
+                                          display: "block",
+                                          borderRadius: "inherit",
+                                          background: "transparent",
+                                        }}
+                                        preload="metadata"
+                                        onClick={() => {
+                                          setPreviewMedia({
+                                            src: msg.mediaUrl || "",
+                                            type: "video",
+                                          });
+                                        }}
+                                        onError={() => {
+                                          console.error(
+                                            "Failed to load video:",
+                                            msg.mediaUrl
+                                          );
+                                        }}
+                                      >
+                                        <source src={msg.mediaUrl} />
+                                        Trình duyệt không hỗ trợ phát video này.
+                                      </video>
+                                    ) : null}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </MessageWithGesture>
+
+                          {/* Thời gian tin nhắn */}
+                          <p className="text-xs text-gray-500 mt-4 px-1">
+                            {formatTime(
+                              typeof msg.createdAt === "number"
+                                ? new Date(msg.createdAt)
+                                : !isNaN(Number(msg.createdAt))
+                                ? new Date(Number(msg.createdAt))
+                                : msg.createdAt,
+                              "HH:mm"
+                            )}
+                          </p>
+                        </div>
                       </div>
                     </div>
                   </div>
