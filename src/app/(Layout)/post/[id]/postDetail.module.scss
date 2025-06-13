@@ -1,0 +1,8 @@
+.postDetailContainer {
+  padding: 40px;
+  height: 100dvh;
+
+  @media (max-width: 768px) {
+    padding: 0;
+  }
+}

@@ -26,7 +26,8 @@ body {
   font-family: Arial, Helvetica, sans-serif;
   scrollbar-color: #808080 transparent;
   overflow-x: hidden !important;
-  -ms-overflow-style: none
+  -ms-overflow-style: none;
+  box-sizing: border-box;
 }
 
 @media(max-width: 768px) {

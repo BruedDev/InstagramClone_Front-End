@@ -17,6 +17,8 @@ import PostModal from "@/components/Modal/Post/PostModal";
 import { createPortal } from "react-dom";
 import Comment from "../ui/Comment";
 import { usePostSettingModal } from "../hooks/usePostSettingModal";
+import SlidePanel from "@/components/SlidePanel"; // Import SlidePanel
+import Notification from "@/components/Notification"; // Import Notification component
 
 export default function Home() {
   const { posts, setPosts, handleLikeRealtime } = usePostContext();
@@ -48,10 +50,16 @@ export default function Home() {
   const [mobileOverlayAnimationClass, setMobileOverlayAnimationClass] =
     useState("");
 
+  // Function to handle notification click
+  const handleNotificationClick = () => {
+    setIsNotificationsOpen(true);
+  };
+
   const actionStates = {
     "Thông báo": {
       isOpen: isNotificationsOpen,
       setIsOpen: setIsNotificationsOpen,
+      customAction: handleNotificationClick,
     },
   };
 
@@ -228,7 +236,10 @@ export default function Home() {
           <div className={styles.action}>
             {notificationItem && (
               <button
-                onClick={notificationItem.onClick}
+                onClick={() => {
+                  if (notificationItem.onClick) notificationItem.onClick();
+                  handleNotificationClick();
+                }}
                 title={notificationItem.label}
               >
                 {notificationItem.active
@@ -359,6 +370,15 @@ export default function Home() {
 
       {/* PostSetting Modal (hiển thị ở cha, cùng cấp với các modal khác) */}
       {postSettingModal.renderModal()}
+
+      {/* Notification Panel */}
+      <SlidePanel
+        isOpen={isNotificationsOpen}
+        onClose={() => setIsNotificationsOpen(false)}
+        type="notification"
+      >
+        <Notification />
+      </SlidePanel>
     </div>
   );
 }

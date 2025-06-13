@@ -629,4 +629,14 @@ export const socketService = {
     const currentSocket = socketService.getSocket();
     currentSocket.off("updateMessageMedia", callback);
   },
+
+  // --- Notification Realtime ---
+  onNotificationNew: (callback: (data: { notification: unknown }) => void) => {
+    const currentSocket = socketService.getSocket();
+    currentSocket.on("notification:new", callback);
+  },
+  offNotificationNew: (callback: (data: { notification: unknown }) => void) => {
+    const currentSocket = socketService.getSocket();
+    currentSocket.off("notification:new", callback);
+  },
 };

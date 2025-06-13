@@ -14,6 +14,7 @@ interface ActionStates {
   [label: string]: {
     isOpen: boolean;
     setIsOpen: (open: boolean) => void;
+    customAction?: () => void;
   };
 }
 
@@ -400,7 +401,12 @@ export const useNavItems = (actionStates: ActionStates = {}) => {
     if (activeItem !== null) {
       active = index === activeItem;
     } else {
-      active = item.href === pathname;
+      // Special logic for profile: active if pathname matches /[username]
+      if (item.label === "Trang cá nhân" && pathname === `/${id}`) {
+        active = true;
+      } else {
+        active = item.href === pathname;
+      }
     }
 
     let onClick: (() => void) | undefined;
@@ -410,7 +416,12 @@ export const useNavItems = (actionStates: ActionStates = {}) => {
         setActiveItem(index);
         const state = actionStates[item.label];
         if (state) {
-          state.setIsOpen(!state.isOpen);
+          // Nếu có customAction thì gọi nó
+          if (state.customAction) {
+            state.customAction();
+          } else {
+            state.setIsOpen(!state.isOpen);
+          }
         } else {
           return;
         }

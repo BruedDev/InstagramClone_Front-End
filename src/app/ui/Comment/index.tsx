@@ -14,6 +14,7 @@ import { X } from "lucide-react";
 import CommentInput from "../CommentInput";
 import { CommentWithReplies } from "@/components/CommentWithReplies";
 import { ReplyData } from "@/components/CommentItem";
+import { useSearchParams } from "next/navigation";
 
 export default function Comment({
   post,
@@ -31,6 +32,8 @@ export default function Comment({
   // STATE ĐỂ QUẢN LÝ REPLY CHO MOBILE VIEW
   const [replyTo, setReplyTo] = useState<ReplyData | null>(null);
   const commentsListRef = useRef<HTMLDivElement>(null);
+  const searchParams = useSearchParams();
+  const commentId = searchParams?.get("commentId");
 
   const rawComments = useSelector(
     (state: RootState) => state.comments.commentsByItem[post._id] || []
@@ -159,6 +162,19 @@ export default function Comment({
       return () => listElement.removeEventListener("scroll", handleScroll);
     }
   }, [handleScroll]);
+
+  // Tự động cuộn tới comment hoặc reply khi có commentId trên URL query
+  useEffect(() => {
+    if (!commentId || !commentsListRef.current) return;
+    // Tìm phần tử comment hoặc reply có id tương ứng
+    const el = commentsListRef.current.querySelector(
+      `[data-comment-id='${commentId}'], [data-reply-id='${commentId}']`
+    );
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      // ĐÃ BỎ hiệu ứng focus màu xanh
+    }
+  }, [commentId, rawComments]);
 
   // Skeleton Loading Component cho Comments
   const CommentSkeleton = () => (

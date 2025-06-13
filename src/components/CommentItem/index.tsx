@@ -38,6 +38,8 @@ export const CommentItem = ({
   return (
     <div
       className={styles.commentItem}
+      data-comment-id={!isReply ? comment._id : undefined}
+      data-reply-id={isReply ? comment._id : undefined}
       style={{
         marginLeft: marginLeft + "px",
         // borderLeft: showBorder ? "2px solid rgba(255,255,255,0.2)" : "none",

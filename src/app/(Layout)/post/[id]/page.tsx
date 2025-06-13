@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import PostModal from "@/components/Modal/Post/PostModal";
 import { getPostById } from "@/server/posts";
 import { Post } from "@/types/home.type";
+import styles from "./postDetail.module.scss";
 
 export default function PostPageDetail() {
   const params = useParams();
@@ -93,7 +94,7 @@ export default function PostPageDetail() {
 
   // Render PostModal với detail mode
   return (
-    <div style={{ padding: "40px" }}>
+    <div className={styles.postDetailContainer}>
       <PostModal post={post} detail={true} />
     </div>
   );
