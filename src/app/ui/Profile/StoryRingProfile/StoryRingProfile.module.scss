@@ -13,7 +13,7 @@
     &.viewed {
       animation: dashAnimationMobile 2s ease-in-out,
         movingDashMobile 3s linear infinite;
-      stroke-dasharray: 4 2;
+      stroke-dasharray: 8 4;
     }
   }
 }

@@ -11,6 +11,13 @@ type Post = {
   fileUrl: string;
 };
 
+// Skeleton component
+const PostSkeleton = () => (
+  <div className="relative aspect-square bg-gray-800 rounded-lg animate-pulse">
+    <div className="w-full h-full bg-gray-700/50 rounded-lg"></div>
+  </div>
+);
+
 export default function TabPosts({ user }: { user: User }) {
   const {
     selectedPost,
@@ -20,11 +27,16 @@ export default function TabPosts({ user }: { user: User }) {
     setSelectedPost,
   } = usePost();
   const [posts, setPosts] = useState<Post[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isPostLoading, setIsPostLoading] = useState(false);
+
+  // Lấy số lượng posts thực tế từ user
+  const postsCount = user?.posts?.length ?? 0;
 
   useEffect(() => {
     const fetchPosts = async () => {
       try {
+        setIsLoading(true);
         const data = await getUserPosts({
           userId: user._id,
           username: user.username,
@@ -33,6 +45,8 @@ export default function TabPosts({ user }: { user: User }) {
         setPosts(data);
       } catch (error) {
         console.error("Lỗi khi lấy bài đăng:", error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -42,9 +56,9 @@ export default function TabPosts({ user }: { user: User }) {
   }, [user]);
 
   const handleClick = async (postId: string) => {
-    setIsLoading(true);
+    setIsPostLoading(true);
     await handlePostClick(postId);
-    setIsLoading(false);
+    setIsPostLoading(false);
   };
 
   const handleCloseModal = () => {
@@ -54,7 +68,25 @@ export default function TabPosts({ user }: { user: User }) {
 
   return (
     <div className="mt-5">
-      {(user?.posts?.length ?? 0) === 0 ? (
+      {isLoading ? (
+        // Skeleton loading state - hiển thị đúng số lượng posts
+        postsCount === 0 ? (
+          // Nếu không có posts thì hiển thị một vài skeleton mặc định
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            {Array.from({ length: 3 }).map((_, index) => (
+              <PostSkeleton key={index} />
+            ))}
+          </div>
+        ) : (
+          // Hiển thị skeleton theo đúng số lượng posts
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            {Array.from({ length: postsCount }).map((_, index) => (
+              <PostSkeleton key={index} />
+            ))}
+          </div>
+        )
+      ) : postsCount === 0 ? (
+        // Empty state
         <div className="flex flex-col justify-center items-center text-center p-10">
           <div className="text-gray-400 mb-4">
             <Camera size={50} />
@@ -65,7 +97,8 @@ export default function TabPosts({ user }: { user: User }) {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-4">
+        // Posts grid
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           {posts.map((post) => (
             <div
               key={post._id}
@@ -79,11 +112,13 @@ export default function TabPosts({ user }: { user: User }) {
                 width={300}
                 height={300}
               />
-              {isLoading && selectedPost && selectedPost._id === post._id && (
-                <div className="absolute inset-0 bg-black bg-opacity-60 flex items-center justify-center rounded-lg">
-                  <div className="w-8 h-8 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
-                </div>
-              )}
+              {isPostLoading &&
+                selectedPost &&
+                selectedPost._id === post._id && (
+                  <div className="absolute inset-0 bg-black bg-opacity-60 flex items-center justify-center rounded-lg">
+                    <div className="w-8 h-8 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
+                  </div>
+                )}
             </div>
           ))}
         </div>

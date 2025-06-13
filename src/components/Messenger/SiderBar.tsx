@@ -16,6 +16,7 @@ import {
 import { socketService, type MessageData } from "@/server/socket";
 import StoryAvatar from "@/components/Story/StoryAvatar";
 import { SiderBarSkeleton, SearchResultsSkeleton } from "@/Skeleton/siderbar";
+import { useChatRedirect } from "@/app/hooks/useChatRedirect";
 
 type UserWithStory = User & { hasStory?: boolean };
 
@@ -61,8 +62,10 @@ export default function SiderBar({
   const [isLoading, setIsLoading] = useState(true);
   const [isSearching, setIsSearching] = useState(false);
   const router = useRouter();
+  const redirectToChat = useChatRedirect();
   const currentUserIdRef = useRef<string | null>(null);
   const [userIdForSocket, setUserIdForSocket] = useState<string | null>(null);
+  const username = localStorage.getItem("username") || "Người dùng";
 
   useEffect(() => {
     let idFromStorage: string | null = null;
@@ -338,11 +341,9 @@ export default function SiderBar({
 
     setSelectedUser(userToSelect as User);
     setShowMainChat(true);
-    if (preview) {
-      // Chỉ cập nhật url trên thanh địa chỉ, không điều hướng thật
-      window.history.replaceState(null, "", `/messages?id=${chat.user._id}`);
-    } else {
-      router.push(`/messages?id=${chat.user._id}`);
+    // Không cập nhật URL khi ở chế độ preview
+    if (!preview) {
+      redirectToChat(chat.user._id);
     }
   };
 
@@ -350,7 +351,7 @@ export default function SiderBar({
     setSelectedUser(user);
     setShowMainChat(true);
     if (!preview) {
-      router.push(`/messages?id=${user._id}`);
+      redirectToChat(user._id);
     }
   };
 
@@ -452,19 +453,21 @@ export default function SiderBar({
         <div className="flex items-center">
           <button
             onClick={handleBackClick}
-            className="md:hidden w-9 h-9 rounded-full bg-[#1a1a1a] hover:bg-[#2a2a2a] flex items-center justify-center cursor-pointer transition-colors mr-3"
+            className={`md:hidden w-9 h-9 rounded-full bg-[#1a1a1a] hover:bg-[#2a2a2a] flex items-center justify-center cursor-pointer transition-colors mr-3 ${styles.backButton}`}
           >
             <ArrowLeft className="h-5 w-5 text-gray-200" />
           </button>
           <h1
-            className={`font-bold text-2xl text-white${
+            className={`font-bold text-[1.25rem] text-white${
               preview ? " !text-lg" : ""
             }`}
             style={preview ? { fontSize: "1.1rem" } : {}}
           >
-            Tin Nhắn
+            {username}
           </h1>
-          <ChevronDown className="ml-2 h-4 w-4 text-gray-300" />
+          <ChevronDown
+            className={`ml-2 h-4 w-4 text-gray-300 ${styles.chevronDown}`}
+          />
         </div>
         {preview && onClose ? (
           <button
@@ -475,7 +478,9 @@ export default function SiderBar({
             <X className="h-4 w-4 text-gray-200" />
           </button>
         ) : (
-          <div className="w-9 h-9 rounded-full bg-[#1a1a1a] hover:bg-[#2a2a2a] flex items-center justify-center cursor-pointer transition-colors">
+          <div
+            className={`w-9 h-9 rounded-full bg-[#1a1a1a] hover:bg-[#2a2a2a] flex items-center justify-center cursor-pointer transition-colors ${styles.backButton}`}
+          >
             <Edit className="h-4 w-4 text-gray-200" />
           </div>
         )}
@@ -484,8 +489,8 @@ export default function SiderBar({
       <div className="px-4 py-3">
         <div
           className={`relative flex items-center bg-[#1a1a1a] rounded-full px-3 py-2 transition-all ${
-            isSearchFocused ? "ring-1 ring-blue-500" : ""
-          }`}
+            styles.searchInput
+          } ${isSearchFocused ? "ring-1 ring-blue-500" : ""}`}
         >
           <Search className="h-4 w-4 text-gray-400 mr-2 flex-shrink-0" />
           <input
@@ -495,7 +500,7 @@ export default function SiderBar({
             onChange={(e) => setSearchQuery(e.target.value)}
             onFocus={() => setIsSearchFocused(true)}
             onBlur={() => setIsSearchFocused(false)}
-            className="flex-1 bg-transparent text-white placeholder-gray-400 text-sm outline-none"
+            className={`flex-1 bg-transparent text-white placeholder-gray-400 text-sm outline-none`}
           />
           {searchQuery && (
             <button

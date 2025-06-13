@@ -170,7 +170,9 @@ export default function MessageInput({
       )}
       <div className="flex items-center">
         <Smile className="h-6 w-6 mr-3 text-gray-400 cursor-pointer hover:text-gray-200 flex-shrink-0" />
-        <div className="flex-1 bg-[#1a1a1a] rounded-full border border-[#222] flex items-center">
+        <div
+          className={`flex-1 bg-[#1a1a1a] rounded-full border border-[#222] flex items-center ${styles.fileInput}`}
+        >
           <input
             type="text"
             value={message}
@@ -196,7 +198,7 @@ export default function MessageInput({
               ref={fileInputRef}
               type="file"
               accept="image/*,video/*"
-              className="hidden"
+              className={`hidden`}
               onChange={handleFileChange}
             />
           </button>

@@ -5,6 +5,7 @@ import { User } from "@/types/user.type";
 import IsProfile from "@/components/isProfile";
 import styles from "../Infor/Infor.module.scss";
 import Link from "next/link";
+import { useChatRedirect } from "@/app/hooks/useChatRedirect";
 
 // Redux imports
 import { useSelector, useDispatch } from "react-redux";
@@ -18,6 +19,7 @@ import {
 
 export default function Action({ user }: { user: User }) {
   const dispatch = useDispatch<AppDispatch>();
+  const redirectToChat = useChatRedirect();
 
   const userIdForAction = user._id;
 
@@ -88,7 +90,12 @@ export default function Action({ user }: { user: User }) {
             >
               {followButtonText}
             </button>
-            <button className={styles.viewArchive}>Nhắn tin</button>
+            <button
+              className={styles.viewArchive}
+              onClick={() => redirectToChat(user)}
+            >
+              Nhắn tin
+            </button>
           </div>
           {actionStateForThisUser.status === "error" &&
             actionStateForThisUser.error && (

@@ -351,6 +351,9 @@ export const socketService = {
     itemId: string;
     itemType: "post" | "reel";
     text: string;
+    limit?: number;
+    skip?: number;
+    userId?: string;
   }) => {
     const currentSocket = socketService.getSocket();
     currentSocket.emit("comment:create", data);

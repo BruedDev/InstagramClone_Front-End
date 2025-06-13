@@ -17,11 +17,19 @@ export default function StoryRingProfile({
   className = "",
 }: StoryRingProfileProps) {
   const [internalViewed, setInternalViewed] = useState(isViewed);
-  const [animationKey, setAnimationKey] = useState(0); // Thêm key để trigger animation
+  const [animationKey, setAnimationKey] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     setInternalViewed(isViewed);
   }, [isViewed]);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth <= 480);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   const handleClick = () => {
     if (hasStories && !internalViewed) {
@@ -96,11 +104,11 @@ export default function StoryRingProfile({
               ? "rgba(255, 255, 255, 0.3)"
               : `url(#storyGradient-large-${animationKey})`
           }
-          strokeWidth={sizeConfig.strokeWidth} // Luôn dùng strokeWidth lớn
-          strokeDasharray={internalViewed ? "8 4" : "0"}
+          strokeWidth={isMobile ? "3" : "1.5"}
           className={`${styles.storyCircle} ${
             internalViewed ? styles.viewed : ""
-          }`}
+          } ${styles.responsiveStroke}`}
+          strokeDasharray={internalViewed ? "8 4" : "0"}
         />
       </svg>
 

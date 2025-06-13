@@ -341,11 +341,6 @@ export default function MainChat({
               <MessageSkeletonShort />
               <MessageSkeletonRight />
               <TypingSkeleton />
-              <MessageSkeleton />
-              <MessageSkeletonRight />
-              <MessageSkeletonShort />
-              <MessageSkeletonRight />
-              <MessageSkeleton />
             </div>
           ) : messages.length > 0 ? (
             messages.map((msg, index) => {

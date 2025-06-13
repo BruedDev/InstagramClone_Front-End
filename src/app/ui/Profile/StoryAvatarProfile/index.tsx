@@ -26,8 +26,8 @@ const StoryAvatarProfile: React.FC<StoryAvatarProfileProps> = ({
   hasStories = true,
   className = "",
   initialIndex = 0,
-  profileOpen, // Nhận prop này
-  onClick, // Thêm destructure onClick
+  profileOpen,
+  onClick,
 }) => {
   const {
     openStory,
@@ -67,7 +67,7 @@ const StoryAvatarProfile: React.FC<StoryAvatarProfileProps> = ({
           className="w-full h-full"
         >
           {/* Avatar container responsive: 150px desktop, 60px mobile */}
-          <div className="w-[130px] h-[130px] max-[480px]:w-[70%] max-[480px]:h-[auto] rounded-full overflow-hidden bg-black flex items-center justify-center mx-auto my-auto">
+          <div className="w-[130px] h-[130px] max-[480px]:w-[75%] max-[480px]:h-[auto] rounded-full overflow-hidden bg-black flex items-center justify-center mx-auto my-auto">
             <Image
               src={author.profilePicture || "/api/placeholder/150/150"}
               alt={author.username}

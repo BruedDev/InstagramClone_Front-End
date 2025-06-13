@@ -159,7 +159,7 @@ export default function ViewStoryUi({
                      ? "translate-y-0 opacity-100 scale-100"
                      : "translate-y-full opacity-0 scale-90"
                  }`
-              : `fixed bottom-4 left-1/2 transform -translate-x-1/2 w-full max-w-[422px] mx-auto bg-zinc-900 rounded-t-2xl rounded-b-2xl shadow-2xl z-40 transition-all duration-400 ease-in-out h-[60dvh] ${
+              : `fixed bottom-4 left-[50.5%] transform -translate-x-1/2 w-full max-w-[425px] mx-auto bg-zinc-900 rounded-t-2xl rounded-b-2xl shadow-2xl z-40 transition-all duration-400 ease-in-out h-[60dvh] ${
                   visible
                     ? "translate-y-0 opacity-100 scale-100"
                     : "translate-y-8 opacity-0 scale-90"

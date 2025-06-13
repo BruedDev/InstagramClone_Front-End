@@ -55,7 +55,6 @@
 
 .mainChat {
   flex: 3.2;
-  background-color: #242526;
   transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s;
   overflow-x: hidden !important;
 
@@ -65,7 +64,6 @@
     left: 0;
     width: 100vw;
     height: 100dvh;
-    background: #111;
     z-index: 998;
     transform: translateX(-100%);
     opacity: 0;
@@ -79,24 +77,29 @@
       position: sticky;
       top: 0;
       height: 60px;
-      background-color: #0f0f0f;
       z-index: 998;
       flex-shrink: 0;
+      background-color: #0d1015 !important;
     }
 
     .messageInput {
       position: sticky;
       bottom: 0;
       min-height: 70px;
-      background-color: #0f0f0f;
       z-index: 998;
       flex-shrink: 0;
       max-height: fit-content;
+      background-color: #0d1015 !important;
+    }
+
+    .fileInput {
+      background-color: transparent !important;
     }
 
     .messages {
       flex: 2;
       min-height: 0;
+      background-color: #0d1015 !important;
 
       &::-webkit-scrollbar {
         display: none;
@@ -214,6 +217,31 @@
     left: calc(100% + 12px);
     flex-direction: row-reverse;
   }
+}
+
+// Preview mode for message actions
+.messageActionsPreview {
+  display: flex;
+  align-items: center;
+  flex-direction: row-reverse;
+  position: static;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s;
+  z-index: 10;
+
+  // Hiện khi hover messageContainer
+  .messageContainer:hover & {
+    opacity: 1;
+    visibility: visible;
+  }
+  // Luôn hiện nếu là preview (nếu muốn luôn hiện thì bỏ 2 dòng trên)
+}
+
+// Thu nhỏ icon trong preview
+.messageActionsPreview .messageActionBtn svg {
+  width: 16px !important;
+  height: 16px !important;
 }
 
 // Show actions on hover
@@ -349,4 +377,25 @@
       opacity: 0.7;
     }
   }
+}
+.searchInput {
+  @media (max-width: 768px) {
+    background-color: transparent !important;
+    border: 1px solid #262626;
+  }
+}
+.backButton {
+  @media (max-width: 768px) {
+    background-color: transparent !important;
+  }
+}
+
+.messageActionsPreview .messageActionBtn:hover,
+.messageActions .messageActionBtn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  transform: scale(1.08); // bỏ rotate
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+  border-radius: unset; // bỏ border tròn nếu có
+  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 50%;
 }
