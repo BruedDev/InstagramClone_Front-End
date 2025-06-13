@@ -40,7 +40,7 @@ export const CommentItem = ({
       className={styles.commentItem}
       style={{
         marginLeft: marginLeft + "px",
-        borderLeft: showBorder ? "2px solid rgba(255,255,255,0.2)" : "none",
+        // borderLeft: showBorder ? "2px solid rgba(255,255,255,0.2)" : "none",
         paddingLeft: showBorder ? "16px" : "0",
         position: "relative",
         marginBottom: "16px",
@@ -51,12 +51,12 @@ export const CommentItem = ({
         <div
           style={{
             position: "absolute",
-            left: "-2px",
+            left: "0",
             top: "0",
             width: "16px",
             height: "24px",
             borderBottom: "2px solid rgba(255,255,255,0.2)",
-            borderLeft: "2px solid rgba(255,255,255,0.2)",
+            // borderLeft: "2px solid rgba(255,255,255,0.2)",
             borderBottomLeftRadius: "8px",
           }}
         />

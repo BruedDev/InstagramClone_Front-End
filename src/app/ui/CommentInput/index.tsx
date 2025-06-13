@@ -49,10 +49,13 @@ export default function CommentInput({
   const [commentText, setCommentText] = useState(externalComment || "");
 
   const loading = useSelector(
-    (state: RootState) => state.comments.loading[`add_${post._id}`] || false
+    (state: RootState) =>
+      (state.comments as RootState["comments"]).loading[`add_${post._id}`] ||
+      false
   );
   const error = useSelector(
-    (state: RootState) => state.comments.error[`add_${post._id}`]
+    (state: RootState) =>
+      (state.comments as RootState["comments"]).error[`add_${post._id}`]
   );
 
   // Determine if we're currently submitting

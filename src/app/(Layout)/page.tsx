@@ -202,6 +202,16 @@ export default function Home() {
 
   const postSettingModal = usePostSettingModal();
 
+  // Khi modal mở, body không cuộn được
+  useEffect(() => {
+    if (isModalOpen || (isMobileView && showMobileComment)) {
+      document.body.classList.add("modal-open");
+    } else {
+      document.body.classList.remove("modal-open");
+    }
+    return () => document.body.classList.remove("modal-open");
+  }, [isModalOpen, isMobileView, showMobileComment]);
+
   if (error) return <div>Lỗi: {error}</div>;
 
   // Sửa renderPost để truyền callback mở PostSetting

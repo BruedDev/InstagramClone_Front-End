@@ -32,13 +32,71 @@ export const CommentWithReplies = ({
   };
 
   return (
-    <div style={{ marginBottom: "16px" }}>
+    <div style={{ position: "relative", marginBottom: "16px" }}>
+      {/* Đường kẻ tree từ cha xuống các replies */}
+      {flattenedReplies.length > 0 && (
+        <>
+          {/* Đường kẻ dọc - điều chỉnh để tới đúng nút button */}
+          <div
+            style={{
+              position: "absolute",
+              left: 20,
+              top: 55,
+              // Tính toán lại bottom để đường kẻ tới đúng nút button
+              bottom: shouldShowCollapseButton
+                ? showReplies
+                  ? 16
+                  : 16 // Điều chỉnh để khớp với L
+                : showReplies
+                ? 0
+                : 16,
+              width: 0,
+              borderLeft: "2px solid rgba(255,255,255,0.2)",
+              zIndex: 0,
+              transition: "bottom 0.3s",
+            }}
+          />
+          {/* Đường kẻ chữ L móc vào button "Hiển thị bình luận" */}
+          {shouldShowCollapseButton && !showReplies && (
+            <div
+              style={{
+                position: "absolute",
+                left: 20,
+                bottom: 13, // Điều chỉnh để khớp với button
+                width: 28, // Tăng width để L dài hơn
+                height: 10, // Giảm height để không thừa
+                borderBottom: "2px solid rgba(255,255,255,0.2)",
+                borderBottomLeftRadius: "8px",
+                zIndex: 1,
+                background: "transparent",
+              }}
+            />
+          )}
+          {/* Đường kẻ chữ L móc vào button "Ẩn bình luận" */}
+          {shouldShowCollapseButton && showReplies && (
+            <div
+              style={{
+                position: "absolute",
+                left: 19,
+                bottom: 13, // Điều chỉnh để khớp với button ẩn bình luận
+                width: 28, // Tăng width để L dài hơn
+                height: 12, // Giảm height để không thừa
+                borderBottom: "2px solid rgba(255,255,255,0.2)",
+                borderBottomLeftRadius: "8px",
+                zIndex: 1,
+                background: "transparent",
+              }}
+            />
+          )}
+        </>
+      )}
+
       {/* Comment gốc */}
       <CommentItem comment={comment} isReply={false} onReply={onReply} />
 
-      {/* Nút collapse/expand nếu tổng số comments >= 3 */}
-      {shouldShowCollapseButton && (
-        <div style={{ marginLeft: "20px", marginBottom: "12px" }}>
+      {/* Nút collapse/expand nếu tổng số comments >= 3 - vị trí thay đổi */}
+      {shouldShowCollapseButton && !showReplies && (
+        <div style={{ marginLeft: "48px", marginBottom: "16px" }}>
           <button
             onClick={toggleReplies}
             style={{
@@ -61,17 +119,8 @@ export const CommentWithReplies = ({
               e.currentTarget.style.transform = "translateY(0)";
             }}
           >
-            {showReplies ? (
-              <>
-                <ChevronUp size={16} />
-                Ẩn bình luận ({flattenedReplies.length})
-              </>
-            ) : (
-              <>
-                <ChevronDown size={16} />
-                Hiển thị bình luận ({flattenedReplies.length})
-              </>
-            )}
+            <ChevronDown size={16} />
+            Hiển thị bình luận ({flattenedReplies.length})
           </button>
         </div>
       )}
@@ -89,10 +138,41 @@ export const CommentWithReplies = ({
             <CommentItem
               key={reply._id}
               comment={reply}
-              isReply={true} // TẤT CẢ đều là reply, không phân biệt cấp độ
+              isReply={true}
               onReply={onReply}
             />
           ))}
+        </div>
+      )}
+
+      {/* Nút ẩn bình luận ở cuối khi đang hiển thị replies */}
+      {shouldShowCollapseButton && showReplies && (
+        <div style={{ marginLeft: "48px", marginTop: "8px" }}>
+          <button
+            onClick={toggleReplies}
+            style={{
+              border: "none",
+              borderRadius: "20px",
+              padding: "8px 16px",
+              fontSize: "13px",
+              fontWeight: "500",
+              color: "#ffffff",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              transition: "all 0.3s ease",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = "translateY(-1px)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = "translateY(0)";
+            }}
+          >
+            <ChevronUp size={16} />
+            Ẩn bình luận ({flattenedReplies.length})
+          </button>
         </div>
       )}
 

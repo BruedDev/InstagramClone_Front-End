@@ -26,6 +26,7 @@ body {
   font-family: Arial, Helvetica, sans-serif;
   scrollbar-color: #808080 transparent;
   overflow-x: hidden !important;
+  -ms-overflow-style: none
 }
 
 @media(max-width: 768px) {
@@ -35,6 +36,19 @@ body {
 
   body::-webkit-scrollbar {
     display: none;
+  }
+
+  body::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  html::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  html {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
   }
 }
 
@@ -53,4 +67,15 @@ main {
   main {
     margin-left: 0;
   }
+}
+
+/* Chỉ riêng trang setting trên PC (>= 1264px) sẽ margin-left: 70px */
+@media (min-width: 1264px) {
+  main[data-page="setting"] {
+    margin-left: 70px !important;
+  }
+}
+
+body.modal-open {
+  overflow: hidden !important;
 }

@@ -166,7 +166,7 @@ export const StoryProvider: React.FC<{ children: React.ReactNode }> = ({
               }
               setIsLoading(false); // Đặt isLoading thành false SAU KHI modal hiển thị
               modalDisplayTimeoutRef.current = null; // Xóa ref sau khi timeout chạy
-            }, 1000); // Đợi 1 giây (1000ms)
+            }, 500); // Đợi 1 giây (1000ms)
           } else {
             setModalAuthor(null);
             setIsLoading(false); // Không có story, đặt isLoading thành false

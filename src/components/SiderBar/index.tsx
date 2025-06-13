@@ -81,17 +81,24 @@ export default function SiderBar() {
     return `/${href}`;
   };
 
+  // Không render logo cho đến khi windowWidth đã xác định (tránh nhấp nháy logo nhỏ)
+  const isReady = windowWidth > 0;
+
   return (
     <aside className={`${styles.sidebar} ${collapsed ? styles.collapsed : ""}`}>
       <div className={styles.logo}>
-        <Link href="/">
-          <Image
-            src={collapsed ? "/Images/instagram.png" : "/Images/logoLogin.png"}
-            alt="Logo"
-            width={collapsed ? 30 : 120}
-            height={collapsed ? 30 : 40}
-          />
-        </Link>
+        {isReady && (
+          <Link href="/">
+            <Image
+              src={
+                collapsed ? "/Images/instagram.png" : "/Images/logoLogin.png"
+              }
+              alt="Logo"
+              width={collapsed ? 30 : 120}
+              height={collapsed ? 30 : 40}
+            />
+          </Link>
+        )}
       </div>
 
       <nav className={styles.nav}>
