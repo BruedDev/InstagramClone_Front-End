@@ -241,6 +241,25 @@ const StoryModal: React.FC<
     };
   }, [audioRef, videoRef, isPlaying, isMuted, story]);
 
+  // Reset và play lại audio khi chuyển slide (fix iOS audio không phát)
+  useEffect(() => {
+    if (!open) return;
+    if (audioRef) {
+      try {
+        audioRef.pause();
+        audioRef.currentTime = 0;
+        if (isPlaying) {
+          const playPromise = audioRef.play();
+          if (playPromise && typeof playPromise.then === "function") {
+            playPromise.catch(() => {}); // Bắt lỗi play trên Safari/iOS
+          }
+        }
+      } catch {
+        // ignore
+      }
+    }
+  }, [current, open, audioRef, isPlaying]);
+
   useEffect(() => {
     // Chỉ xử lý URL khi không phải deltail
     if (deltail) return;
