@@ -19,9 +19,12 @@ export default function StoryRingProfile({
   const [internalViewed, setInternalViewed] = useState(isViewed);
   const [animationKey, setAnimationKey] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
+  const [shouldAnimate, setShouldAnimate] = useState(false); // Thêm state để control animation
 
   useEffect(() => {
     setInternalViewed(isViewed);
+    // Reset shouldAnimate khi isViewed thay đổi từ bên ngoài
+    setShouldAnimate(false);
   }, [isViewed]);
 
   useEffect(() => {
@@ -31,6 +34,17 @@ export default function StoryRingProfile({
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
+  // Reset shouldAnimate sau khi animation hoàn thành (2s)
+  useEffect(() => {
+    if (shouldAnimate) {
+      const timer = setTimeout(() => {
+        setShouldAnimate(false);
+      }, 2000); // Thời gian animation dashAnimation là 2s
+
+      return () => clearTimeout(timer);
+    }
+  }, [shouldAnimate]);
+
   const handleClick = () => {
     if (hasStories && !internalViewed) {
       setInternalViewed(true);
@@ -38,6 +52,7 @@ export default function StoryRingProfile({
 
     // Trigger animation lại từ đầu mỗi lần click
     setAnimationKey((prev) => prev + 1);
+    setShouldAnimate(true); // Set animate = true mỗi lần click
 
     onClick?.();
   };
@@ -107,7 +122,9 @@ export default function StoryRingProfile({
           strokeWidth={isMobile ? "3" : "1.5"}
           className={`${styles.storyCircle} ${
             internalViewed ? styles.viewed : ""
-          } ${styles.responsiveStroke}`}
+          } ${styles.responsiveStroke} ${
+            shouldAnimate ? styles.dashAnimation : ""
+          }`} // Chỉ thêm dashAnimation class khi shouldAnimate = true
           strokeDasharray={internalViewed ? "8 4" : "0"}
         />
       </svg>

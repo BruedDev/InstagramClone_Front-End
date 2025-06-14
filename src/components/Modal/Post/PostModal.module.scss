@@ -24,8 +24,7 @@
     width: 100%;
     height: 100%;
     max-height: 100vh;
-    background-color: #0d1015;
-    padding: 0;
+    // background-color: #0d1015;
   }
 
   @media (max-width: 480px) {
@@ -59,7 +58,6 @@
   @media (max-width: 768px) {
     flex-direction: column;
     padding: 0 !important;
-
     background-color: #0d1015;
     height: 100dvh;
     max-height: 100vh;
@@ -68,6 +66,20 @@
   @media (max-width: 480px) {
     height: 100dvh;
     max-height: 100vh;
+  }
+}
+
+.postContainerDetail {
+  @media (max-width: 768px) {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 100vw;
+    height: calc(100dvh - 70px);
+    max-height: calc(100dvh - 70px);
+    z-index: 9;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 }
 
@@ -100,7 +112,6 @@
   display: flex;
   flex-direction: column;
   background-color: #000;
-  // border-left: 1px solid #262626;
 
   @media (max-width: 768px) {
     width: 100%;
@@ -191,7 +202,7 @@
 
 .commentsSectionMobile {
   position: fixed;
-  z-index: 997;
+  z-index: 97;
   bottom: 0;
   left: 0;
   height: 80dvh;
@@ -281,6 +292,22 @@
 
   @media (max-width: 768px) {
     padding: 0 16px;
+    padding-bottom: 15px;
+    // padding-top: 15px;
+    height: auto;
+    // margin-bottom: 70px;
+  }
+}
+
+.commentFormDetail {
+  display: flex;
+  align-items: center;
+  padding: 14px 16px;
+  border-top: 1px solid #262626;
+
+  @media (max-width: 768px) {
+    padding: 0 16px;
+    padding-top: 15px;
     padding-bottom: 15px;
     height: auto;
   }

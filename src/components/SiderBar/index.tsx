@@ -104,7 +104,10 @@ export default function SiderBar() {
     "Tạo bài viết": {
       isOpen: isUploadPostOpen,
       setIsOpen: setIsUploadPostOpen,
-      customAction: handleOtherNavClick,
+      customAction: () => {
+        setIsUploadPostOpen(true);
+        handleOtherNavClick();
+      },
     },
     "Tìm kiếm": {
       isOpen: isSearchOpen,
@@ -249,6 +252,10 @@ export default function SiderBar() {
                       }
                       if (item.label === "Xem Thêm") {
                         setIsMoreMenuOpen(true);
+                      }
+                      // Gọi onClick từ item nếu có
+                      if (item.onClick) {
+                        item.onClick();
                       }
                     }}
                     className={`${styles.navItem} ${

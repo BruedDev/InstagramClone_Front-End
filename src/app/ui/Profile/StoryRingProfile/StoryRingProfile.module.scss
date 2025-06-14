@@ -3,17 +3,33 @@
   animation: ringAppear 0.6s ease-out;
 
   &.viewed {
-    animation: dashAnimation 2s ease-in-out, movingDash 3s linear infinite;
     stroke-dasharray: 8 4;
     stroke: rgba(255, 255, 255, 0.4);
+    // Xóa dashAnimation từ đây, chỉ để lại movingDash
+    animation: movingDash 3s linear infinite;
   }
 
   // Mobile responsive styling
   @media (max-width: 480px) {
     &.viewed {
+      animation: movingDashMobile 3s linear infinite;
+      stroke-dasharray: 8 4;
+    }
+  }
+}
+
+// Animation chỉ chạy khi có class dashAnimation
+.storyCircle.dashAnimation {
+  animation: dashAnimation 2s ease-in-out;
+
+  // Nếu cũng có class viewed thì chạy cả 2 animation
+  &.viewed {
+    animation: dashAnimation 2s ease-in-out, movingDash 3s linear infinite;
+
+    // Mobile version
+    @media (max-width: 480px) {
       animation: dashAnimationMobile 2s ease-in-out,
         movingDashMobile 3s linear infinite;
-      stroke-dasharray: 8 4;
     }
   }
 }
@@ -24,6 +40,7 @@
     left: -10px;
   }
 }
+
 @keyframes dashAnimation {
   0% {
     stroke-dasharray: 0 200;
@@ -92,7 +109,6 @@
 }
 
 // Hiệu ứng pulse khi hover
-
 .storyCircle:not(.viewed) {
   animation: fadeInRing 0.3s ease-out;
 }

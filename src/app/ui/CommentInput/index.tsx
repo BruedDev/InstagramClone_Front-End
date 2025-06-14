@@ -41,7 +41,8 @@ export default function CommentInput({
   replyTo,
   onReplyCancel,
   inputStyle,
-}: CommentInputProps) {
+  detail = false, // Thêm prop detail để xác định chế độ detail
+}: CommentInputProps & { detail?: boolean }) {
   const dispatch = useDispatch<AppDispatch>();
   const { user } = useUser();
 
@@ -198,7 +199,10 @@ export default function CommentInput({
         </div>
       )}
 
-      <form onSubmit={submitHandler} className={styles.commentForm}>
+      <form
+        onSubmit={submitHandler}
+        className={detail ? styles.commentFormDetail : styles.commentForm}
+      >
         <div className={styles.avatarContainer}>
           {user && (
             <Image

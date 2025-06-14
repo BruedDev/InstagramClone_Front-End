@@ -165,7 +165,13 @@ export default function PostModal({
 
   // Render nội dung chính
   const renderContent = () => (
-    <div className={styles.postContainer}>
+    <div
+      className={
+        detail
+          ? `${styles.postContainer} ${styles.postContainerDetail}`
+          : styles.postContainer
+      }
+    >
       {/* Phần hình ảnh */}
       <div className={styles.imageContainer}>
         {post.type === "image" ? (
@@ -188,6 +194,7 @@ export default function PostModal({
             muted={false}
             playsInline
             controls
+            controlsList="nodownload noremoteplayback"
             style={{
               width: "100%",
               height: "100%",
@@ -290,6 +297,7 @@ export default function PostModal({
           post={currentPost}
           replyTo={replyTo}
           onReplyCancel={handleReplyCancel}
+          detail={detail}
         />
       </div>
     </div>

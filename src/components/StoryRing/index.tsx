@@ -19,11 +19,25 @@ export default function StoryRing({
   className = "",
 }: StoryRingProps) {
   const [internalViewed, setInternalViewed] = useState(isViewed);
-  const [animationKey, setAnimationKey] = useState(0); // Thêm key để trigger animation
+  const [animationKey, setAnimationKey] = useState(0);
+  const [shouldAnimate, setShouldAnimate] = useState(false); // Thêm state để control animation
 
   useEffect(() => {
     setInternalViewed(isViewed);
+    // Reset shouldAnimate khi isViewed thay đổi từ bên ngoài
+    setShouldAnimate(false);
   }, [isViewed]);
+
+  // Reset shouldAnimate sau khi animation hoàn thành (2s)
+  useEffect(() => {
+    if (shouldAnimate) {
+      const timer = setTimeout(() => {
+        setShouldAnimate(false);
+      }, 2000); // Thời gian animation dashAnimation là 2s
+
+      return () => clearTimeout(timer);
+    }
+  }, [shouldAnimate]);
 
   const handleClick = () => {
     if (hasStories && !internalViewed) {
@@ -32,6 +46,7 @@ export default function StoryRing({
 
     // Trigger animation lại từ đầu mỗi lần click
     setAnimationKey((prev) => prev + 1);
+    setShouldAnimate(true); // Set animate = true mỗi lần click
 
     onClick?.();
   };
@@ -79,13 +94,13 @@ export default function StoryRing({
     >
       {/* SVG Ring với animation - thêm key để reset animation */}
       <svg
-        key={animationKey} // Key này sẽ force re-render và chạy lại animation
+        key={animationKey}
         className={`absolute inset-0 ${currentSize.svg} -rotate-90`}
         viewBox={`0 0 ${center * 2} ${center * 2}`}
       >
         <defs>
           <linearGradient
-            id={`storyGradient-${size}-${animationKey}`} // Thêm animationKey vào id để tránh conflict
+            id={`storyGradient-${size}-${animationKey}`}
             x1="0%"
             y1="0%"
             x2="100%"
@@ -114,7 +129,7 @@ export default function StoryRing({
           strokeDasharray={internalViewed ? "8 4" : "0"}
           className={`${styles.storyCircle} ${
             internalViewed ? styles.viewed : ""
-          }`}
+          } ${shouldAnimate ? styles.dashAnimation : ""}`} // Chỉ thêm dashAnimation class khi shouldAnimate = true
         />
       </svg>
 

@@ -1,4 +1,3 @@
-// src/components/Messenger/index.tsx
 "use client";
 
 import { useEffect, useState, useRef } from "react";
@@ -23,8 +22,8 @@ import MainChat from "./MainChat";
 interface MessengerComponentProps {
   ringtoneRef: React.RefObject<HTMLAudioElement | null>;
   isModal?: boolean;
-  preview?: boolean; // Thêm prop preview để truyền xuống SiderBar nếu cần
-  onClose?: () => void; // Thêm prop onClose
+  preview?: boolean;
+  onClose?: () => void;
 }
 
 export default function MessengerComponent({
@@ -50,6 +49,7 @@ export default function MessengerComponent({
   const [file, setFile] = useState<File | null>(null);
   const [filePreview, setFilePreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [lastFetchReplace, setLastFetchReplace] = useState(false);
 
   useEffect(() => {
     const handleReceiveMessage = (msg: {
@@ -74,12 +74,10 @@ export default function MessengerComponent({
             isRead?: boolean;
             replyTo?: string | null;
           };
-      // Thêm các trường media
       mediaUrl?: string;
       mediaType?: "image" | "video" | "file";
       isOwnMessage?: boolean;
     }) => {
-      // Xử lý realtime replyTo như cũ...
       let replyToValue: string | null = null;
       if (msg.replyTo) {
         if (typeof msg.replyTo === "string") {
@@ -105,7 +103,6 @@ export default function MessengerComponent({
         read: msg.isRead ?? false,
         message: msg.message,
         replyTo: replyToValue,
-        // Thêm các trường media
         mediaUrl: msg.mediaUrl,
         mediaType: msg.mediaType,
         isOwnMessage: msg.isOwnMessage,
@@ -126,8 +123,7 @@ export default function MessengerComponent({
     return () => {
       socketService.offReceiveMessage(handleReceiveMessage);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedUser, userId, dispatch]);
+  }, [selectedUser, userId, dispatch, messages]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -140,7 +136,6 @@ export default function MessengerComponent({
     dispatch(fetchAvailableUsers())
       .unwrap()
       .then((users) => {
-        // Auto-select user from URL if exists
         const selectedId = searchParams.get("id");
         if (selectedId) {
           const foundUser = users.find((user) => user._id === selectedId);
@@ -151,9 +146,9 @@ export default function MessengerComponent({
       });
   }, [dispatch, searchParams]);
 
-  // useEffect fetchMessages: chỉ fetch khi selectedUser._id thực sự thay đổi
   useEffect(() => {
-    if (selectedUser?._id && userId) {
+    if (selectedUser?._id && userId && messages.length === 0 && hasMore) {
+      setLastFetchReplace(true);
       dispatch(
         fetchMessages({
           userId: selectedUser._id,
@@ -162,11 +157,10 @@ export default function MessengerComponent({
         })
       );
     }
-  }, [selectedUser?._id, userId, dispatch]);
+  }, [selectedUser?._id, userId, dispatch, messages.length, hasMore]);
 
   const replyTo = useAppSelector((state) => state.messenger.replyTo);
 
-  // Lắng nghe updateMessageMedia từ socket để cập nhật mediaUrl cho message
   useEffect(() => {
     const handleUpdateMessageMedia = (data: {
       messageId: string;
@@ -199,28 +193,27 @@ export default function MessengerComponent({
       }
     }
     if (file) {
-      // Đọc file thành base64
       const reader = new FileReader();
       reader.onload = () => {
         const base64 = reader.result as string;
         console.log("[Messenger] Sending media message:", {
           senderId: userId,
           receiverId: selectedUser._id,
-          message: message || "", // Nếu chỉ gửi media thì message là rỗng
+          message: message || "",
           tempId: Date.now().toString(),
           replyTo: replyToId,
           media: base64,
           mediaType: file.type.startsWith("image/") ? "image" : "video",
         });
         socketService.emitUploadMediaComplete({
-          messageId: Date.now().toString(), // Tạo tạm, BE sẽ update lại
+          messageId: Date.now().toString(),
           media: base64,
           mediaType: file.type.startsWith("image/") ? "image" : "video",
         });
         socketService.sendMessage({
           senderId: userId,
           receiverId: selectedUser._id,
-          message: message || "", // Nếu chỉ gửi media thì message là rỗng
+          message: message || "",
           tempId: Date.now().toString(),
           replyTo: replyToId,
           media: base64,
@@ -261,6 +254,7 @@ export default function MessengerComponent({
 
   const handleLoadMore = () => {
     if (!loadingMore && hasMore && selectedUser && before) {
+      setLastFetchReplace(false);
       dispatch(
         fetchMessages({
           userId: selectedUser._id,
@@ -271,7 +265,6 @@ export default function MessengerComponent({
     }
   };
 
-  // Reset selectedUser và messages state khi rời khỏi trang Messenger (unmount toàn bộ Messenger) alo
   useEffect(() => {
     return () => {
       dispatch(setSelectedUser(null));
@@ -279,7 +272,6 @@ export default function MessengerComponent({
     };
   }, [dispatch]);
 
-  // State kiểm tra màn hình lớn hơn 768px
   const [isLargeScreen, setIsLargeScreen] = useState(
     typeof window !== "undefined" ? window.innerWidth > 768 : true
   );
@@ -292,11 +284,9 @@ export default function MessengerComponent({
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Nếu là modal hoặc preview thì chỉ render SiderBar hoặc MainChat theo state riêng, chỉ áp dụng khi màn hình lớn hơn 768px
   const [showMainChatModal, setShowMainChatModal] = useState(false);
 
   if (isLargeScreen && (isModal || preview)) {
-    // Nếu đã chọn user và showMainChatModal=true thì render MainChat, ngược lại render SiderBar
     if (selectedUser && showMainChatModal) {
       return (
         <div
@@ -334,11 +324,11 @@ export default function MessengerComponent({
             setFilePreview={setFilePreview}
             fileInputRef={fileInputRef}
             preview={true}
+            replace={lastFetchReplace}
           />
         </div>
       );
     }
-    // Chưa chọn user hoặc showMainChatModal=false thì chỉ render SiderBar
     return (
       <div
         className={`flex h-full bg-[#0a0a0a] text-gray-200 ${styles.container} ${styles.modalContainer}`}
@@ -401,6 +391,7 @@ export default function MessengerComponent({
         filePreview={filePreview}
         setFilePreview={setFilePreview}
         fileInputRef={fileInputRef}
+        replace={lastFetchReplace}
       />
     </div>
   );

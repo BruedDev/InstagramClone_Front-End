@@ -52,6 +52,7 @@ export type MainChatProps = {
   setFilePreview?: (url: string | null) => void;
   fileInputRef?: React.RefObject<HTMLInputElement | null>;
   preview?: boolean;
+  replace?: boolean;
 };
 
 export default function MainChat({
@@ -76,6 +77,7 @@ export default function MainChat({
   setFilePreview,
   fileInputRef,
   preview = false,
+  replace = false,
 }: MainChatProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -216,6 +218,12 @@ export default function MainChat({
   const handleEmojiReaction = (messageId: string) => {
     console.log("Emoji reaction for message:", messageId);
   };
+
+  useEffect(() => {
+    if (replace && messagesEndRef.current && messages.length > 0) {
+      messagesEndRef.current.scrollIntoView({ behavior: "auto" });
+    }
+  }, [replace, messages.length]);
 
   return (
     <div
@@ -401,38 +409,42 @@ export default function MainChat({
                     {/* Container cho nội dung tin nhắn */}
                     <div className={`flex-1 ${styles.action}`}>
                       {/* Message Actions */}
-                      <div
-                        className={`${styles.messageActions} ${
-                          isCurrentUser ? styles.currentUser : styles.otherUser
-                        }`}
-                      >
-                        <button
-                          className={`${styles.messageActionBtn} ${styles.emojiBtn}`}
-                          onClick={() => handleEmojiReaction(msg._id)}
-                          title="Xem thêm"
-                          aria-label="Xem thêm"
+                      {!preview && (
+                        <div
+                          className={`${styles.messageActions} ${
+                            isCurrentUser
+                              ? styles.currentUser
+                              : styles.otherUser
+                          }`}
                         >
-                          <IoMdMore size={24} />
-                        </button>
+                          <button
+                            className={`${styles.messageActionBtn} ${styles.emojiBtn}`}
+                            onClick={() => handleEmojiReaction(msg._id)}
+                            title="Xem thêm"
+                            aria-label="Xem thêm"
+                          >
+                            <IoMdMore size={24} />
+                          </button>
 
-                        <button
-                          className={`${styles.messageActionBtn} ${styles.replyBtn}`}
-                          onClick={() => dispatch(setReplyTo(msg._id))}
-                          title="Trả lời tin nhắn"
-                          aria-label="Trả lời tin nhắn này"
-                        >
-                          <MdOutlineReply size={24} />
-                        </button>
+                          <button
+                            className={`${styles.messageActionBtn} ${styles.replyBtn}`}
+                            onClick={() => dispatch(setReplyTo(msg._id))}
+                            title="Trả lời tin nhắn"
+                            aria-label="Trả lời tin nhắn này"
+                          >
+                            <MdOutlineReply size={24} />
+                          </button>
 
-                        <button
-                          className={`${styles.messageActionBtn} ${styles.emojiBtn}`}
-                          onClick={() => handleEmojiReaction(msg._id)}
-                          title="Thêm emoji"
-                          aria-label="Thêm emoji reaction"
-                        >
-                          <HiOutlineFaceSmile size={24} />
-                        </button>
-                      </div>
+                          <button
+                            className={`${styles.messageActionBtn} ${styles.emojiBtn}`}
+                            onClick={() => handleEmojiReaction(msg._id)}
+                            title="Thêm emoji"
+                            aria-label="Thêm emoji reaction"
+                          >
+                            <HiOutlineFaceSmile size={24} />
+                          </button>
+                        </div>
+                      )}
 
                       <div
                         className={`flex flex-col ${
@@ -645,17 +657,105 @@ export default function MainChat({
                           </div>
                         </div>
 
-                        {/* Thời gian tin nhắn */}
-                        <p className="text-xs text-gray-500 mt-4 px-1">
-                          {formatTime(
-                            typeof msg.createdAt === "number"
-                              ? new Date(msg.createdAt)
-                              : !isNaN(Number(msg.createdAt))
-                              ? new Date(Number(msg.createdAt))
-                              : msg.createdAt,
-                            "HH:mm"
-                          )}
-                        </p>
+                        {/* Thời gian tin nhắn + Actions Preview */}
+                        {preview ? (
+                          <div className={styles.messageMetaPreviewRow}>
+                            {isCurrentUser ? (
+                              <>
+                                <div className={styles.messageActionsPreview}>
+                                  <button
+                                    className={styles.messageActionBtn}
+                                    onClick={() => handleEmojiReaction(msg._id)}
+                                    title="Xem thêm"
+                                    aria-label="Xem thêm"
+                                  >
+                                    <IoMdMore size={16} />
+                                  </button>
+                                  <button
+                                    className={styles.messageActionBtn}
+                                    onClick={() =>
+                                      dispatch(setReplyTo(msg._id))
+                                    }
+                                    title="Trả lời tin nhắn"
+                                    aria-label="Trả lời tin nhắn này"
+                                  >
+                                    <MdOutlineReply size={16} />
+                                  </button>
+                                  <button
+                                    className={styles.messageActionBtn}
+                                    onClick={() => handleEmojiReaction(msg._id)}
+                                    title="Thêm emoji"
+                                    aria-label="Thêm emoji reaction"
+                                  >
+                                    <HiOutlineFaceSmile size={16} />
+                                  </button>
+                                </div>
+                                <p className="text-xs text-gray-500 px-1">
+                                  {formatTime(
+                                    typeof msg.createdAt === "number"
+                                      ? new Date(msg.createdAt)
+                                      : !isNaN(Number(msg.createdAt))
+                                      ? new Date(Number(msg.createdAt))
+                                      : msg.createdAt,
+                                    "HH:mm"
+                                  )}
+                                </p>
+                              </>
+                            ) : (
+                              <>
+                                <p className="text-xs text-gray-500 px-1">
+                                  {formatTime(
+                                    typeof msg.createdAt === "number"
+                                      ? new Date(msg.createdAt)
+                                      : !isNaN(Number(msg.createdAt))
+                                      ? new Date(Number(msg.createdAt))
+                                      : msg.createdAt,
+                                    "HH:mm"
+                                  )}
+                                </p>
+                                <div className={styles.messageActionsPreview}>
+                                  <button
+                                    className={styles.messageActionBtn}
+                                    onClick={() => handleEmojiReaction(msg._id)}
+                                    title="Xem thêm"
+                                    aria-label="Xem thêm"
+                                  >
+                                    <IoMdMore size={16} />
+                                  </button>
+                                  <button
+                                    className={styles.messageActionBtn}
+                                    onClick={() =>
+                                      dispatch(setReplyTo(msg._id))
+                                    }
+                                    title="Trả lời tin nhắn"
+                                    aria-label="Trả lời tin nhắn này"
+                                  >
+                                    <MdOutlineReply size={16} />
+                                  </button>
+                                  <button
+                                    className={styles.messageActionBtn}
+                                    onClick={() => handleEmojiReaction(msg._id)}
+                                    title="Thêm emoji"
+                                    aria-label="Thêm emoji reaction"
+                                  >
+                                    <HiOutlineFaceSmile size={16} />
+                                  </button>
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        ) : (
+                          <p className="text-xs text-gray-500 mt-4 px-1">
+                            {formatTime(
+                              typeof msg.createdAt === "number"
+                                ? new Date(msg.createdAt)
+                                : !isNaN(Number(msg.createdAt))
+                                ? new Date(Number(msg.createdAt))
+                                : msg.createdAt,
+                              "HH:mm"
+                            )}
+                          </p>
+                        )}
                       </div>
                     </div>
                   </div>

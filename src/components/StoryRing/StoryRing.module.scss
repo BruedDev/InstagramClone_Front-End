@@ -2,9 +2,20 @@
   transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 
   &.viewed {
-    animation: dashAnimation 2s ease-in-out;
     stroke-dasharray: 8 4;
     stroke: rgba(255, 255, 255, 0.4);
+    // Xóa animation ở đây, chỉ để lại moving dash animation
+    animation: movingDash 3s linear infinite;
+  }
+}
+
+// Animation chỉ chạy khi có class dashAnimation
+.storyCircle.dashAnimation {
+  animation: dashAnimation 2s ease-in-out;
+
+  // Nếu cũng có class viewed thì chạy cả 2 animation
+  &.viewed {
+    animation: dashAnimation 2s ease-in-out, movingDash 3s linear infinite;
   }
 }
 
@@ -33,10 +44,6 @@
 }
 
 // Animation cho moving dashes
-.storyCircle.viewed {
-  animation: dashAnimation 2s ease-in-out, movingDash 3s linear infinite;
-}
-
 @keyframes movingDash {
   0% {
     stroke-dashoffset: 0;
@@ -44,51 +51,4 @@
   100% {
     stroke-dashoffset: 24;
   }
-}
-
-// Hiệu ứng pulse khi hover
-.storyCircle:not(.viewed):hover {
-  filter: brightness(1.1);
-  transform: scale(1.02);
-  transition: all 0.2s ease;
-}
-
-.storyCircle:not(.viewed) {
-  animation: fadeInRing 0.3s ease-out;
-}
-
-// Glow effect
-@keyframes glowPulse {
-  0%,
-  100% {
-    opacity: 0.3;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.6;
-    transform: scale(1.05);
-  }
-}
-
-.glowCircle {
-  animation: glowPulse 2s ease-in-out infinite;
-}
-.storyCircle {
-  // Animation sẽ chạy mỗi khi component được re-render với key mới
-  animation: ringAppear 0.6s ease-out;
-}
-
-@keyframes ringAppear {
-  0% {
-    opacity: 0;
-    transform: scale(0.8);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-.viewed {
-  // styles cho trạng thái đã xem
 }

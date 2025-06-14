@@ -229,6 +229,7 @@ const PostItem = memo(
               muted={false}
               playsInline
               controls
+              controlsList="nodownload noremoteplayback"
               onClick={(e) => e.stopPropagation()}
               onPlay={() => {
                 const video = videoRefs.current[post._id];

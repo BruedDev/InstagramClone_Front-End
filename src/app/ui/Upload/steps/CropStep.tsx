@@ -524,6 +524,11 @@ const CropStep = function CropStep({
             <video
               src={currentMedia}
               controls
+              controlsList="nodownload noremoteplayback"
+              autoPlay
+              loop
+              playsInline
+              webkit-playsinline="true"
               style={{
                 objectFit: "contain",
               }}
