@@ -241,25 +241,6 @@ const StoryModal: React.FC<
     };
   }, [audioRef, videoRef, isPlaying, isMuted, story]);
 
-  // Reset và play lại audio khi chuyển slide (fix iOS audio không phát)
-  useEffect(() => {
-    if (!open) return;
-    if (audioRef) {
-      try {
-        audioRef.pause();
-        audioRef.currentTime = 0;
-        if (isPlaying) {
-          const playPromise = audioRef.play();
-          if (playPromise && typeof playPromise.then === "function") {
-            playPromise.catch(() => {}); // Bắt lỗi play trên Safari/iOS
-          }
-        }
-      } catch {
-        // ignore
-      }
-    }
-  }, [current, open, audioRef, isPlaying]);
-
   useEffect(() => {
     // Chỉ xử lý URL khi không phải deltail
     if (deltail) return;
@@ -385,10 +366,36 @@ const StoryModal: React.FC<
     videoRef?.readyState,
   ]);
 
-  const handleSlideChange = useCallback((swiper: SwiperCore) => {
-    const newIndex = swiper.activeIndex;
-    setCurrent(newIndex);
-  }, []);
+  const handleSlideChange = useCallback(
+    (swiper: SwiperCore) => {
+      // Pause nội dung hiện tại trước khi chuyển slide
+      if (audioRef) {
+        audioRef.pause();
+      }
+      if (videoRef) {
+        videoRef.pause();
+      }
+      const newIndex = swiper.activeIndex;
+      setCurrent(newIndex);
+    },
+    [audioRef, videoRef]
+  );
+
+  // Khi current (slide) thay đổi, reset và play lại nếu đang play (chỉ với audio/image hoặc video/audio)
+  useEffect(() => {
+    if (story?.audioUrl && audioRef) {
+      audioRef.currentTime = 0;
+      if (isPlaying) {
+        audioRef.play().catch(() => {});
+      }
+    }
+    if (story?.mediaType === "video" && videoRef) {
+      videoRef.currentTime = 0;
+      if (isPlaying) {
+        videoRef.play().catch(() => {});
+      }
+    }
+  }, [current, story, audioRef, videoRef, isPlaying]);
 
   // Thêm state để kiểm soát xác nhận
   const [confirmed, setConfirmed] = useState(!waitForConfirm);
