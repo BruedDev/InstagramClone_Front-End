@@ -40,12 +40,12 @@ interface StoryModalProps {
   deltail?: boolean;
 }
 
-const StoryModal: React.FC<
-  StoryModalProps & {
-    waitForConfirm?: boolean;
-    onConfirm?: () => Promise<boolean> | boolean;
-  }
-> = ({
+type StoryModalExtraProps = {
+  waitForConfirm?: boolean;
+  onConfirm?: () => Promise<boolean> | boolean;
+};
+
+const StoryModal: React.FC<StoryModalProps & StoryModalExtraProps> = ({
   open,
   onClose,
   stories,
@@ -57,14 +57,14 @@ const StoryModal: React.FC<
   profileOpen,
   deltail,
 }) => {
-  const [isPlaying, setIsPlaying] = useState(true);
-  const [isMuted, setIsMuted] = useState(false);
-  const [progress, setProgress] = useState(0);
+  const [isPlaying, setIsPlaying] = useState<boolean>(true);
+  const [isMuted, setIsMuted] = useState<boolean>(false);
+  const [progress, setProgress] = useState<number>(0);
   const [audioRef, setAudioRef] = useState<HTMLAudioElement | null>(null);
   const [videoRef, setVideoRef] = useState<HTMLVideoElement | null>(null);
   const [startTime, setStartTime] = useState<number>(Date.now());
   const [duration, setDuration] = useState<number>(7000);
-  const [current, setCurrent] = useState(initialIndex);
+  const [current, setCurrent] = useState<number>(initialIndex);
   const [elapsed, setElapsed] = useState<number>(0);
   const swiperRef = useRef<SwiperCore | null>(null);
   const rafRef = useRef<number | null>(null);
@@ -81,6 +81,133 @@ const StoryModal: React.FC<
   const storyViewers = useSelector(
     (state: RootState) => state.story.storyViewers
   );
+
+  // iOS Audio Context Management
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const isIOSRef = useRef<boolean>(false);
+  const audioInitializedRef = useRef<boolean>(false);
+  const preloadCacheRef = useRef<
+    Map<string, HTMLAudioElement | HTMLVideoElement>
+  >(new Map());
+
+  // Detect iOS
+  useEffect(() => {
+    isIOSRef.current = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  }, []);
+
+  // Initialize Audio Context for iOS
+  const initAudioContext = useCallback(() => {
+    if (!isIOSRef.current) return;
+
+    try {
+      if (!audioContextRef.current) {
+        type WindowWithWebkitAudioContext = typeof window & {
+          webkitAudioContext?: typeof AudioContext;
+        };
+        const win = window as WindowWithWebkitAudioContext;
+        audioContextRef.current = new (window.AudioContext ||
+          win.webkitAudioContext!)();
+      }
+
+      if (audioContextRef.current.state === "suspended") {
+        audioContextRef.current.resume();
+      }
+
+      audioInitializedRef.current = true;
+    } catch (error) {
+      console.warn("AudioContext initialization failed:", error);
+    }
+  }, []);
+
+  // Setup first touch handler for iOS
+  useEffect(() => {
+    if (!isIOSRef.current) return;
+
+    const handleFirstInteraction = () => {
+      initAudioContext();
+      document.removeEventListener("touchstart", handleFirstInteraction);
+      document.removeEventListener("click", handleFirstInteraction);
+    };
+
+    document.addEventListener("touchstart", handleFirstInteraction, {
+      passive: true,
+    });
+    document.addEventListener("click", handleFirstInteraction);
+
+    return () => {
+      document.removeEventListener("touchstart", handleFirstInteraction);
+      document.removeEventListener("click", handleFirstInteraction);
+    };
+  }, [initAudioContext]);
+
+  // Preload next stories
+  useEffect(() => {
+    if (!open) return;
+
+    const preloadStory = (storyIndex: number) => {
+      const storyToPreload = stories[storyIndex];
+      if (!storyToPreload) return;
+
+      const cacheKey = storyToPreload._id;
+      if (preloadCacheRef.current.has(cacheKey)) return;
+
+      // Preload audio
+      if (storyToPreload.audioUrl) {
+        const audio = new Audio();
+        audio.preload = "auto";
+        audio.crossOrigin = "anonymous";
+        audio.src = storyToPreload.audioUrl;
+
+        if (isIOSRef.current) {
+          audio.setAttribute("playsinline", "true");
+          audio.setAttribute("webkit-playsinline", "true");
+        }
+
+        audio.load();
+        preloadCacheRef.current.set(cacheKey + "_audio", audio);
+      }
+
+      // Preload video
+      if (storyToPreload.mediaType === "video") {
+        const video = document.createElement("video");
+        video.preload = "metadata";
+        video.crossOrigin = "anonymous";
+        video.src = storyToPreload.mediaUrl;
+
+        if (isIOSRef.current) {
+          video.setAttribute("playsinline", "true");
+          video.setAttribute("webkit-playsinline", "true");
+          video.setAttribute("muted", "true");
+        }
+
+        video.load();
+        preloadCacheRef.current.set(cacheKey + "_video", video);
+      }
+    };
+
+    // Preload current and next 2 stories
+    preloadStory(current);
+    preloadStory(current + 1);
+    preloadStory(current + 2);
+  }, [current, stories, open]);
+
+  // Cleanup preload cache
+  useEffect(() => {
+    return () => {
+      preloadCacheRef.current.forEach((element) => {
+        if (
+          element instanceof HTMLAudioElement ||
+          element instanceof HTMLVideoElement
+        ) {
+          element.pause();
+          element.src = "";
+          element.load();
+        }
+      });
+      preloadCacheRef.current.clear();
+    };
+  }, []);
+
   // Lấy userId từ localStorage (FE không có user slice chuẩn)
   const userId =
     typeof window !== "undefined" ? localStorage.getItem("id") : null;
@@ -109,15 +236,11 @@ const StoryModal: React.FC<
   useEffect(() => {
     // Chỉ reset progress khi 'current' thay đổi
     resetProgress();
-  }, [current, resetProgress]); // resetProgress là callback nên ổn định
+  }, [current, resetProgress]);
 
   useEffect(() => {
     if (open) {
       setCurrent(initialIndex);
-      // Không cần reset storyFitStyles ở đây để giữ lại style đã xác định nếu modal được mở lại với cùng stories
-    } else {
-      // Optional: Xóa styles khi modal đóng hẳn để giải phóng bộ nhớ nếu cần
-      // setStoryFitStyles({});
     }
   }, [open, initialIndex]);
 
@@ -143,7 +266,7 @@ const StoryModal: React.FC<
       const now = Date.now();
       const totalElapsed = elapsed + (now - startTime);
       let actualDuration = duration;
-      // Nếu là video thường, lấy duration thực tế từ videoRef (max 1 phút)
+
       if (
         story?.mediaType === "video" &&
         !story?.audioUrl &&
@@ -157,14 +280,12 @@ const StoryModal: React.FC<
       const newProgress = Math.min(100, (totalElapsed / actualDuration) * 100);
       setProgress(newProgress);
 
-      // Chỉ tự động chuyển story khi không phải deltail
       if (!deltail && totalElapsed >= actualDuration) {
         setProgress(100);
         if (swiperRef.current) {
           if (current < stories.length - 1) {
             swiperRef.current.slideNext();
           } else {
-            // Sử dụng handleClose để xử lý URL đúng cách
             handleClose();
           }
         }
@@ -194,7 +315,7 @@ const StoryModal: React.FC<
     videoRef,
     videoRef?.duration,
     videoRef?.readyState,
-    deltail, // Thêm deltail vào dependency
+    deltail,
   ]);
 
   useEffect(() => {
@@ -206,30 +327,146 @@ const StoryModal: React.FC<
     }
   }, [audioRef, videoRef]);
 
+  // Improved audio/video control with iOS handling
   useEffect(() => {
     const activeAudio = audioRef;
     const activeVideo = videoRef;
 
-    if (activeAudio) {
-      // Nếu có audioUrl (video/audio hoặc image/audio), điều khiển muted của audio custom
-      activeAudio.muted = !!story?.audioUrl ? isMuted : true;
-      if (isPlaying) {
-        activeAudio.play().catch(() => {});
-      } else {
-        activeAudio.pause();
-      }
-    }
+    const waitForCanPlay = (
+      element: HTMLAudioElement | HTMLVideoElement
+    ): Promise<void> => {
+      return new Promise((resolve) => {
+        if (element.readyState >= 2) {
+          resolve();
+          return;
+        }
 
-    if (activeVideo) {
-      // Nếu có audioUrl (video/audio hoặc image/audio), luôn mute video gốc
-      // Nếu là video thường (không có audioUrl), điều khiển muted của video gốc bằng isMuted
-      activeVideo.muted = !!story?.audioUrl ? true : isMuted;
-      if (isPlaying) {
-        activeVideo.play().catch(() => {});
-      } else {
-        activeVideo.pause();
+        const onCanPlay = () => {
+          element.removeEventListener("canplay", onCanPlay);
+          element.removeEventListener("canplaythrough", onCanPlay);
+          resolve();
+        };
+
+        element.addEventListener("canplay", onCanPlay);
+        element.addEventListener("canplaythrough", onCanPlay);
+
+        // Timeout fallback
+        setTimeout(() => {
+          element.removeEventListener("canplay", onCanPlay);
+          element.removeEventListener("canplaythrough", onCanPlay);
+          resolve();
+        }, 2000);
+      });
+    };
+
+    const playAudio = async () => {
+      if (!activeAudio) return;
+
+      try {
+        // iOS audio context initialization
+        if (isIOSRef.current && !audioInitializedRef.current) {
+          initAudioContext();
+        }
+
+        // Set mute state
+        activeAudio.muted = !!story?.audioUrl ? isMuted : true;
+
+        if (isPlaying) {
+          // Wait for audio to be ready
+          await waitForCanPlay(activeAudio);
+
+          // Multiple retry mechanism for iOS
+          let attempts = 0;
+          const maxAttempts = 3;
+
+          const tryPlay = async (): Promise<void> => {
+            try {
+              await activeAudio.play();
+            } catch (error) {
+              attempts++;
+              if (attempts < maxAttempts) {
+                // Wait and retry
+                await new Promise((resolve) =>
+                  setTimeout(resolve, 100 * attempts)
+                );
+
+                // Re-initialize audio context for iOS
+                if (isIOSRef.current) {
+                  initAudioContext();
+                }
+
+                return tryPlay();
+              } else {
+                console.warn(
+                  `Audio play failed after ${maxAttempts} attempts:`,
+                  error
+                );
+                throw error;
+              }
+            }
+          };
+
+          await tryPlay();
+        } else {
+          activeAudio.pause();
+        }
+      } catch (error) {
+        console.warn("Audio control error:", error);
       }
-    }
+    };
+
+    const playVideo = async () => {
+      if (!activeVideo) return;
+
+      try {
+        // Set mute state
+        activeVideo.muted = !!story?.audioUrl ? true : isMuted;
+
+        // iOS specific attributes
+        if (isIOSRef.current) {
+          activeVideo.setAttribute("playsinline", "true");
+          activeVideo.setAttribute("webkit-playsinline", "true");
+        }
+
+        if (isPlaying) {
+          // Wait for video to be ready
+          await waitForCanPlay(activeVideo);
+
+          let attempts = 0;
+          const maxAttempts = 3;
+
+          const tryPlay = async (): Promise<void> => {
+            try {
+              await activeVideo.play();
+            } catch (error) {
+              attempts++;
+              if (attempts < maxAttempts) {
+                await new Promise((resolve) =>
+                  setTimeout(resolve, 100 * attempts)
+                );
+                return tryPlay();
+              } else {
+                console.warn(
+                  `Video play failed after ${maxAttempts} attempts:`,
+                  error
+                );
+                throw error;
+              }
+            }
+          };
+
+          await tryPlay();
+        } else {
+          activeVideo.pause();
+        }
+      } catch (error) {
+        console.warn("Video control error:", error);
+      }
+    };
+
+    // Execute play functions
+    playAudio();
+    playVideo();
 
     return () => {
       if (activeAudio && activeAudio.readyState > 0) {
@@ -239,25 +476,36 @@ const StoryModal: React.FC<
         activeVideo.pause();
       }
     };
-  }, [audioRef, videoRef, isPlaying, isMuted, story]);
+  }, [audioRef, videoRef, isPlaying, isMuted, story, initAudioContext]);
+
+  // Setup iOS-specific attributes when refs change
+  useEffect(() => {
+    if (!isIOSRef.current) return;
+
+    if (audioRef) {
+      audioRef.setAttribute("playsinline", "true");
+      audioRef.setAttribute("webkit-playsinline", "true");
+    }
+
+    if (videoRef) {
+      videoRef.setAttribute("playsinline", "true");
+      videoRef.setAttribute("webkit-playsinline", "true");
+    }
+  }, [audioRef, videoRef]);
 
   useEffect(() => {
-    // Chỉ xử lý URL khi không phải deltail
     if (deltail) return;
 
     if (open && !wasOpenRef.current) {
-      // Lưu lại pathname gốc khi mở modal lần đầu
       prevPathRef.current = window.location.pathname;
       wasOpenRef.current = true;
       window.history.pushState({}, "", `/story/${stories[current]._id}`);
     } else if (open && wasOpenRef.current) {
-      // Khi chuyển story, chỉ pushState, không ghi đè prevPathRef
       window.history.pushState({}, "", `/story/${stories[current]._id}`);
     }
   }, [open, current, stories, deltail]);
 
   useEffect(() => {
-    // Chỉ xử lý URL khi không phải deltail
     if (deltail) return;
 
     if (!open && wasOpenRef.current) {
@@ -271,7 +519,6 @@ const StoryModal: React.FC<
       if (current < stories.length - 1) {
         swiperRef.current.slideNext();
       } else {
-        // Chỉ tự động đóng modal khi không phải deltail
         if (!deltail) {
           handleClose();
         }
@@ -323,23 +570,20 @@ const StoryModal: React.FC<
       currentStoryData.mediaType === "video" &&
       !currentStoryData.audioUrl
     ) {
-      // Video thường: FE lấy duration thực tế từ videoRef, max 1 phút
       if (
         videoRef &&
         videoRef.duration &&
         !isNaN(videoRef.duration) &&
         videoRef.readyState >= 1
       ) {
-        d = Math.min(Math.round(videoRef.duration * 1000), 60000); // max 1 phút
+        d = Math.min(Math.round(videoRef.duration * 1000), 60000);
       } else {
-        // Nếu chưa có metadata thì chờ lần sau
         return;
       }
     } else if (
       currentStoryData.mediaType === "video" &&
       currentStoryData.audioUrl
     ) {
-      // video/audio, ưu tiên audioDuration nếu có, nếu không thì lấy videoRef.duration
       if (
         currentStoryData.audioDuration &&
         !isNaN(currentStoryData.audioDuration)
@@ -366,17 +610,39 @@ const StoryModal: React.FC<
     videoRef?.readyState,
   ]);
 
-  const handleSlideChange = useCallback((swiper: SwiperCore) => {
-    const newIndex = swiper.activeIndex;
-    setCurrent(newIndex);
-  }, []);
+  // Improved slide change handler with iOS audio handling
+  const handleSlideChange = useCallback(
+    async (swiper: SwiperCore) => {
+      const newIndex = swiper.activeIndex;
+
+      // Pause current audio/video immediately
+      if (audioRef) {
+        audioRef.pause();
+        audioRef.currentTime = 0;
+      }
+      if (videoRef) {
+        videoRef.pause();
+        videoRef.currentTime = 0;
+      }
+
+      setCurrent(newIndex);
+
+      // Small delay to let component update
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
+      // Re-initialize audio context for iOS
+      if (isIOSRef.current) {
+        initAudioContext();
+      }
+    },
+    [audioRef, videoRef, initAudioContext]
+  );
 
   // Thêm state để kiểm soát xác nhận
   const [confirmed, setConfirmed] = useState(!waitForConfirm);
 
   useEffect(() => {
     if (waitForConfirm && open && !confirmed) {
-      // Nếu cần xác nhận và chưa xác nhận, gọi onConfirm
       (async () => {
         let ok = true;
         if (onConfirm) {
@@ -392,8 +658,7 @@ const StoryModal: React.FC<
   // Reset âm thanh khi vào trang detail (deltail)
   useEffect(() => {
     if (deltail) {
-      setIsPlaying(false); // Pause lại khi vào detail
-      // Không cần tắt tiếng (giữ nguyên volume)
+      setIsPlaying(false);
       if (audioRef) {
         audioRef.pause();
         audioRef.currentTime = 0;
@@ -406,8 +671,6 @@ const StoryModal: React.FC<
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [deltail]);
 
-  // Ưu tiên deltail, sau đó profileOpen, sau đó open
-  // Giữ nguyên cả hai prop: deltail và profileOpen
   const shouldShow = deltail
     ? true
     : profileOpen !== undefined
@@ -418,7 +681,7 @@ const StoryModal: React.FC<
   useEffect(() => {
     dispatch(listenStoryViewedSocket());
     return () => {
-      socketService.offStoryViewed(() => {}); // cleanup
+      socketService.offStoryViewed(() => {});
     };
   }, [dispatch]);
 
