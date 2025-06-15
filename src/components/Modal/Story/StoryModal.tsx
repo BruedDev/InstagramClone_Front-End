@@ -87,14 +87,22 @@ const StoryModal: React.FC<
 
   // Helper function để xử lý đóng modal
   const handleClose = useCallback(() => {
+    if (audioRef) {
+      audioRef.pause();
+      audioRef.currentTime = 0;
+    }
+    if (videoRef) {
+      videoRef.pause();
+      videoRef.currentTime = 0;
+    }
+    setIsPlaying(false); // Dừng toàn bộ story khi đóng
     if (deltail) {
       onClose();
     } else {
-      // Xử lý URL cho trường hợp open thông thường
       window.history.replaceState({}, "", prevPathRef.current || "/");
       onClose();
     }
-  }, [deltail, onClose]);
+  }, [deltail, onClose, audioRef, videoRef]);
 
   const resetProgress = useCallback(() => {
     if (rafRef.current !== null) {
