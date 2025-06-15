@@ -366,10 +366,22 @@ const StoryModal: React.FC<
     videoRef?.readyState,
   ]);
 
-  const handleSlideChange = useCallback((swiper: SwiperCore) => {
-    const newIndex = swiper.activeIndex;
-    setCurrent(newIndex);
-  }, []);
+  const handleSlideChange = useCallback(
+    (swiper: SwiperCore) => {
+      // Pause và reset audio/video trước khi chuyển slide (fix iOS mất tiếng)
+      if (audioRef) {
+        audioRef.pause();
+        audioRef.currentTime = 0;
+      }
+      if (videoRef) {
+        videoRef.pause();
+        videoRef.currentTime = 0;
+      }
+      const newIndex = swiper.activeIndex;
+      setCurrent(newIndex);
+    },
+    [audioRef, videoRef]
+  );
 
   // Thêm state để kiểm soát xác nhận
   const [confirmed, setConfirmed] = useState(!waitForConfirm);
