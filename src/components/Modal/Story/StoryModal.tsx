@@ -87,22 +87,14 @@ const StoryModal: React.FC<
 
   // Helper function để xử lý đóng modal
   const handleClose = useCallback(() => {
-    if (audioRef) {
-      audioRef.pause();
-      audioRef.currentTime = 0;
-    }
-    if (videoRef) {
-      videoRef.pause();
-      videoRef.currentTime = 0;
-    }
-    setIsPlaying(false); // Dừng toàn bộ story khi đóng
     if (deltail) {
       onClose();
     } else {
+      // Xử lý URL cho trường hợp open thông thường
       window.history.replaceState({}, "", prevPathRef.current || "/");
       onClose();
     }
-  }, [deltail, onClose, audioRef, videoRef]);
+  }, [deltail, onClose]);
 
   const resetProgress = useCallback(() => {
     if (rafRef.current !== null) {
@@ -374,33 +366,10 @@ const StoryModal: React.FC<
     videoRef?.readyState,
   ]);
 
-  const handleSlideChange = useCallback(
-    (swiper: SwiperCore) => {
-      // Khi chuyển slide, pause story (dừng toàn bộ: audio, video, progress)
-      setIsPlaying(false); // Pause toàn bộ story
-      if (audioRef) {
-        audioRef.pause();
-        audioRef.currentTime = 0;
-      }
-      if (videoRef) {
-        videoRef.pause();
-        videoRef.currentTime = 0;
-      }
-      const newIndex = swiper.activeIndex;
-      setCurrent(newIndex);
-      // Sau một khoảng nhỏ, play lại toàn bộ story
-      setTimeout(() => {
-        setIsPlaying(true);
-        if (audioRef) {
-          audioRef.play().catch(() => {});
-        }
-        if (videoRef) {
-          videoRef.play().catch(() => {});
-        }
-      }, 100);
-    },
-    [audioRef, videoRef]
-  );
+  const handleSlideChange = useCallback((swiper: SwiperCore) => {
+    const newIndex = swiper.activeIndex;
+    setCurrent(newIndex);
+  }, []);
 
   // Thêm state để kiểm soát xác nhận
   const [confirmed, setConfirmed] = useState(!waitForConfirm);
