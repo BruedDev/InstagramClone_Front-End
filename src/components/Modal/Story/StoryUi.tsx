@@ -70,6 +70,7 @@ interface StoryUiProps {
   setAudioRef: (el: HTMLAudioElement | null) => void;
   setVideoRef: (el: HTMLVideoElement | null) => void;
   uniqueViewerCount: number;
+  audioKey: number; // thêm prop này
 }
 
 const StoryUi: React.FC<StoryUiProps> = ({
@@ -92,6 +93,7 @@ const StoryUi: React.FC<StoryUiProps> = ({
   setAudioRef,
   setVideoRef,
   uniqueViewerCount,
+  audioKey,
 }) => {
   const story = stories[current];
   const { getSlideBackground } = useAdaptiveBackground(stories, current);
@@ -382,6 +384,7 @@ const StoryUi: React.FC<StoryUiProps> = ({
                           />
                           {s.audioUrl && (
                             <audio
+                              key={audioKey} // force remount audio mỗi lần chuyển slide
                               ref={(el) => setAudioRef(el)}
                               controls={false}
                               className="hidden"
@@ -412,6 +415,7 @@ const StoryUi: React.FC<StoryUiProps> = ({
                           />
                           {s.audioUrl && (
                             <audio
+                              key={audioKey} // force remount audio mỗi lần chuyển slide
                               ref={(el) => setAudioRef(el)}
                               controls={false}
                               className="hidden"

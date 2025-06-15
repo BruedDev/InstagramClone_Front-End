@@ -66,6 +66,8 @@ const StoryModal: React.FC<
   const [duration, setDuration] = useState<number>(7000);
   const [current, setCurrent] = useState(initialIndex);
   const [elapsed, setElapsed] = useState<number>(0);
+  const [audioKey] = useState(0);
+
   const swiperRef = useRef<SwiperCore | null>(null);
   const rafRef = useRef<number | null>(null);
   const story = stories[current];
@@ -366,22 +368,10 @@ const StoryModal: React.FC<
     videoRef?.readyState,
   ]);
 
-  const handleSlideChange = useCallback(
-    (swiper: SwiperCore) => {
-      // Pause và reset audio/video trước khi chuyển slide (fix iOS mất tiếng)
-      if (audioRef) {
-        audioRef.pause();
-        audioRef.currentTime = 0;
-      }
-      if (videoRef) {
-        videoRef.pause();
-        videoRef.currentTime = 0;
-      }
-      const newIndex = swiper.activeIndex;
-      setCurrent(newIndex);
-    },
-    [audioRef, videoRef]
-  );
+  const handleSlideChange = useCallback((swiper: SwiperCore) => {
+    const newIndex = swiper.activeIndex;
+    setCurrent(newIndex);
+  }, []);
 
   // Thêm state để kiểm soát xác nhận
   const [confirmed, setConfirmed] = useState(!waitForConfirm);
@@ -489,6 +479,7 @@ const StoryModal: React.FC<
       setAudioRef={setAudioRef}
       setVideoRef={setVideoRef}
       uniqueViewerCount={uniqueViewerCount}
+      audioKey={audioKey}
     />
   );
 };
