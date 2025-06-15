@@ -171,26 +171,6 @@ const StoryUi: React.FC<StoryUiProps> = ({
     };
   }, [showViewers, story._id, userId]);
 
-  // Đảm bảo audio/video luôn pause rồi play lại khi chuyển slide (áp dụng cho mọi loại story)
-  React.useEffect(() => {
-    setTimeout(() => {
-      if (typeof window !== "undefined") {
-        const audio = document.querySelector("audio");
-        const video = document.querySelector("video");
-        if (audio) {
-          audio.pause();
-          audio.currentTime = 0;
-          audio.play().catch(() => {});
-        }
-        if (video) {
-          video.pause();
-          video.currentTime = 0;
-          video.play().catch(() => {});
-        }
-      }
-    }, 100);
-  }, [current]);
-
   return (
     <div
       className={`fixed inset-0 z-[1000] flex flex-col items-center justify-center ${

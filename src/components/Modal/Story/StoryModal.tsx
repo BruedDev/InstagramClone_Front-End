@@ -368,7 +368,8 @@ const StoryModal: React.FC<
 
   const handleSlideChange = useCallback(
     (swiper: SwiperCore) => {
-      // Khi chuyển slide, luôn pause rồi mới play lại audio/video
+      // Khi chuyển slide, pause story (dừng toàn bộ: audio, video, progress)
+      setIsPlaying(false); // Pause toàn bộ story
       if (audioRef) {
         audioRef.pause();
         audioRef.currentTime = 0;
@@ -379,8 +380,9 @@ const StoryModal: React.FC<
       }
       const newIndex = swiper.activeIndex;
       setCurrent(newIndex);
-      // Sau khi setCurrent, play lại audio/video sau một khoảng nhỏ
+      // Sau một khoảng nhỏ, play lại toàn bộ story
       setTimeout(() => {
+        setIsPlaying(true);
         if (audioRef) {
           audioRef.play().catch(() => {});
         }
