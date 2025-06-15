@@ -15,6 +15,7 @@ import {
   setShowMainChat,
   resetMessagesState,
 } from "@/store/messengerSlice";
+import { useNotification } from "@/utils/useNotification";
 
 import SiderBar from "./SiderBar";
 import MainChat from "./MainChat";
@@ -43,6 +44,7 @@ export default function MessengerComponent({
     hasMore,
     showMainChat,
   } = useAppSelector((state) => state.messenger);
+  const { notify } = useNotification();
 
   const searchParams = useSearchParams();
   const [userId, setUserId] = useState("");
@@ -50,6 +52,15 @@ export default function MessengerComponent({
   const [filePreview, setFilePreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [lastFetchReplace, setLastFetchReplace] = useState(false);
+
+  // State để kiểm soát việc hiển thị thông báo khi đã đóng modal
+  const [isClosed, setIsClosed] = useState(false);
+
+  // Sửa hàm onClose để set isClosed
+  const handleClose = () => {
+    setIsClosed(true);
+    if (onClose) onClose();
+  };
 
   useEffect(() => {
     const handleReceiveMessage = (msg: {
@@ -117,13 +128,41 @@ export default function MessengerComponent({
       ) {
         dispatch(addMessage(convertedMsg));
       }
+      // Gửi thông báo nếu là tin nhắn đến và không phải của mình
+      if (convertedMsg.senderId !== userId && !isClosed) {
+        // Lấy đúng user từ danh sách availableUsers hoặc từ msg.senderId
+        let senderName = "Người lạ";
+        if (msg.senderId) {
+          const foundUser = availableUsers.find((u) => u._id === msg.senderId);
+          if (foundUser && foundUser.username) {
+            senderName = foundUser.username;
+          } else if (
+            msg.senderId === selectedUser?._id &&
+            selectedUser?.username
+          ) {
+            senderName = selectedUser.username;
+          }
+        }
+        notify("Tin nhắn mới", {
+          body: `Bạn có tin nhắn mới từ ${senderName}`,
+          icon: "/instagram.png",
+        });
+      }
     };
 
     socketService.onReceiveMessage(handleReceiveMessage);
     return () => {
       socketService.offReceiveMessage(handleReceiveMessage);
     };
-  }, [selectedUser, userId, dispatch, messages]);
+  }, [
+    selectedUser,
+    userId,
+    dispatch,
+    messages,
+    notify,
+    availableUsers,
+    isClosed,
+  ]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -286,6 +325,13 @@ export default function MessengerComponent({
 
   const [showMainChatModal, setShowMainChatModal] = useState(false);
 
+  // Reset lại isClosed khi mở lại Messenger modal
+  useEffect(() => {
+    if (showMainChatModal) {
+      setIsClosed(false);
+    }
+  }, [showMainChatModal]);
+
   if (isLargeScreen && (isModal || preview)) {
     if (selectedUser && showMainChatModal) {
       return (
@@ -353,7 +399,7 @@ export default function MessengerComponent({
           userId={userId}
           setShowMainChat={setShowMainChatModal}
           preview={true}
-          onClose={onClose}
+          onClose={handleClose}
         />
       </div>
     );

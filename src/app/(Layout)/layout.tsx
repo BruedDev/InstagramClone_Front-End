@@ -4,6 +4,8 @@ import "../globals.css";
 import SiderBar from "@/components/SiderBar";
 import Footer from "@/components/Footer";
 import ClientProviders from "@/components/ClientProviders";
+import NotificationPermissionRequester from "@/components/NotificationPermissionRequester";
+import GlobalMessengerNotificationListener from "@/components/GlobalMessengerNotificationListener";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -32,6 +34,8 @@ export default function RootLayout({
         style={{ margin: 0, padding: 0 }}
       >
         <ClientProviders>
+          <NotificationPermissionRequester />
+          <GlobalMessengerNotificationListener />
           <div style={{ display: "flex", minHeight: "100vh" }}>
             <SiderBar />
             <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
