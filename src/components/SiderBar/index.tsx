@@ -139,6 +139,12 @@ export default function SiderBar() {
     return `/${href}`;
   };
 
+  // Lấy avatar user từ localStorage (cache) nếu có
+  let cachedAvatar = null;
+  if (typeof window !== "undefined") {
+    cachedAvatar = localStorage.getItem("profilePicture");
+  }
+
   // Fallback nav items đầy đủ các mục chính
   const fallbackNavItems = [
     {
@@ -372,7 +378,15 @@ export default function SiderBar() {
     {
       label: "Trang cá nhân",
       href: "/profile",
-      icon: (
+      icon: cachedAvatar ? (
+        <Image
+          src={cachedAvatar}
+          alt="avatar"
+          width={28}
+          height={28}
+          style={{ borderRadius: "50%", objectFit: "cover" }}
+        />
+      ) : (
         <svg width="24" height="24" fill="none" stroke="currentColor">
           <circle cx="12" cy="8" r="4" strokeWidth="2" />
           <path d="M2 20c0-4 8-6 10-6s10 2 10 6" strokeWidth="2" />
