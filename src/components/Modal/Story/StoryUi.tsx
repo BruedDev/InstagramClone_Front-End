@@ -103,6 +103,7 @@ const StoryUi: React.FC<StoryUiProps> = ({
   const [isMobile, setIsMobile] = React.useState(false);
   const [viewers, setViewers] = React.useState<Viewer[]>([]);
   const audioElementRef = React.useRef<HTMLAudioElement | null>(null);
+  const [audioSrc, setAudioSrc] = React.useState<string | undefined>(undefined);
 
   React.useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth <= 767);
@@ -175,11 +176,26 @@ const StoryUi: React.FC<StoryUiProps> = ({
   }, [showViewers, story._id, userId]);
 
   React.useEffect(() => {
-    if (audioElementRef.current && isPlaying) {
-      // iOS cần gọi play() lại mỗi lần mount hoặc chuyển slide
-      audioElementRef.current.play().catch(() => {});
+    // Khi chuyển slide, force reload src để iOS nhận diện lại gesture
+    if (stories[current]?.audioUrl) {
+      setAudioSrc(undefined); // Xóa src trước
+      setTimeout(() => {
+        setAudioSrc(stories[current]?.audioUrl);
+      }, 30); // Delay nhỏ để force reload
     }
-  }, [audioKey, isPlaying]);
+  }, [audioKey, current, stories]);
+
+  React.useEffect(() => {
+    if (audioElementRef.current) {
+      audioElementRef.current.pause();
+      audioElementRef.current.currentTime = 0;
+      if (isPlaying && audioSrc) {
+        setTimeout(() => {
+          audioElementRef.current?.play().catch(() => {});
+        }, 100); // Delay nhỏ để iOS nhận gesture
+      }
+    }
+  }, [audioSrc, isPlaying, audioKey]);
 
   return (
     <div
@@ -399,7 +415,7 @@ const StoryUi: React.FC<StoryUiProps> = ({
                               }}
                               controls={false}
                               className="hidden"
-                              src={s.audioUrl}
+                              src={idx === current ? audioSrc : undefined}
                               onCanPlay={() => {
                                 if (isPlaying && audioElementRef.current) {
                                   audioElementRef.current
@@ -440,7 +456,7 @@ const StoryUi: React.FC<StoryUiProps> = ({
                               }}
                               controls={false}
                               className="hidden"
-                              src={s.audioUrl}
+                              src={idx === current ? audioSrc : undefined}
                               onCanPlay={() => {
                                 if (isPlaying && audioElementRef.current) {
                                   audioElementRef.current
