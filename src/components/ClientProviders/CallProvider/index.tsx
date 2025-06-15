@@ -70,8 +70,27 @@ export default function CallProvider({ userId }: CallProviderProps) {
       }
     };
 
+    // Thêm lắng nghe sự kiện callEnded để tự động đóng popup khi người gọi đóng cửa sổ
+    const handleCallEnded = (data: { from: string }) => {
+      // Nếu đang hiển thị popup và người gọi là người đã gọi mình thì đóng popup
+      if (
+        showIncomingCall &&
+        incomingCallData &&
+        data.from === incomingCallData.callerId
+      ) {
+        setShowIncomingCall(false);
+        setIncomingCallData(null);
+        dispatch(setIncoming(null));
+        if (ringtoneRef.current) {
+          ringtoneRef.current.pause();
+          ringtoneRef.current.currentTime = 0;
+        }
+      }
+    };
+
     if (socketInstance) {
       socketInstance.on("incomingCall", handleIncomingCall);
+      socketInstance.on("callEnded", handleCallEnded);
     } else {
       console.warn(
         "CallProvider: Socket not initialized, incoming call listener not attached."
@@ -81,11 +100,12 @@ export default function CallProvider({ userId }: CallProviderProps) {
     return () => {
       if (socketInstance) {
         socketInstance.off("incomingCall", handleIncomingCall);
+        socketInstance.off("callEnded", handleCallEnded);
       }
     };
     // Removed `availableUsers` from dependency array as it's not directly related to socket setup/teardown.
     // Re-running this effect on `availableUsers` change is likely not desired.
-  }, [userId, dispatch]);
+  }, [userId, dispatch, showIncomingCall, incomingCallData]);
 
   const openCallPopup = (callType: "audio" | "video", remoteUserId: string) => {
     const screenWidth = window.screen.availWidth;
@@ -158,6 +178,11 @@ export default function CallProvider({ userId }: CallProviderProps) {
           callerId: incomingCallData.callerId,
           calleeId: userId,
           reason: "Người dùng đã từ chối cuộc gọi",
+        });
+        // Gửi thêm sự kiện endCall để bên người gọi cũng đóng popup nếu đang mở
+        currentSocket.emit("endCall", {
+          to: incomingCallData.callerId,
+          from: userId,
         });
       } else {
         console.error("Cannot reject call: Socket not available.");
