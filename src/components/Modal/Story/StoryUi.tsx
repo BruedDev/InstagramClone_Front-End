@@ -70,7 +70,6 @@ interface StoryUiProps {
   setAudioRef: (el: HTMLAudioElement | null) => void;
   setVideoRef: (el: HTMLVideoElement | null) => void;
   uniqueViewerCount: number;
-  audioKey: number; // thêm prop này
 }
 
 const StoryUi: React.FC<StoryUiProps> = ({
@@ -93,7 +92,6 @@ const StoryUi: React.FC<StoryUiProps> = ({
   setAudioRef,
   setVideoRef,
   uniqueViewerCount,
-  audioKey,
 }) => {
   const story = stories[current];
   const { getSlideBackground } = useAdaptiveBackground(stories, current);
@@ -102,8 +100,6 @@ const StoryUi: React.FC<StoryUiProps> = ({
   const [showViewers, setShowViewers] = React.useState(false);
   const [isMobile, setIsMobile] = React.useState(false);
   const [viewers, setViewers] = React.useState<Viewer[]>([]);
-  const audioElementRef = React.useRef<HTMLAudioElement | null>(null);
-  const [audioSrc, setAudioSrc] = React.useState<string | undefined>(undefined);
 
   React.useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth <= 767);
@@ -175,27 +171,25 @@ const StoryUi: React.FC<StoryUiProps> = ({
     };
   }, [showViewers, story._id, userId]);
 
+  // Đảm bảo audio/video luôn pause rồi play lại khi chuyển slide (áp dụng cho mọi loại story)
   React.useEffect(() => {
-    // Khi chuyển slide, force reload src để iOS nhận diện lại gesture
-    if (stories[current]?.audioUrl) {
-      setAudioSrc(undefined); // Xóa src trước
-      setTimeout(() => {
-        setAudioSrc(stories[current]?.audioUrl);
-      }, 30); // Delay nhỏ để force reload
-    }
-  }, [audioKey, current, stories]);
-
-  React.useEffect(() => {
-    if (audioElementRef.current) {
-      audioElementRef.current.pause();
-      audioElementRef.current.currentTime = 0;
-      if (isPlaying && audioSrc) {
-        setTimeout(() => {
-          audioElementRef.current?.play().catch(() => {});
-        }, 100); // Delay nhỏ để iOS nhận gesture
+    setTimeout(() => {
+      if (typeof window !== "undefined") {
+        const audio = document.querySelector("audio");
+        const video = document.querySelector("video");
+        if (audio) {
+          audio.pause();
+          audio.currentTime = 0;
+          audio.play().catch(() => {});
+        }
+        if (video) {
+          video.pause();
+          video.currentTime = 0;
+          video.play().catch(() => {});
+        }
       }
-    }
-  }, [audioSrc, isPlaying, audioKey]);
+    }, 100);
+  }, [current]);
 
   return (
     <div
@@ -408,21 +402,10 @@ const StoryUi: React.FC<StoryUiProps> = ({
                           />
                           {s.audioUrl && (
                             <audio
-                              key={audioKey}
-                              ref={(el) => {
-                                setAudioRef(el);
-                                audioElementRef.current = el;
-                              }}
+                              ref={(el) => setAudioRef(el)}
                               controls={false}
                               className="hidden"
-                              src={idx === current ? audioSrc : undefined}
-                              onCanPlay={() => {
-                                if (isPlaying && audioElementRef.current) {
-                                  audioElementRef.current
-                                    .play()
-                                    .catch(() => {});
-                                }
-                              }}
+                              src={s.audioUrl}
                             />
                           )}
                         </div>
@@ -449,21 +432,10 @@ const StoryUi: React.FC<StoryUiProps> = ({
                           />
                           {s.audioUrl && (
                             <audio
-                              key={audioKey}
-                              ref={(el) => {
-                                setAudioRef(el);
-                                audioElementRef.current = el;
-                              }}
+                              ref={(el) => setAudioRef(el)}
                               controls={false}
                               className="hidden"
-                              src={idx === current ? audioSrc : undefined}
-                              onCanPlay={() => {
-                                if (isPlaying && audioElementRef.current) {
-                                  audioElementRef.current
-                                    .play()
-                                    .catch(() => {});
-                                }
-                              }}
+                              src={s.audioUrl}
                             />
                           )}
                         </div>
