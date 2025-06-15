@@ -102,6 +102,7 @@ const StoryUi: React.FC<StoryUiProps> = ({
   const [showViewers, setShowViewers] = React.useState(false);
   const [isMobile, setIsMobile] = React.useState(false);
   const [viewers, setViewers] = React.useState<Viewer[]>([]);
+  const audioElementRef = React.useRef<HTMLAudioElement | null>(null);
 
   React.useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth <= 767);
@@ -172,6 +173,13 @@ const StoryUi: React.FC<StoryUiProps> = ({
       socketService.offStoryViewed(handleViewed);
     };
   }, [showViewers, story._id, userId]);
+
+  React.useEffect(() => {
+    if (audioElementRef.current && isPlaying) {
+      // iOS cần gọi play() lại mỗi lần mount hoặc chuyển slide
+      audioElementRef.current.play().catch(() => {});
+    }
+  }, [audioKey, isPlaying]);
 
   return (
     <div
@@ -384,11 +392,21 @@ const StoryUi: React.FC<StoryUiProps> = ({
                           />
                           {s.audioUrl && (
                             <audio
-                              key={audioKey} // force remount audio mỗi lần chuyển slide
-                              ref={(el) => setAudioRef(el)}
+                              key={audioKey}
+                              ref={(el) => {
+                                setAudioRef(el);
+                                audioElementRef.current = el;
+                              }}
                               controls={false}
                               className="hidden"
                               src={s.audioUrl}
+                              onCanPlay={() => {
+                                if (isPlaying && audioElementRef.current) {
+                                  audioElementRef.current
+                                    .play()
+                                    .catch(() => {});
+                                }
+                              }}
                             />
                           )}
                         </div>
@@ -415,11 +433,21 @@ const StoryUi: React.FC<StoryUiProps> = ({
                           />
                           {s.audioUrl && (
                             <audio
-                              key={audioKey} // force remount audio mỗi lần chuyển slide
-                              ref={(el) => setAudioRef(el)}
+                              key={audioKey}
+                              ref={(el) => {
+                                setAudioRef(el);
+                                audioElementRef.current = el;
+                              }}
                               controls={false}
                               className="hidden"
                               src={s.audioUrl}
+                              onCanPlay={() => {
+                                if (isPlaying && audioElementRef.current) {
+                                  audioElementRef.current
+                                    .play()
+                                    .catch(() => {});
+                                }
+                              }}
                             />
                           )}
                         </div>
