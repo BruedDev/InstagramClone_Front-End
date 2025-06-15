@@ -19,7 +19,6 @@ import Comment from "../ui/Comment";
 import { usePostSettingModal } from "../hooks/usePostSettingModal";
 import SlidePanel from "@/components/SlidePanel"; // Import SlidePanel
 import Notification from "@/components/Notification"; // Import Notification component
-import SiderBar from "@/components/SiderBar";
 
 export default function Home() {
   const { posts, setPosts, handleLikeRealtime } = usePostContext();
@@ -260,8 +259,6 @@ export default function Home() {
           </div>
         </div>
       </div>
-
-      <SiderBar />
 
       <StoryUserHome />
 
