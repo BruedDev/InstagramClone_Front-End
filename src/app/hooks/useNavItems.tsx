@@ -18,7 +18,19 @@ interface ActionStates {
   };
 }
 
-export const useNavItems = (actionStates: ActionStates = {}) => {
+// Định nghĩa type cho nav item để luôn có các property cần thiết
+export interface NavItem {
+  label: string;
+  icon: React.ReactNode;
+  ActiveIcon?: React.ReactNode;
+  href?: string;
+  type: string;
+  className?: string;
+  active?: boolean;
+  onClick?: () => void;
+}
+
+export const useNavItems = (actionStates: ActionStates = {}): NavItem[] => {
   const pathname = usePathname();
   const [activeItem, setActiveItem] = useState<number | null>(null);
 
@@ -28,8 +40,247 @@ export const useNavItems = (actionStates: ActionStates = {}) => {
 
   const { user, loading } = useUser();
 
-  if (loading || !user) {
-    return [];
+  if (loading) {
+    // Trả về navItems với skeleton/avatar placeholder khi loading
+    return [
+      {
+        label: "Trang chủ",
+        icon: (
+          <div
+            className="skeleton-icon"
+            style={{
+              width: 24,
+              height: 24,
+              borderRadius: 4,
+              background: "#333",
+            }}
+          ></div>
+        ),
+        ActiveIcon: (
+          <div
+            className="skeleton-icon"
+            style={{
+              width: 24,
+              height: 24,
+              borderRadius: 4,
+              background: "#333",
+            }}
+          ></div>
+        ),
+        href: "/",
+        type: "link",
+        className: "item1",
+      },
+      {
+        label: "Tìm kiếm",
+        icon: (
+          <div
+            className="skeleton-icon"
+            style={{
+              width: 24,
+              height: 24,
+              borderRadius: 4,
+              background: "#333",
+            }}
+          ></div>
+        ),
+        ActiveIcon: (
+          <div
+            className="skeleton-icon"
+            style={{
+              width: 24,
+              height: 24,
+              borderRadius: 4,
+              background: "#333",
+            }}
+          ></div>
+        ),
+        type: "action",
+        className: "item5",
+      },
+      {
+        label: "Khám phá",
+        icon: (
+          <div
+            className="skeleton-icon"
+            style={{
+              width: 24,
+              height: 24,
+              borderRadius: 4,
+              background: "#333",
+            }}
+          ></div>
+        ),
+        ActiveIcon: (
+          <div
+            className="skeleton-icon"
+            style={{
+              width: 24,
+              height: 24,
+              borderRadius: 4,
+              background: "#333",
+            }}
+          ></div>
+        ),
+        href: "/explore",
+        type: "link",
+        className: "item2",
+      },
+      {
+        label: "Reels",
+        icon: (
+          <div
+            className="skeleton-icon"
+            style={{
+              width: 24,
+              height: 24,
+              borderRadius: 4,
+              background: "#333",
+            }}
+          ></div>
+        ),
+        ActiveIcon: (
+          <div
+            className="skeleton-icon"
+            style={{
+              width: 24,
+              height: 24,
+              borderRadius: 4,
+              background: "#333",
+            }}
+          ></div>
+        ),
+        href: "/reels",
+        type: "link",
+        className: "item3",
+      },
+      {
+        label: "Tin nhắn",
+        icon: (
+          <div
+            className="skeleton-icon"
+            style={{
+              width: 28,
+              height: 28,
+              borderRadius: 6,
+              background: "#333",
+            }}
+          ></div>
+        ),
+        ActiveIcon: (
+          <div
+            className="skeleton-icon"
+            style={{
+              width: 28,
+              height: 28,
+              borderRadius: 6,
+              background: "#333",
+            }}
+          ></div>
+        ),
+        href: "/messages",
+        type: "link",
+        className: "item4",
+      },
+      {
+        label: "Thông báo",
+        icon: (
+          <div
+            className="skeleton-icon"
+            style={{
+              width: 26,
+              height: 26,
+              borderRadius: 6,
+              background: "#333",
+            }}
+          ></div>
+        ),
+        ActiveIcon: (
+          <div
+            className="skeleton-icon"
+            style={{
+              width: 26,
+              height: 26,
+              borderRadius: 6,
+              background: "#333",
+            }}
+          ></div>
+        ),
+        type: "action",
+        className: "item6",
+      },
+      {
+        label: "Tạo bài viết",
+        icon: (
+          <div
+            className="skeleton-icon"
+            style={{
+              width: 24,
+              height: 24,
+              borderRadius: 4,
+              background: "#333",
+            }}
+          ></div>
+        ),
+        ActiveIcon: (
+          <div
+            className="skeleton-icon"
+            style={{
+              width: 24,
+              height: 24,
+              borderRadius: 4,
+              background: "#333",
+            }}
+          ></div>
+        ),
+        type: "action",
+        className: "item7",
+      },
+      {
+        label: "Trang cá nhân",
+        icon: (
+          <div
+            className="skeleton-avatar"
+            style={{
+              width: 30,
+              height: 30,
+              borderRadius: "50%",
+              background: "#444",
+            }}
+          ></div>
+        ),
+        href: "#",
+        type: "link",
+        className: "avatar",
+      },
+      {
+        label: "Xem Thêm",
+        icon: (
+          <div
+            className="skeleton-icon"
+            style={{
+              width: 24,
+              height: 24,
+              borderRadius: 4,
+              background: "#333",
+            }}
+          ></div>
+        ),
+        ActiveIcon: (
+          <div
+            className="skeleton-icon"
+            style={{
+              width: 24,
+              height: 24,
+              borderRadius: 4,
+              background: "#333",
+            }}
+          ></div>
+        ),
+        type: "action",
+        className: "item8",
+      },
+    ] as NavItem[];
   }
 
   const id = localStorage.getItem("username");
@@ -382,7 +633,17 @@ export const useNavItems = (actionStates: ActionStates = {}) => {
     },
     {
       label: "Trang cá nhân",
-      icon: user.profilePicture,
+      icon: user?.profilePicture || (
+        <div
+          className="skeleton-avatar"
+          style={{
+            width: 30,
+            height: 30,
+            borderRadius: "50%",
+            background: "#444",
+          }}
+        ></div>
+      ),
       href: `/${id}`,
       type: "link",
       className: "avatar",
@@ -439,5 +700,5 @@ export const useNavItems = (actionStates: ActionStates = {}) => {
     };
   });
 
-  return navItems;
+  return navItems as NavItem[];
 };

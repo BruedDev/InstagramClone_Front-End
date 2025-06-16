@@ -213,3 +213,20 @@
     }
   }
 }
+
+.skeleton-icon {
+  background: linear-gradient(90deg, #222 25%, #333 50%, #222 75%);
+  animation: skeleton-loading 1.2s infinite linear;
+}
+.skeleton-avatar {
+  background: linear-gradient(90deg, #333 25%, #444 50%, #333 75%);
+  animation: skeleton-loading 1.2s infinite linear;
+}
+@keyframes skeleton-loading {
+  0% {
+    background-position: -200px 0;
+  }
+  100% {
+    background-position: calc(200px + 100%) 0;
+  }
+}

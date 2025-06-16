@@ -17,6 +17,7 @@ import { socketService, type MessageData } from "@/server/socket";
 import StoryAvatar from "@/components/Story/StoryAvatar";
 import { SiderBarSkeleton, SearchResultsSkeleton } from "@/Skeleton/siderbar";
 import { useChatRedirect } from "@/app/hooks/useChatRedirect";
+import { useRecentChatsStore } from "@/store/recentChatsStore";
 
 type UserWithStory = User & { hasStory?: boolean };
 
@@ -58,7 +59,6 @@ export default function SiderBar({
 }: SiderBarProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchFocused, setIsSearchFocused] = useState(false);
-  const [recentChats, setRecentChats] = useState<RecentChat[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSearching, setIsSearching] = useState(false);
   const router = useRouter();
@@ -66,6 +66,10 @@ export default function SiderBar({
   const currentUserIdRef = useRef<string | null>(null);
   const [userIdForSocket, setUserIdForSocket] = useState<string | null>(null);
   const username = localStorage.getItem("username") || "Người dùng";
+
+  // Zustand store
+  const { recentChats, setRecentChats, updateRecentChat } =
+    useRecentChatsStore();
 
   useEffect(() => {
     let idFromStorage: string | null = null;
@@ -78,31 +82,32 @@ export default function SiderBar({
 
   const { isUserOnline } = useCheckOnline(availableUsers);
 
+  // Đổi markChatMessageAsRead để cập nhật cache Zustand
   const markChatMessageAsRead = useCallback(
     (messageId: string, chatUserId: string) => {
-      setRecentChats((prevChats) =>
-        prevChats.map((chat) => {
-          if (
-            chat.user._id === chatUserId &&
-            chat.lastMessage &&
-            chat.lastMessage._id === messageId &&
-            !chat.lastMessage.isOwnMessage
-          ) {
-            return {
-              ...chat,
-              lastMessage: {
-                ...chat.lastMessage,
-                isRead: true,
-              },
-            };
-          }
-          return chat;
-        })
-      );
+      const updated = recentChats.map((chat) => {
+        if (
+          chat.user._id === chatUserId &&
+          chat.lastMessage &&
+          chat.lastMessage._id === messageId &&
+          !chat.lastMessage.isOwnMessage
+        ) {
+          return {
+            ...chat,
+            lastMessage: {
+              ...chat.lastMessage,
+              isRead: true,
+            },
+          };
+        }
+        return chat;
+      });
+      setRecentChats(updated);
     },
-    []
+    [recentChats, setRecentChats]
   );
 
+  // Update recent chat item vào cache Zustand
   const updateRecentChatItem = useCallback(
     (newChatData: RecentChat) => {
       const currentId = currentUserIdRef.current;
@@ -112,29 +117,15 @@ export default function SiderBar({
       ) {
         return;
       }
-      setRecentChats((prevChats) => {
-        const existingChatIndex = prevChats.findIndex(
-          (chat) => chat.user._id === newChatData.user._id
-        );
-        const chatUserWithOnlineStatus: RecentChat["user"] = {
+      updateRecentChat({
+        ...newChatData,
+        user: {
           ...newChatData.user,
           isOnline: isUserOnline(newChatData.user._id),
-        };
-        const finalNewChatData = {
-          ...newChatData,
-          user: chatUserWithOnlineStatus,
-        };
-        if (existingChatIndex !== -1) {
-          const updatedChatsArr = [...prevChats];
-          updatedChatsArr[existingChatIndex] = finalNewChatData;
-          const [updatedChat] = updatedChatsArr.splice(existingChatIndex, 1);
-          return [updatedChat, ...updatedChatsArr];
-        } else {
-          return [finalNewChatData, ...prevChats];
-        }
+        },
       });
     },
-    [isUserOnline]
+    [isUserOnline, updateRecentChat]
   );
 
   const handleNewMessage = useCallback(
@@ -236,12 +227,17 @@ export default function SiderBar({
     markChatMessageAsRead,
   ]);
 
+  // Sử dụng cache Zustand cho fetch recent chats
   useEffect(() => {
     const fetchAndSetRecentChats = async () => {
       const userId = currentUserIdRef.current;
       if (!userId) {
         setIsLoading(false);
         setRecentChats([]);
+        return;
+      }
+      if (recentChats.length > 0) {
+        setIsLoading(false);
         return;
       }
       try {
@@ -265,7 +261,7 @@ export default function SiderBar({
       setIsLoading(false);
       setRecentChats([]);
     }
-  }, [userIdForSocket]);
+  }, [userIdForSocket, setRecentChats, recentChats.length]);
 
   useEffect(() => {
     const currentUserId = currentUserIdRef.current;

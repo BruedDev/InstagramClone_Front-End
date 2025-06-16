@@ -8,7 +8,7 @@ import { useState, useEffect } from "react";
 import MoreMenu from "@/components/SeeMore";
 import { usePathname } from "next/navigation";
 import UploadPost from "../Modal/Post/UpLoadPost";
-import SlidePanel from "@/components/SlidePanel"; // Import SlidePanel
+import SlidePanel from "@/components/SlidePanel";
 import Notification from "../Notification";
 
 export default function SiderBar() {
@@ -152,6 +152,7 @@ export default function SiderBar() {
                 alt="Logo"
                 width={30}
                 height={30}
+                priority
               />
             ) : (
               <Image
@@ -159,6 +160,7 @@ export default function SiderBar() {
                 alt="Logo"
                 width={120}
                 height={40}
+                priority
               />
             )}
           </Link>
@@ -185,27 +187,28 @@ export default function SiderBar() {
                   }}
                   className={`${styles.navItem} ${
                     isActive ? styles.active : ""
-                  } ${styles[item.className] || ""}`}
+                  } ${item.className ? styles[item.className] : ""}`}
                   title={collapsed ? item.label : ""}
                 >
                   {item.className === "avatar" ? (
                     <>
-                      <Image
-                        src={
-                          typeof item.icon === "string"
-                            ? item.icon
-                            : "/default-avatar.png"
-                        }
-                        alt="Avatar"
-                        width={30}
-                        height={30}
-                        className="rounded-full"
-                      />
+                      {typeof item.icon === "string" ? (
+                        <Image
+                          src={item.icon}
+                          alt="Avatar"
+                          width={30}
+                          height={30}
+                          className="rounded-full"
+                        />
+                      ) : (
+                        // Nếu là skeleton thì render luôn
+                        item.icon
+                      )}
                       {!collapsed && <span>{item.label}</span>}
                     </>
                   ) : (
                     <>
-                      {icon}
+                      {item.icon}
                       {!collapsed && <span>{item.label}</span>}
                     </>
                   )}
@@ -220,7 +223,7 @@ export default function SiderBar() {
                     onClick={item.onClick}
                     className={`${styles.navItem} ${
                       isActive ? styles.active : ""
-                    } ${styles[item.className] || ""}`}
+                    } ${item.className ? styles[item.className] : ""}`}
                     title={collapsed ? item.label : ""}
                   >
                     {icon}
@@ -259,7 +262,7 @@ export default function SiderBar() {
                       }
                     }}
                     className={`${styles.navItem} ${
-                      styles[item.className] || ""
+                      item.className ? styles[item.className] : ""
                     }`}
                     title={collapsed ? item.label : ""}
                   >
