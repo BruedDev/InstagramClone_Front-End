@@ -51,8 +51,10 @@ export const getUserPosts = async ({
     throw new Error("Phải truyền vào userId hoặc username");
   }
 
+  // Sửa: Thêm cache: "no-store" để luôn lấy dữ liệu mới nhất từ server
   const res = await fetch(url, {
     headers: createAuthHeaders(),
+    cache: "no-store",
   });
 
   if (!res.ok) {

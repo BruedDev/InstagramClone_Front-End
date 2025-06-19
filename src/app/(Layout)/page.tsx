@@ -153,6 +153,21 @@ export default function Home() {
     setCurrentVideoTime(0);
   };
 
+  // Callback xóa bài viết
+  const handlePostDeleted = async () => {
+    try {
+      setLoading(true);
+      const response = await getHomePosts(1, limit);
+      setPosts(response.posts);
+      setHasMore(response.hasMore);
+      setPage(1);
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Memoized posts để tránh re-render không cần thiết
   const memoizedPosts = useMemo(() => posts, [posts]);
 
@@ -208,7 +223,7 @@ export default function Home() {
     handleCloseMobileComment();
   };
 
-  const postSettingModal = usePostSettingModal();
+  const postSettingModal = usePostSettingModal(handlePostDeleted);
 
   // Khi modal mở, body không cuộn được
   useEffect(() => {

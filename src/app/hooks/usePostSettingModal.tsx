@@ -3,7 +3,7 @@ import { Post } from "@/types/home.type";
 import PostSetting from "@/components/Modal/Post/PostSetting";
 import { deletePostById } from "@/server/posts";
 
-export function usePostSettingModal() {
+export function usePostSettingModal(onPostDeleted?: (postId: string) => void) {
   const [showPostSettings, setShowPostSettings] = useState(false);
   const [selectedPostForSettings, setSelectedPostForSettings] =
     useState<Post | null>(null);
@@ -23,7 +23,10 @@ export function usePostSettingModal() {
     if (action === "delete" && selectedPostForSettings) {
       try {
         await deletePostById(selectedPostForSettings._id);
-        window.location.reload();
+        if (onPostDeleted) {
+          onPostDeleted(selectedPostForSettings._id);
+        }
+        handleClosePostSettings();
       } catch (error) {
         console.error("Xóa bài viết thất bại:", error);
       }
