@@ -123,17 +123,7 @@ const InnerCallModal = () => {
   // Nếu cuộc gọi bị từ chối, hiển thị thông báo thay vì CallModal
   if (callRejected) {
     return (
-      <div
-        style={{
-          height: "100dvh",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          backgroundColor: "#121212",
-          color: "white",
-          fontSize: "18px",
-        }}
-      >
+      <div className="fixed inset-0 w-screen h-screen flex items-center justify-center bg-[#121212] text-white text-lg z-50">
         <div className="text-center">
           <p>Cuộc gọi đã bị từ chối</p>
           <p className="text-sm text-gray-400 mt-2">Đang đóng cửa sổ...</p>
@@ -145,17 +135,7 @@ const InnerCallModal = () => {
   // Nếu cuộc gọi đã kết thúc
   if (callEnded) {
     return (
-      <div
-        style={{
-          height: "100dvh",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          backgroundColor: "#121212",
-          color: "white",
-          fontSize: "18px",
-        }}
-      >
+      <div className="fixed inset-0 w-screen h-screen flex items-center justify-center bg-[#121212] text-white text-lg z-50">
         <div className="text-center">
           <p>Cuộc gọi đã kết thúc</p>
           <p className="text-sm text-gray-400 mt-2">Đang đóng cửa sổ...</p>
@@ -165,7 +145,7 @@ const InnerCallModal = () => {
   }
 
   return (
-    <div style={{ height: "100dvh" }}>
+    <div className="fixed inset-0 w-screen h-screen flex items-center justify-center bg-zinc-900 z-40">
       <CallModal handleEndCall={handleEndCall} />
     </div>
   );

@@ -150,7 +150,7 @@ export default function CallModalUi({
 
         {/* Local video (camera của bạn) */}
         <div
-          className={`absolute bottom-20 right-4 md:bottom-24 md:right-6 w-32 h-48 md:w-40 md:h-56 bg-black rounded-md overflow-hidden shadow-lg z-10 border-2 border-zinc-700 ${
+          className={`absolute bottom-0 right-0 md:bottom-0 md:right-0 w-32 h-48 md:w-40 md:h-56 bg-black rounded-md overflow-hidden shadow-lg z-10 border-2 border-zinc-700 ${
             !videoOff ? "block" : "hidden"
           }`}
         >
