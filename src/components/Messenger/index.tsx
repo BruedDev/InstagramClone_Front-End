@@ -129,7 +129,12 @@ export default function MessengerComponent({
         dispatch(addMessage(convertedMsg));
       }
       // Gửi thông báo nếu là tin nhắn đến và không phải của mình
-      if (convertedMsg.senderId !== userId && !isClosed) {
+      if (
+        convertedMsg.senderId !== userId &&
+        !isClosed &&
+        // Không thông báo nếu mình đang là người gửi (giống Facebook)
+        (!convertedMsg.isOwnMessage || convertedMsg.senderId !== userId)
+      ) {
         // Lấy đúng user từ danh sách availableUsers hoặc từ msg.senderId
         let senderName = "Người lạ";
         if (msg.senderId) {
